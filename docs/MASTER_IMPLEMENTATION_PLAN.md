@@ -541,7 +541,7 @@ lib/
 | **CHECKPOINT 3** | Authentication Engine | ✅ COMPLETE | JWT Access/Refresh tokens, bcrypt hashing, Auth API, JwtGuard |
 | **CHECKPOINT 4** | RBAC & Department Scoping Guards | ✅ COMPLETE | `PermissionsGuard`, `RolesGuard`, `DepartmentScopeGuard`, Roles API |
 | **CHECKPOINT 5** | Organization & Employee Management | ✅ COMPLETE | School/Dept CRUD, Employee CRUD, Bulk CSV/JSON Import |
-| **CHECKPOINT 6** | Core Task Assignment API | ⏳ PENDING | Task creation, assignment, validation rules |
+| **CHECKPOINT 6** | Core Task Assignment API | ✅ COMPLETE | Task Creation, Unique Code, Multi-criteria Search & Scoped Query |
 | **CHECKPOINT 7** | Task Lifecycle State Machine & Progress Engine | ⏳ PENDING | Subtask CRUD, progress updates, state machine guards |
 | **CHECKPOINT 8** | Extension, Review & Reissue Engine | ⏳ PENDING | Extension approval flow, submission review & task reissue |
 | **CHECKPOINT 9** | Deadline Engine & Idle Task Scanner | ⏳ PENDING | BullMQ Redis jobs, automated reminder cron, idle flags |
