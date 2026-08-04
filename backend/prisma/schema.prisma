@@ -1,0 +1,15 @@
+// Prisma Schema for CT University Task Assignment System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Initial health check model for Checkpoint 1 schema validation
+model SystemHealthCheck {
+  id        String   @id @default(uuid())
+  status    String   @default("ok")
+  checkedAt DateTime @default(now())
+}

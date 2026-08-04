@@ -1,75 +1,108 @@
-# TaskPulse - Workspace & Task Assignment System
+# CT University Task Assignment, Monitoring & Faculty Workflow System
 
-A modern, high-performance Task Assignment & Workspace Management application built with **React**, **Vite**, and **Vanilla CSS Design Tokens**.
-
-Created for GitHub user **[iharmandeepsingh](https://github.com/iharmandeepsingh)**.
+Production-quality cross-platform task assignment and monitoring system built with a single **Flutter** mobile application (Android & iOS) and a modular **NestJS (TypeScript)** backend backed by **PostgreSQL** and **Redis + BullMQ**.
 
 ---
 
-## 🌟 Key Features
-
-1. **Kanban Board View**: Interactive 4-column workflow (*To Do*, *In Progress*, *In Review*, *Done*) with stage transitions and subtask progress indicators.
-2. **Detailed List / Table View**: Sortable columns by ID, Title, Stage, Priority, Assignee, and Due Date with inline actions.
-3. **Team Workload Directory**: Team member profiles, active/completed task counters, and role distribution.
-4. **Live Metrics Dashboard**: Completion rate tracking, total active tasks, in-progress counters, and urgent priority alerts.
-5. **Real-time Filter & Search**: Search by title, description, or tags with multi-tier priority filtering.
-6. **Task Creation & Subtask Checklist**: Full modal interface for creating and editing tasks with dynamic subtasks.
-7. **Local Persistence**: Integrated `localStorage` auto-saving.
-
----
-
-## 🚀 How to Publish to GitHub (https://github.com/iharmandeepsingh)
-
-Follow these simple steps in your terminal to publish this workspace to your GitHub account:
-
-1. **Create a new repository on GitHub**:
-   Go to [https://github.com/new](https://github.com/new) and create a public or private repository named `task-assignment`.
-
-2. **Add Remote Origin**:
-   ```bash
-   git remote add origin https://github.com/iharmandeepsingh/task-assignment.git
-   ```
-
-3. **Push to GitHub**:
-   ```bash
-   git push -u origin main
-   ```
-
----
-
-## 💻 Local Development Setup
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Run local development server
-npm run dev
-
-# 3. Build production bundle
-npm run build
-```
-
----
-
-## 📁 Workspace Architecture
+## 📁 Repository Structure
 
 ```
 task assignement/
-├── src/
-│   ├── components/
-│   │   ├── GitHubSyncModal.jsx   # Interactive GitHub deployment modal
-│   │   ├── KanbanBoard.jsx       # 4-stage Kanban Board
-│   │   ├── ListView.jsx          # Sortable task directory
-│   │   ├── Navbar.jsx            # Top navigation, search, and view tabs
-│   │   ├── StatsOverview.jsx     # Workspace metrics cards
-│   │   ├── TaskModal.jsx         # Create & edit task modal
-│   │   └── TeamDirectory.jsx     # Team workload tracker
-│   ├── data/
-│   │   └── initialData.js        # Default tasks & team members
-│   ├── App.jsx                   # Main application container
-│   ├── index.css                 # Glassmorphic CSS design tokens
-│   └── main.jsx                  # Application entry point
-├── package.json
+├── backend/                  # NestJS + TypeScript Enterprise API
+│   ├── src/
+│   │   ├── common/           # Decorators, Guards, Interceptors, Filters
+│   │   ├── config/           # Environment configuration service
+│   │   └── modules/          # Auth, Users, Tasks, Extensions, Chat, Reports, Audit...
+│   ├── prisma/               # PostgreSQL Database Schema & Config
+│   └── .env.example
+├── mobile/                   # Flutter Cross-Platform Mobile Application
+│   ├── lib/
+│   │   ├── app/              # App router & Theme tokens
+│   │   ├── core/             # Api client, Secure storage, Environment config
+│   │   └── features/         # Feature-first modules (Auth, Tasks, Extensions, Reports...)
+│   └── pubspec.yaml
+├── docs/                     # Architecture & Checkpoint Documentation
+│   └── MASTER_IMPLEMENTATION_PLAN.md
+├── docker-compose.yml        # Local PostgreSQL 16 & Redis 7 development containers
+├── .gitignore
 └── README.md
+```
+
+---
+
+## 🛠️ Technology Stack
+
+- **Mobile Client**: Flutter 3.x, Dart, Riverpod (v2.x), GoRouter, Dio, FlutterSecureStorage.
+- **Backend API**: NestJS (TypeScript), Swagger/OpenAPI (`/api/v1/docs`), ValidationPipe, Global Exception Filters.
+- **Database & ORM**: PostgreSQL 16 + Prisma ORM.
+- **Queue & Cache**: Redis 7 + BullMQ.
+- **Real-Time Communication**: Socket.io WebSockets.
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Local Database & Redis Containers
+```bash
+# Start PostgreSQL (port 5432) and Redis (port 6379)
+docker-compose up -d
+```
+
+### 2. Backend Setup & Startup
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Validate Prisma schema
+npx prisma validate
+
+# Run backend development server
+npm run start:dev
+```
+- API Base URL: `http://localhost:3000/api/v1`
+- Health Endpoint: `http://localhost:3000/api/v1/health`
+- Swagger Documentation: `http://localhost:3000/api/v1/docs`
+
+### 3. Mobile Setup & Startup
+```bash
+cd mobile
+
+# Fetch Flutter dependencies
+flutter pub get
+
+# Run Flutter application
+flutter run
+```
+
+---
+
+## ⚙️ Configurable Business Rules (Non-Hardcoded)
+
+As specified in the system architecture, critical workflow thresholds are configurable via backend environment variables or system configuration database records:
+
+- `IDLE_THRESHOLD_DAYS`: Default = `3` (Days without progress before task is flagged idle).
+- `REMINDER_FREQUENCY_DAYS`: Default = `3` (Interval between automated reminder notifications).
+- `REMINDER_WINDOW_START_DAYS`: Default = `30` (Start of reminder window prior to deadline).
+- `REMINDER_WINDOW_END_DAYS`: Default = `15` (End of reminder window prior to deadline).
+
+---
+
+## 🧪 Validation & Lint Commands
+
+### Backend Validation
+```bash
+cd backend
+npx tsc --noEmit        # Type check
+npm run lint            # ESLint check
+npx prisma validate     # Schema validation
+```
+
+### Mobile Validation
+```bash
+cd mobile
+dart format --output=none --set-exit-if-changed .
+flutter analyze
+flutter test
 ```

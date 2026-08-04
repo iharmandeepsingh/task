@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: ctu_task_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ctu_user
+      POSTGRES_PASSWORD: ctu_password
+      POSTGRES_DB: ctu_task_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctu_user -d ctu_task_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Background Job Queue Service
+  redis:
+    image: redis:7-alpine
+    container_name: ctu_task_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

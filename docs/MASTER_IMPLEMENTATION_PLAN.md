@@ -533,27 +533,27 @@ lib/
 
 ## 9. Phased Implementation Plan (Checkpoints 0 to 18)
 
-| Checkpoint | Scope & Description | Target Deliverable |
-|---|---|---|
-| **CHECKPOINT 0** | Requirements validation & Master Architecture Plan | `docs/MASTER_IMPLEMENTATION_PLAN.md` |
-| **CHECKPOINT 1** | Repository & Project Scaffold (NestJS + Flutter) | Clean root project with `backend/` and `mobile/` |
-| **CHECKPOINT 2** | Database & Prisma Model Definition | PostgreSQL docker container, Prisma schema, initial migration |
-| **CHECKPOINT 3** | Authentication Engine | JWT Access/Refresh tokens, bcrypt password hashing, login API |
-| **CHECKPOINT 4** | RBAC & Department Scoping Guards | `PermissionsGuard`, `DepartmentScopeGuard`, seed permissions |
-| **CHECKPOINT 5** | Organization & Employee Management | Department, School, User CRUD & HR Bulk Import API |
-| **CHECKPOINT 6** | Core Task Assignment API | Task creation, assignment, validation rules |
-| **CHECKPOINT 7** | Task Lifecycle State Machine & Progress Engine | Subtask CRUD, progress updates, state machine guards |
-| **CHECKPOINT 8** | Extension, Review & Reissue Engine | Extension approval flow, submission review & task reissue |
-| **CHECKPOINT 9** | Deadline Engine & Idle Task Scanner | BullMQ Redis jobs, automated reminder cron, idle flags |
-| **CHECKPOINT 10** | Task-Specific Chat & File Storage | Socket.io gateway, S3 presigned URL file upload integration |
-| **CHECKPOINT 11** | Reporting, Analytics & PDF/Excel Export | Report generation, CSV/XLSX export backend endpoints |
-| **CHECKPOINT 12** | Flutter Auth & Role Router | Flutter Riverpod auth state, GoRouter navigation guards |
-| **CHECKPOINT 13** | Faculty Mobile Experience | Faculty dashboard, assigned tasks, progress logger, extensions |
-| **CHECKPOINT 14** | Admin/Head Mobile Experience | Admin dashboard, task creator, review queue, extension approval |
-| **CHECKPOINT 15** | HR & Super Admin Mobile Views | University analytics, global audit logs, HR employee manager |
-| **CHECKPOINT 16** | Automated Testing & Security Hardening | Unit & E2E tests, rate limiting, security headers, input validation |
-| **CHECKPOINT 17** | Production Build & Deployment Guide | Docker compose production config, CI/CD pipeline |
-| **CHECKPOINT 18** | Android & iOS Store Release Preparation | App icons, Android APK build, iOS bundle configuration |
+| Checkpoint | Scope & Description | Status | Target Deliverable |
+|---|---|:---:|---|
+| **CHECKPOINT 0** | Requirements validation & Master Architecture Plan | ✅ COMPLETE | `docs/MASTER_IMPLEMENTATION_PLAN.md` |
+| **CHECKPOINT 1** | Repository & Project Scaffold (NestJS + Flutter) | ✅ COMPLETE | Clean monorepo structure with `/backend`, `/mobile`, `/docs` |
+| **CHECKPOINT 2** | Database & Prisma Model Definition | ⏳ PENDING | PostgreSQL docker container, Prisma schema, initial migration |
+| **CHECKPOINT 3** | Authentication Engine | ⏳ PENDING | JWT Access/Refresh tokens, bcrypt password hashing, login API |
+| **CHECKPOINT 4** | RBAC & Department Scoping Guards | ⏳ PENDING | `PermissionsGuard`, `DepartmentScopeGuard`, seed permissions |
+| **CHECKPOINT 5** | Organization & Employee Management | ⏳ PENDING | Department, School, User CRUD & HR Bulk Import API |
+| **CHECKPOINT 6** | Core Task Assignment API | ⏳ PENDING | Task creation, assignment, validation rules |
+| **CHECKPOINT 7** | Task Lifecycle State Machine & Progress Engine | ⏳ PENDING | Subtask CRUD, progress updates, state machine guards |
+| **CHECKPOINT 8** | Extension, Review & Reissue Engine | ⏳ PENDING | Extension approval flow, submission review & task reissue |
+| **CHECKPOINT 9** | Deadline Engine & Idle Task Scanner | ⏳ PENDING | BullMQ Redis jobs, automated reminder cron, idle flags |
+| **CHECKPOINT 10** | Task-Specific Chat & File Storage | ⏳ PENDING | Socket.io gateway, S3 presigned URL file upload integration |
+| **CHECKPOINT 11** | Reporting, Analytics & PDF/Excel Export | ⏳ PENDING | Report generation, CSV/XLSX export backend endpoints |
+| **CHECKPOINT 12** | Flutter Auth & Role Router | ⏳ PENDING | Flutter Riverpod auth state, GoRouter navigation guards |
+| **CHECKPOINT 13** | Faculty Mobile Experience | ⏳ PENDING | Faculty dashboard, assigned tasks, progress logger, extensions |
+| **CHECKPOINT 14** | Admin/Head Mobile Experience | ⏳ PENDING | Admin dashboard, task creator, review queue, extension approval |
+| **CHECKPOINT 15** | HR & Super Admin Mobile Views | ⏳ PENDING | University analytics, global audit logs, HR employee manager |
+| **CHECKPOINT 16** | Automated Testing & Security Hardening | ⏳ PENDING | Unit & E2E tests, rate limiting, security headers, input validation |
+| **CHECKPOINT 17** | Production Build & Deployment Guide | ⏳ PENDING | Docker compose production config, CI/CD pipeline |
+| **CHECKPOINT 18** | Android & iOS Store Release Preparation | ⏳ PENDING | App icons, Android APK build, iOS bundle configuration |
 
 ---
 
