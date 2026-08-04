@@ -538,7 +538,7 @@ lib/
 | **CHECKPOINT 0** | Requirements validation & Master Architecture Plan | ✅ COMPLETE | `docs/MASTER_IMPLEMENTATION_PLAN.md` |
 | **CHECKPOINT 1** | Repository & Project Scaffold (NestJS + Flutter) | ✅ COMPLETE | Clean monorepo structure with `/backend`, `/mobile`, `/docs` |
 | **CHECKPOINT 2** | Database & Prisma Model Definition | ✅ COMPLETE | PostgreSQL Prisma schema, 21 models, indexes, seed.ts |
-| **CHECKPOINT 3** | Authentication Engine | ⏳ PENDING | JWT Access/Refresh tokens, bcrypt password hashing, login API |
+| **CHECKPOINT 3** | Authentication Engine | ✅ COMPLETE | JWT Access/Refresh tokens, bcrypt hashing, Auth API, JwtGuard |
 | **CHECKPOINT 4** | RBAC & Department Scoping Guards | ⏳ PENDING | `PermissionsGuard`, `DepartmentScopeGuard`, seed permissions |
 | **CHECKPOINT 5** | Organization & Employee Management | ⏳ PENDING | Department, School, User CRUD & HR Bulk Import API |
 | **CHECKPOINT 6** | Core Task Assignment API | ⏳ PENDING | Task creation, assignment, validation rules |
