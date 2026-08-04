@@ -7,9 +7,388 @@ datasource db {
   provider = "postgresql"
 }
 
-// Initial health check model for Checkpoint 1 schema validation
-model SystemHealthCheck {
+enum UserRoleType {
+  SUPER_ADMIN
+  ADMIN_HEAD
+  HR
+  FACULTY
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  COMPLETED
+  REJECTED
+  REISSUED
+  OVERDUE
+}
+
+enum ExtensionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DeadlineHealth {
+  GREEN
+  YELLOW
+  ORANGE
+  RED
+}
+
+model School {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  code        String       @unique
+  departments Department[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("schools")
+}
+
+model Department {
+  id        String            @id @default(uuid())
+  name      String
+  code      String            @unique
+  schoolId  String
+  school    School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  profiles  EmployeeProfile[]
+  tasks     Task[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([schoolId])
+  @@map("departments")
+}
+
+model User {
+  id            String             @id @default(uuid())
+  employeeId    String             @unique
+  email         String             @unique
+  passwordHash  String
+  isActive      Boolean            @default(true)
+  profile       EmployeeProfile?
+  userRoles     UserRole[]
+  assignedTasks Task[]             @relation("TaskAssignee")
+  createdTasks  Task[]             @relation("TaskCreator")
+  reviews       TaskReview[]
+  extensions    ExtensionRequest[]
+  chats         ChatMessage[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  deviceTokens  DeviceToken[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@map("users")
+}
+
+model EmployeeProfile {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  phone        String?
+  designation  String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([departmentId])
+  @@map("employee_profiles")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        UserRoleType     @unique
+  description String?
+  permissions RolePermission[]
+  userRoles   UserRole[]
+  createdAt   DateTime         @default(now())
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  code        String           @unique // e.g., TASK_CREATE, EXTENSION_APPROVE
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Task {
+  id              String               @id @default(uuid())
+  taskCode        String               @unique // e.g., CTU-1001
+  title           String
+  description     String
+  instructions    String?
+  creatorId       String
+  creator         User                 @relation("TaskCreator", fields: [creatorId], references: [id])
+  assigneeId      String
+  assignee        User                 @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  departmentId    String
+  department      Department           @relation(fields: [departmentId], references: [id])
+  priority        PriorityLevel        @default(MEDIUM)
+  status          TaskStatus           @default(ASSIGNED)
+  deadlineHealth  DeadlineHealth       @default(GREEN)
+  progressPercent Int                  @default(0)
+  startDate       DateTime
+  deadline        DateTime
+  lastActivityAt  DateTime             @default(now())
+  isIdle          Boolean              @default(false)
+
+  subtasks        TaskSubtask[]
+  progressUpdates TaskProgressUpdate[]
+  attachments     TaskAttachment[]
+  submissions     TaskSubmission[]
+  reviews         TaskReview[]
+  reissues        TaskReissue[]
+  extensions      ExtensionRequest[]
+  chatThread      ChatThread?
+
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([departmentId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([deadlineHealth])
+  @@map("tasks")
+}
+
+model TaskSubtask {
+  id          String    @id @default(uuid())
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  sequence    Int
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([taskId])
+  @@map("task_subtasks")
+}
+
+model TaskProgressUpdate {
+  id              String   @id @default(uuid())
+  taskId          String
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  progressPercent Int
+  updateMessage   String
+  attachmentUrl   String?
+  createdAt       DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_progress_updates")
+}
+
+model TaskAttachment {
+  id         String   @id @default(uuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileName   String
+  fileKey    String
+  fileSize   Int
+  mimeType   String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_attachments")
+}
+
+model TaskSubmission {
+  id            String   @id @default(uuid())
+  taskId        String
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  notes         String?
+  attachmentUrl String?
+  submittedAt   DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_submissions")
+}
+
+model TaskReview {
+  id         String     @id @default(uuid())
+  taskId     String
+  task       Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User       @relation(fields: [reviewerId], references: [id])
+  status     TaskStatus // COMPLETED or REJECTED
+  feedback   String
+  reviewedAt DateTime   @default(now())
+
+  @@index([taskId])
+  @@map("task_reviews")
+}
+
+model TaskReissue {
+  id          String   @id @default(uuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reason      String
+  newDeadline DateTime
+  reissuedAt  DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_reissues")
+}
+
+model ExtensionRequest {
+  id                String          @id @default(uuid())
+  taskId            String
+  task              Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  applicantId       String
+  applicant         User            @relation(fields: [applicantId], references: [id])
+  currentDeadline   DateTime
+  requestedDeadline DateTime
+  reason            String
+  status            ExtensionStatus @default(PENDING)
+  decisionReason    String?
+  decidedBy         String?
+  decidedAt         DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([taskId])
+  @@index([applicantId])
+  @@map("extension_requests")
+}
+
+model ChatThread {
+  id        String        @id @default(uuid())
+  taskId    String        @unique
+  task      Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id            String         @id @default(uuid())
+  threadId      String
+  thread        ChatThread     @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        User           @relation(fields: [senderId], references: [id])
+  content       String
+  attachmentUrl String?
+  isRead        Boolean        @default(false)
+  attachments   ChatAttachment[]
+  createdAt     DateTime       @default(now())
+
+  @@index([threadId])
+  @@map("chat_messages")
+}
+
+model ChatAttachment {
+  id        String      @id @default(uuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileKey   String
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime    @default(now())
+
+  @@map("chat_attachments")
+}
+
+model Notification {
   id        String   @id @default(uuid())
-  status    String   @default("ok")
-  checkedAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  taskId    String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // ANDROID / IOS
+  createdAt DateTime @default(now())
+
+  @@map("device_tokens")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String   // e.g., TASK_ASSIGNED, EXTENSION_APPROVED
+  entity    String   // e.g., Task, ExtensionRequest, User
+  entityId  String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entityId])
+  @@map("audit_logs")
+}
+
+model DeadlineConfiguration {
+  id                  String   @id @default("default")
+  greenThresholdDays  Int      @default(7)
+  yellowThresholdDays Int      @default(3)
+  orangeThresholdDays Int      @default(1)
+  idleThresholdDays   Int      @default(3)
+  updatedAt           DateTime @updatedAt
+
+  @@map("deadline_configurations")
+}
+
+model SystemConfiguration {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configurations")
 }

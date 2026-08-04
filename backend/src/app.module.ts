@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
+import { DatabaseModule } from './database/database.module';
 
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,6 +23,7 @@ import { AuditModule } from './modules/audit/audit.module';
       isGlobal: true,
       load: [configuration],
     }),
+    DatabaseModule,
     HealthModule,
     AuthModule,
     UsersModule,
