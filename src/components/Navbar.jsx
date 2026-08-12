@@ -1,95 +1,190 @@
 import React from 'react';
-import { LayoutGrid, CheckSquare, Users, Plus, Search, Filter } from 'lucide-react';
+import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award } from 'lucide-react';
 
-const GithubIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
-  </svg>
-);
-
-export default function Navbar({ 
-  activeView, 
-  setActiveView, 
-  onNewTask, 
-  searchQuery, 
-  setSearchQuery, 
-  filterPriority, 
+export default function Navbar({
+  activeView,
+  setActiveView,
+  onNewTask,
+  searchQuery,
+  setSearchQuery,
+  filterPriority,
   setFilterPriority,
-  onOpenGitModal 
+  authUser,
+  onLogout,
+  onOpenHRImport,
+  onOpenReportCard,
 }) {
+  const roleTitleMap = {
+    superAdmin: 'Super Admin (Global Scope)',
+    admin: 'University Admin',
+    adminHead: 'Head of Dept (CSE Scope)',
+    hod: 'Head of Dept (CSE Scope)',
+    faculty: 'Faculty (Self Tasks Only)',
+    hr: 'HR Executive (Employee Scope)'
+  };
+
+  const badgeColorMap = {
+    superAdmin: '#8b5cf6',
+    admin: '#3b82f6',
+    adminHead: '#10b981',
+    hod: '#10b981',
+    faculty: '#f59e0b',
+    hr: '#ec4899'
+  };
+
+  const currentRole = authUser?.role || 'faculty';
+  const roleBadgeColor = badgeColorMap[currentRole] || '#3b82f6';
+
   return (
-    <header className="navbar">
-      <div className="brand-section">
-        <div className="brand-logo">
-          <CheckSquare size={22} />
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 className="brand-title">TaskPulse</h1>
-            <span className="brand-tag">v1.0</span>
+    <header className="navbar-container">
+      <div className="navbar-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="brand-icon" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <School size={22} color="#ffffff" />
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Workspace: <strong>task assignment</strong>
-          </p>
+          <div>
+            <h1 className="brand-title" style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>CT UNIVERSITY</h1>
+            <p className="brand-subtitle" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>Task Assignment & Faculty Workflow System</p>
+          </div>
+        </div>
+
+        {/* Authenticated User Profile Pill */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '6px 14px',
+          borderRadius: '12px',
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: roleBadgeColor,
+            color: '#ffffff',
+            fontWeight: '800',
+            fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {authUser?.avatar || 'U'}
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {authUser?.name}
+              <span style={{
+                fontSize: '10px',
+                padding: '1px 6px',
+                borderRadius: '8px',
+                background: roleBadgeColor + '20',
+                color: roleBadgeColor,
+                fontWeight: '700'
+              }}>
+                {roleTitleMap[currentRole]}
+              </span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              {authUser?.email}
+            </div>
+          </div>
+
+          <button
+            onClick={onLogout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              background: '#fee2e2',
+              color: '#dc2626',
+              border: 'none',
+              fontSize: '11px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              marginLeft: '8px'
+            }}
+            title="Sign out of CT University portal"
+          >
+            <LogOut size={13} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        <div className="navbar-actions" style={{ display: 'flex', gap: '8px' }}>
+          {(currentRole === 'adminHead' || currentRole === 'hod' || currentRole === 'admin' || currentRole === 'superAdmin') && (
+            <button className="btn-primary" onClick={onNewTask}>
+              <PlusCircle size={16} />
+              <span>Assign New Task</span>
+            </button>
+          )}
+
+          {currentRole === 'hr' && (
+            <button className="btn-secondary" onClick={onOpenHRImport}>
+              <FileSpreadsheet size={16} />
+              <span>Bulk CSV/XLSX Import</span>
+            </button>
+          )}
+
+          {currentRole === 'faculty' && (
+            <button className="btn-primary" onClick={onOpenReportCard} style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
+              <Award size={16} />
+              <span>My Report Card</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        {/* Search Input */}
-        <div className="search-box">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Search tasks, assignees, tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        {/* Priority Filter */}
-        <select 
-          className="select-filter"
-          value={filterPriority}
-          onChange={(e) => setFilterPriority(e.target.value)}
-        >
-          <option value="All">All Priorities</option>
-          <option value="Urgent">Urgent</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-
-        {/* View Switcher */}
-        <div className="view-tabs">
+      <div className="navbar-bottom" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>
+        <nav className="nav-tabs">
           <button 
-            className={`view-btn ${activeView === 'kanban' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'kanban' ? 'active' : ''}`}
             onClick={() => setActiveView('kanban')}
           >
-            <LayoutGrid size={15} /> Board
+            Workflow Board
           </button>
           <button 
-            className={`view-btn ${activeView === 'list' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'list' ? 'active' : ''}`}
             onClick={() => setActiveView('list')}
           >
-            <CheckSquare size={15} /> List
+            Task List & Filters
           </button>
           <button 
-            className={`view-btn ${activeView === 'team' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'team' ? 'active' : ''}`}
             onClick={() => setActiveView('team')}
           >
-            <Users size={15} /> Team
+            Faculty Directory & HR
           </button>
+        </nav>
+
+        <div className="search-filter-bar" style={{ display: 'flex', gap: '10px' }}>
+          <div className="search-input-wrapper">
+            <Search size={14} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search tasks, codes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-dropdown-wrapper">
+            <Filter size={14} className="filter-icon" />
+            <select 
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+            >
+              <option value="All">All Priorities</option>
+              <option value="Low">Low Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="High">High Priority</option>
+              <option value="Urgent">Urgent Priority</option>
+            </select>
+          </div>
         </div>
-
-        {/* Action Buttons */}
-        <button className="btn-secondary" onClick={onOpenGitModal}>
-          <GithubIcon size={16} /> iharmandeepsingh
-        </button>
-
-        <button className="btn-primary" onClick={onNewTask}>
-          <Plus size={18} /> Create Task
-        </button>
       </div>
     </header>
   );

@@ -1,138 +1,200 @@
 import React from 'react';
-import { Calendar, CheckSquare, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
+import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown } from 'lucide-react';
 import { STAGES } from '../data/initialData';
 
-export default function KanbanBoard({ tasks, team, onEditTask, onMoveStage, onDeleteTask }) {
-  const getAssignee = (id) => team.find(m => m.id === id) || { name: 'Unassigned', avatar: '?' };
+export default function KanbanBoard({
+  tasks,
+  team,
+  onEditTask,
+  onMoveStage,
+  onDeleteTask,
+  onOpenChat,
+  onOpenExtensionModal,
+  onOpenReviewModal,
+  onToggleSubtask,
+  currentRole,
+}) {
+  const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
 
   return (
-    <div className="kanban-grid">
-      {STAGES.map((stage) => {
-        const stageTasks = tasks.filter((t) => t.stage === stage);
+    <div className="kanban-container">
+      <div className="kanban-grid">
+        {STAGES.map((stage) => {
+          const stageTasks = tasks.filter((t) => t.stage === stage);
 
-        return (
-          <div key={stage} className="kanban-column">
-            <div className="column-header">
-              <div className="column-title">
-                <span className={`status-dot status-${stage.toLowerCase().replace(' ', '-')}`}></span>
-                {stage}
-              </div>
-              <span className="task-count">{stageTasks.length}</span>
-            </div>
-
-            <div className="task-list">
-              {stageTasks.length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem 1rem', 
-                  color: 'var(--text-muted)', 
-                  fontSize: '0.85rem',
-                  border: '1px dashed var(--border-color)',
-                  borderRadius: 'var(--radius-sm)' 
-                }}>
-                  No tasks in {stage}
+          return (
+            <div key={stage} className="kanban-column">
+              <div className="column-header">
+                <div className="column-title-group">
+                  <span className={`stage-dot ${getStageColorClass(stage)}`}></span>
+                  <h3 className="column-title">{stage}</h3>
+                  <span className="column-count">{stageTasks.length}</span>
                 </div>
-              ) : (
-                stageTasks.map((task) => {
-                  const assignee = getAssignee(task.assigneeId);
-                  const completedSubtasks = (task.subtasks || []).filter(s => s.done).length;
+              </div>
+
+              <div className="column-cards">
+                {stageTasks.map((task) => {
+                  const assignee = team ? team.find((u) => u.id === task.assigneeId) : null;
+                  const isIdle = task.isIdle;
 
                   return (
-                    <div 
-                      key={task.id} 
-                      className="task-card"
-                      onClick={() => onEditTask(task)}
-                    >
-                      <div className="task-tags">
-                        <span className={`badge-priority ${task.priority.toLowerCase()}`}>
-                          {task.priority}
-                        </span>
-                        {task.tags.map((tag) => (
-                          <span key={tag} className="badge-tag">{tag}</span>
-                        ))}
-                      </div>
-
-                      <div className="task-card-title">{task.title}</div>
-                      <div className="task-card-desc">{task.description}</div>
-
-                      {task.subtasks && task.subtasks.length > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckSquare size={13} /> {completedSubtasks}/{task.subtasks.length} subtasks
+                    <div key={task.id} className={`kanban-card ${isIdle ? 'idle-border' : ''}`}>
+                      {/* Idle Flag Alert Banner */}
+                      {isIdle && (
+                        <div className="idle-flag-banner">
+                          <AlertTriangle size={12} />
+                          <span>Idle Flag: No update for 3-5 days</span>
                         </div>
                       )}
 
-                      <div className="task-card-footer">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div className="assignee-avatar" title={assignee.name}>
-                            {assignee.avatar}
+                      <div className="card-top">
+                        <span className="task-code">{task.id}</span>
+                        <span className={`priority-badge ${task.priority ? task.priority.toLowerCase() : 'medium'}`}>
+                          {task.priority || 'Medium'}
+                        </span>
+                        <span className={`health-pill ${task.deadlineHealth ? task.deadlineHealth.toLowerCase() : 'green'}`}>
+                          {task.deadlineHealth || 'Green'}
+                        </span>
+                      </div>
+
+                      <h4 className="card-title" onClick={() => onEditTask(task)}>
+                        {task.title}
+                      </h4>
+
+                      <p className="card-desc">{task.description}</p>
+
+                      {/* Explicit Interactive Stage Changer Dropdown */}
+                      <div
+                        style={{ marginTop: '10px', marginBottom: '10px' }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                          Move Task Stage:
+                        </label>
+                        <select
+                          value={task.stage}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            onMoveStage(task.id, e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            background: '#ffffff',
+                            color: '#0f172a',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                          }}
+                        >
+                          {STAGES.map((s) => (
+                            <option key={s} value={s}>
+                              Stage: {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Subtask Progress Checklist */}
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <div className="card-subtasks">
+                          <div className="subtasks-header">
+                            <span>Sub-tasks ({task.subtasks.filter(s => s.done).length}/{task.subtasks.length})</span>
                           </div>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {assignee.name.split(' ')[0]}
+                          {task.subtasks.map((st) => (
+                            <label key={st.id || st.text} className="subtask-item">
+                              <input
+                                type="checkbox"
+                                checked={st.done}
+                                onChange={() => onToggleSubtask(task.id, st.id)}
+                              />
+                              <span className={st.done ? 'completed' : ''}>{st.text}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Re-issued Feedback Banner */}
+                      {task.stage === 'Re-issued' && task.review && (
+                        <div className="reissued-banner" style={{ background: '#fef2f2', padding: '6px 8px', borderRadius: '6px', fontSize: '11px', color: '#b91c1c', marginTop: '8px' }}>
+                          <RefreshCw size={12} />
+                          <span>Re-issued: {task.review.feedback}</span>
+                        </div>
+                      )}
+
+                      <div className="card-footer" style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div className="assignee-info" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="avatar-small" style={{ width: '24px', height: '24px', fontSize: '10px' }}>
+                            {assignee ? assignee.avatar : 'HS'}
+                          </div>
+                          <span className="assignee-name" style={{ fontSize: '11px', fontWeight: '600' }}>
+                            {task.assigneeName || (assignee ? assignee.name : 'Faculty')}
                           </span>
                         </div>
 
-                        <div className="due-date">
-                          <Calendar size={13} /> {task.dueDate}
-                        </div>
-                      </div>
+                        <div className="card-actions" style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            className="chat-btn"
+                            title="Task Chat Thread"
+                            onClick={() => onOpenChat(task)}
+                            style={{ padding: '4px 8px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <MessageSquare size={14} />
+                            <span>{task.chatMessages ? task.chatMessages.length : 0}</span>
+                          </button>
 
-                      {/* Quick Action Bar on Card */}
-                      <div 
-                        style={{ 
-                          display: 'flex', 
-                          justify: 'space-between', 
-                          alignItems: 'center',
-                          marginTop: '0.75rem',
-                          paddingTop: '0.5rem',
-                          borderTop: '1px solid rgba(255,255,255,0.06)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {stage !== 'To Do' && (
-                            <button 
-                              className="btn-secondary" 
-                              style={{ padding: '2px 6px', fontSize: '0.7rem' }}
-                              onClick={() => {
-                                const prevIdx = STAGES.indexOf(stage) - 1;
-                                onMoveStage(task.id, STAGES[prevIdx]);
-                              }}
-                              title="Move Previous"
+                          {task.stage !== 'Accepted' && (
+                            <button
+                              className="action-btn-small ext"
+                              title="Request or View Extension"
+                              onClick={() => onOpenExtensionModal(task)}
+                              style={{ padding: '4px 8px', borderRadius: '6px', background: '#fffbeb', color: '#b45309', border: 'none', cursor: 'pointer', fontSize: '11px' }}
                             >
-                              <ChevronLeft size={12} />
+                              <Clock size={13} />
                             </button>
                           )}
-                          {stage !== 'Done' && (
-                            <button 
-                              className="btn-secondary" 
-                              style={{ padding: '2px 6px', fontSize: '0.7rem' }}
-                              onClick={() => {
-                                const nextIdx = STAGES.indexOf(stage) + 1;
-                                onMoveStage(task.id, STAGES[nextIdx]);
-                              }}
-                              title="Move Next"
+
+                          {isLeader && (
+                            <button
+                              className="action-btn-small review"
+                              title="Review Submission"
+                              onClick={() => onOpenReviewModal(task)}
+                              style={{ padding: '4px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#047857', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
-                              <ChevronRight size={12} />
+                              <Send size={13} />
+                              <span>Review</span>
                             </button>
                           )}
                         </div>
-
-                        <button 
-                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.7 }}
-                          onClick={() => onDeleteTask(task.id)}
-                          title="Delete task"
-                        >
-                          <Trash2 size={13} />
-                        </button>
                       </div>
                     </div>
                   );
-                })
-              )}
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+function getStageColorClass(stage) {
+  switch (stage) {
+    case 'Assigned': return 'blue';
+    case 'In Progress': return 'indigo';
+    case 'Submitted for Review': return 'purple';
+    case 'Under Review': return 'amber';
+    case 'Accepted': return 'green';
+    case 'Rejected': return 'red';
+    case 'Re-issued': return 'cyan';
+    default: return 'gray';
+  }
 }

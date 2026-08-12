@@ -45,6 +45,85 @@ enum DeadlineHealth {
   RED
 }
 
+enum OrganizationUnitType {
+  UNIVERSITY
+  SCHOOL
+  DEPARTMENT
+  OFFICE
+  CELL
+  CENTRE
+  DIVISION
+  OTHER
+}
+
+enum EmployeeStatus {
+  IMPORTED
+  ACTIVE
+  INACTIVE
+  LEFT_ORGANIZATION
+}
+
+enum AccountStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum EmailType {
+  UNIVERSITY
+  PERSONAL
+  OTHER
+}
+
+enum MembershipType {
+  PRIMARY
+  SECONDARY
+  COORDINATOR
+  MEMBER
+  ADMINISTRATIVE
+  OTHER
+}
+
+enum EmployeeImportJobStatus {
+  UPLOADED
+  PARSING
+  VALIDATING
+  READY_FOR_REVIEW
+  CONFIRMED
+  PROCESSING
+  COMPLETED
+  PARTIALLY_COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ImportRowStatus {
+  VALID
+  WARNING
+  ERROR
+  DUPLICATE
+  SKIPPED
+}
+
+model OrganizationUnit {
+  id          String                           @id @default(uuid())
+  name        String
+  code        String                           @unique
+  type        OrganizationUnitType             @default(DEPARTMENT)
+  parentId    String?
+  parent      OrganizationUnit?                @relation("OrgUnitParent", fields: [parentId], references: [id])
+  children    OrganizationUnit[]               @relation("OrgUnitParent")
+  isActive    Boolean                          @default(true)
+  memberships EmployeeOrganizationMembership[]
+  scopes      UserScope[]
+  departments Department[]                     // Bridge relation for backward compatibility
+  createdAt   DateTime                         @default(now())
+  updatedAt   DateTime                         @updatedAt
+
+  @@map("organization_units")
+}
+
 model School {
   id          String       @id @default(uuid())
   name        String       @unique
@@ -57,38 +136,161 @@ model School {
 }
 
 model Department {
-  id        String            @id @default(uuid())
-  name      String
-  code      String            @unique
-  schoolId  String
-  school    School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  profiles  EmployeeProfile[]
-  tasks     Task[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  name               String
+  code               String            @unique
+  schoolId           String
+  school             School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  organizationUnitId String?
+  organizationUnit   OrganizationUnit? @relation(fields: [organizationUnitId], references: [id])
+  profiles           EmployeeProfile[]
+  tasks              Task[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@index([schoolId])
   @@map("departments")
 }
 
+model Employee {
+  id               String                           @id @default(uuid())
+  employeeId       String                           @unique
+  displayName      String
+  firstName        String?
+  middleName       String?
+  lastName         String?
+  primaryEmail     String?                          @unique
+  phone            String?
+  designation      String
+  employmentType   String                           @default("REGULAR")
+  employmentStatus EmployeeStatus                   @default(ACTIVE)
+  userId           String?                          @unique
+  user             User?                            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emails           EmployeeEmail[]
+  memberships      EmployeeOrganizationMembership[]
+  source           String                           @default("MANUAL")
+  importJobId      String?
+  sourceRowNumber  Int?
+  createdAt        DateTime                         @default(now())
+  updatedAt        DateTime                         @updatedAt
+
+  @@map("employees")
+}
+
+model EmployeeEmail {
+  id         String    @id @default(uuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  email      String
+  type       EmailType @default(UNIVERSITY)
+  isPrimary  Boolean   @default(false)
+  isVerified Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([employeeId, email])
+  @@index([email])
+  @@map("employee_emails")
+}
+
+model EmployeeOrganizationMembership {
+  id                    String           @id @default(uuid())
+  employeeId            String
+  employee              Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  organizationUnitId    String
+  organizationUnit      OrganizationUnit @relation(fields: [organizationUnitId], references: [id], onDelete: Cascade)
+  membershipType        MembershipType   @default(PRIMARY)
+  isPrimary             Boolean          @default(false)
+  titleOrResponsibility String?
+  startDate             DateTime?
+  endDate               DateTime?
+  isActive              Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([employeeId])
+  @@index([organizationUnitId])
+  @@map("employee_organization_memberships")
+}
+
+model UserScope {
+  id                 String           @id @default(uuid())
+  userId             String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationUnitId String
+  organizationUnit   OrganizationUnit @relation(fields: [organizationUnitId], references: [id], onDelete: Cascade)
+  scopeType          String           @default("DEPARTMENT")
+  grantedAt          DateTime         @default(now())
+  grantedBy          String?
+
+  @@unique([userId, organizationUnitId])
+  @@map("user_scopes")
+}
+
+model EmployeeImportJob {
+  id              String                  @id @default(uuid())
+  fileName        String
+  fileHash        String
+  templateVersion String                  @default("CT_EMPLOYEE_IMPORT_V1")
+  columnMapping   Json?
+  uploadedById    String
+  uploadedBy      User                    @relation(fields: [uploadedById], references: [id])
+  status          EmployeeImportJobStatus @default(UPLOADED)
+  totalRows       Int                     @default(0)
+  validRows       Int                     @default(0)
+  warningRows     Int                     @default(0)
+  errorRows       Int                     @default(0)
+  duplicateRows   Int                     @default(0)
+  createdAt       DateTime                @default(now())
+  validatedAt     DateTime?
+  confirmedAt     DateTime?
+  completedAt     DateTime?
+  rows            EmployeeImportRow[]
+
+  @@index([fileHash])
+  @@map("employee_import_jobs")
+}
+
+model EmployeeImportRow {
+  id                 String            @id @default(uuid())
+  jobId              String
+  job                EmployeeImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  rowNumber          Int
+  rawData            Json
+  normalizedData     Json?
+  validationStatus   ImportRowStatus   @default(VALID)
+  validationErrors   Json?
+  validationWarnings Json?
+  existingEmployeeId String?
+  createdAt          DateTime          @default(now())
+
+  @@index([jobId])
+  @@index([validationStatus])
+  @@map("employee_import_rows")
+}
+
 model User {
-  id            String             @id @default(uuid())
-  employeeId    String             @unique
-  email         String             @unique
+  id            String              @id @default(uuid())
+  employeeId    String              @unique
+  email         String              @unique
   passwordHash  String
-  isActive      Boolean            @default(true)
+  accountStatus AccountStatus       @default(ACTIVE)
+  isActive      Boolean             @default(true)
+  employee      Employee?
   profile       EmployeeProfile?
   userRoles     UserRole[]
-  assignedTasks Task[]             @relation("TaskAssignee")
-  createdTasks  Task[]             @relation("TaskCreator")
+  scopes        UserScope[]
+  importJobs    EmployeeImportJob[]
+  assignedTasks Task[]              @relation("TaskAssignee")
+  createdTasks  Task[]              @relation("TaskCreator")
   reviews       TaskReview[]
   extensions    ExtensionRequest[]
   chats         ChatMessage[]
   notifications Notification[]
   auditLogs     AuditLog[]
   deviceTokens  DeviceToken[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@map("users")
 }
@@ -123,7 +325,7 @@ model Role {
 
 model Permission {
   id          String           @id @default(uuid())
-  code        String           @unique // e.g., TASK_CREATE, EXTENSION_APPROVE
+  code        String           @unique // e.g., TASK_CREATE, EXTENSION_APPROVE, EMPLOYEE_IMPORT
   description String?
   roles       RolePermission[]
   createdAt   DateTime         @default(now())
@@ -304,16 +506,16 @@ model ChatThread {
 }
 
 model ChatMessage {
-  id            String         @id @default(uuid())
+  id            String           @id @default(uuid())
   threadId      String
-  thread        ChatThread     @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  thread        ChatThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
   senderId      String
-  sender        User           @relation(fields: [senderId], references: [id])
+  sender        User             @relation(fields: [senderId], references: [id])
   content       String
   attachmentUrl String?
-  isRead        Boolean        @default(false)
+  isRead        Boolean          @default(false)
   attachments   ChatAttachment[]
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime         @default(now())
 
   @@index([threadId])
   @@map("chat_messages")
@@ -362,8 +564,8 @@ model AuditLog {
   id        String   @id @default(uuid())
   actorId   String
   actor     User     @relation(fields: [actorId], references: [id])
-  action    String   // e.g., TASK_ASSIGNED, EXTENSION_APPROVED
-  entity    String   // e.g., Task, ExtensionRequest, User
+  action    String   // e.g., EMPLOYEE_IMPORT_UPLOADED, USER_ACCOUNT_CREATED
+  entity    String   // e.g., Employee, Task, ExtensionRequest, User
   entityId  String
   metadata  Json?
   timestamp DateTime @default(now())

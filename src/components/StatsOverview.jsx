@@ -1,63 +1,69 @@
 import React from 'react';
-import { CheckCircle2, Clock, AlertTriangle, ListTodo, TrendingUp } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, AlertTriangle, UserCheck, ShieldAlert } from 'lucide-react';
 
-export default function StatsOverview({ tasks }) {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.stage === 'Done').length;
-  const inProgress = tasks.filter(t => t.stage === 'In Progress').length;
-  const urgent = tasks.filter(t => t.priority === 'Urgent').length;
-  const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
+export default function StatsOverview({ tasks, currentRole }) {
+  const totalTasks = tasks.length;
+  const greenTasks = tasks.filter(t => t.deadlineHealth === 'Green' || t.stage === 'Accepted').length;
+  const yellowTasks = tasks.filter(t => t.deadlineHealth === 'Yellow').length;
+  const orangeTasks = tasks.filter(t => t.deadlineHealth === 'Orange').length;
+  const redTasks = tasks.filter(t => t.deadlineHealth === 'Red' || t.isIdle).length;
+  const idleCount = tasks.filter(t => t.isIdle).length;
 
   return (
-    <div className="stats-grid">
-      <div className="stat-card">
-        <div className="stat-info">
-          <h3>Total Workspace Tasks</h3>
-          <div className="stat-value">{total}</div>
+    <div className="stats-overview-grid">
+      <div className="stat-card total">
+        <div className="stat-header">
+          <span className="stat-title">Total Tasks</span>
+          <div className="stat-icon-badge blue">
+            <Clock size={16} />
+          </div>
         </div>
-        <div className="stat-icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1' }}>
-          <ListTodo size={24} />
-        </div>
+        <div className="stat-value">{totalTasks}</div>
+        <p className="stat-desc">University System Tasks</p>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-info">
-          <h3>In Progress</h3>
-          <div className="stat-value" style={{ color: '#3b82f6' }}>{inProgress}</div>
+      <div className="stat-card green">
+        <div className="stat-header">
+          <span className="stat-title">🟢 Green Status</span>
+          <div className="stat-icon-badge green">
+            <CheckCircle2 size={16} />
+          </div>
         </div>
-        <div className="stat-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
-          <Clock size={24} />
-        </div>
+        <div className="stat-value">{greenTasks}</div>
+        <p className="stat-desc">Finished / On Track (&gt;7d)</p>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-info">
-          <h3>Completed Tasks</h3>
-          <div className="stat-value" style={{ color: '#10b981' }}>{done}</div>
+      <div className="stat-card yellow">
+        <div className="stat-header">
+          <span className="stat-title">🟡 Yellow Status</span>
+          <div className="stat-icon-badge yellow">
+            <Clock size={16} />
+          </div>
         </div>
-        <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-          <CheckCircle2 size={24} />
-        </div>
+        <div className="stat-value">{yellowTasks}</div>
+        <p className="stat-desc">Near Deadline (3-7d)</p>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-info">
-          <h3>Urgent Priority</h3>
-          <div className="stat-value" style={{ color: '#ef4444' }}>{urgent}</div>
+      <div className="stat-card orange">
+        <div className="stat-header">
+          <span className="stat-title">🟠 Orange / 🔴 Red</span>
+          <div className="stat-icon-badge orange">
+            <AlertTriangle size={16} />
+          </div>
         </div>
-        <div className="stat-icon-wrapper" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
-          <AlertTriangle size={24} />
-        </div>
+        <div className="stat-value">{orangeTasks + redTasks}</div>
+        <p className="stat-desc">Almost at / Past Deadline</p>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-info">
-          <h3>Completion Rate</h3>
-          <div className="stat-value" style={{ color: '#8b5cf6' }}>{completionRate}%</div>
+      <div className="stat-card idle">
+        <div className="stat-header">
+          <span className="stat-title">⚠️ Idle Flags (3-5d)</span>
+          <div className="stat-icon-badge red">
+            <ShieldAlert size={16} />
+          </div>
         </div>
-        <div className="stat-icon-wrapper" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}>
-          <TrendingUp size={24} />
-        </div>
+        <div className="stat-value">{idleCount}</div>
+        <p className="stat-desc">No update for 3-5 days</p>
       </div>
     </div>
   );

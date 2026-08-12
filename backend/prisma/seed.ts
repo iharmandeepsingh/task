@@ -1,4 +1,4 @@
-import { PrismaClient, UserRoleType, PriorityLevel, TaskStatus, ExtensionStatus, DeadlineHealth } from '@prisma/client';
+import { PrismaClient, UserRoleType, PriorityLevel, TaskStatus, ExtensionStatus, DeadlineHealth, OrganizationUnitType, EmployeeStatus, AccountStatus, EmailType, MembershipType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -40,10 +40,10 @@ async function main() {
   // 3. Seed Permissions
   const permissionCodes = [
     'USER_MANAGE', 'ROLE_MANAGE', 'PERMISSION_MANAGE', 'AUDIT_LOG_VIEW', 'SUPER_ADMIN_OVERRIDE',
-    'EMPLOYEE_CREATE', 'EMPLOYEE_UPDATE', 'EMPLOYEE_DEACTIVATE', 'EMPLOYEE_IMPORT',
+    'EMPLOYEE_CREATE', 'EMPLOYEE_UPDATE', 'EMPLOYEE_DEACTIVATE', 'EMPLOYEE_IMPORT', 'EMPLOYEE_VIEW',
     'TASK_CREATE', 'TASK_ASSIGN', 'TASK_UPDATE', 'TASK_DELETE', 'TASK_REVIEW', 'TASK_REISSUE',
     'EXTENSION_REQUEST', 'EXTENSION_APPROVE', 'EXTENSION_REJECT',
-    'REPORT_VIEW', 'REPORT_EXPORT', 'CHAT_ACCESS'
+    'REPORT_VIEW', 'REPORT_EXPORT', 'CHAT_ACCESS', 'USER_CREATE', 'ROLE_ASSIGN', 'SCOPE_ASSIGN'
   ];
 
   for (const code of permissionCodes) {
@@ -54,7 +54,42 @@ async function main() {
     });
   }
 
-  // 4. Seed Schools & Departments
+  // 4. Seed Organization Units & Bridge with Schools & Departments
+  const ctuUniversityOrg = await prisma.organizationUnit.upsert({
+    where: { code: 'CTU' },
+    update: {},
+    create: {
+      name: 'CT University',
+      code: 'CTU',
+      type: OrganizationUnitType.UNIVERSITY,
+      isActive: true,
+    },
+  });
+
+  const soeOrg = await prisma.organizationUnit.upsert({
+    where: { code: 'SOE-ORG' },
+    update: {},
+    create: {
+      name: 'School of Engineering & Technology',
+      code: 'SOE-ORG',
+      type: OrganizationUnitType.SCHOOL,
+      parentId: ctuUniversityOrg.id,
+      isActive: true,
+    },
+  });
+
+  const cseDeptOrg = await prisma.organizationUnit.upsert({
+    where: { code: 'CSE-ORG' },
+    update: {},
+    create: {
+      name: 'Computer Science & Engineering',
+      code: 'CSE-ORG',
+      type: OrganizationUnitType.DEPARTMENT,
+      parentId: soeOrg.id,
+      isActive: true,
+    },
+  });
+
   const school = await prisma.school.upsert({
     where: { code: 'SOE' },
     update: {},
@@ -66,11 +101,12 @@ async function main() {
 
   const cseDept = await prisma.department.upsert({
     where: { code: 'CSE' },
-    update: {},
+    update: { organizationUnitId: cseDeptOrg.id },
     create: {
       name: 'Computer Science & Engineering',
       code: 'CSE',
       schoolId: school.id,
+      organizationUnitId: cseDeptOrg.id,
     },
   });
 
@@ -87,15 +123,15 @@ async function main() {
   // Default hashed password for dev accounts: 'Password123!'
   const devPasswordHash = '$2b$10$EpRnTzVlqHNP0.fKbX26D.gNqMv4w7u2N3I0A2.3I4K5L6M7N8O9P';
 
-  // 5. Seed Users & Profiles
-  // Super Admin
-  const superAdmin = await prisma.user.upsert({
+  // 5. Seed Users, Profiles, & Employee Master Records
+  const superAdminUser = await prisma.user.upsert({
     where: { email: 'superadmin@ctu.edu.in' },
     update: {},
     create: {
       employeeId: 'EMP-001',
       email: 'superadmin@ctu.edu.in',
       passwordHash: devPasswordHash,
+      accountStatus: AccountStatus.ACTIVE,
       userRoles: { create: { roleId: roleMap[UserRoleType.SUPER_ADMIN] } },
       profile: {
         create: {
@@ -108,14 +144,38 @@ async function main() {
     },
   });
 
-  // CSE Head
-  const cseHead = await prisma.user.upsert({
+  await prisma.employee.upsert({
+    where: { employeeId: 'EMP-001' },
+    update: { userId: superAdminUser.id },
+    create: {
+      employeeId: 'EMP-001',
+      displayName: 'Super Admin',
+      firstName: 'Super',
+      lastName: 'Admin',
+      primaryEmail: 'superadmin@ctu.edu.in',
+      designation: 'University System Administrator',
+      employmentType: 'REGULAR',
+      employmentStatus: EmployeeStatus.ACTIVE,
+      userId: superAdminUser.id,
+      source: 'SEED',
+      memberships: {
+        create: {
+          organizationUnitId: ctuUniversityOrg.id,
+          membershipType: MembershipType.PRIMARY,
+          isPrimary: true,
+        },
+      },
+    },
+  });
+
+  const cseHeadUser = await prisma.user.upsert({
     where: { email: 'csehead@ctu.edu.in' },
     update: {},
     create: {
       employeeId: 'EMP-101',
       email: 'csehead@ctu.edu.in',
       passwordHash: devPasswordHash,
+      accountStatus: AccountStatus.ACTIVE,
       userRoles: { create: { roleId: roleMap[UserRoleType.ADMIN_HEAD] } },
       profile: {
         create: {
@@ -128,14 +188,38 @@ async function main() {
     },
   });
 
-  // HR Manager
-  await prisma.user.upsert({
+  await prisma.employee.upsert({
+    where: { employeeId: 'EMP-101' },
+    update: { userId: cseHeadUser.id },
+    create: {
+      employeeId: 'EMP-101',
+      displayName: 'Dr. Rajesh Kumar',
+      firstName: 'Rajesh',
+      lastName: 'Kumar',
+      primaryEmail: 'csehead@ctu.edu.in',
+      designation: 'Head of Department (CSE)',
+      employmentType: 'REGULAR',
+      employmentStatus: EmployeeStatus.ACTIVE,
+      userId: cseHeadUser.id,
+      source: 'SEED',
+      memberships: {
+        create: {
+          organizationUnitId: cseDeptOrg.id,
+          membershipType: MembershipType.PRIMARY,
+          isPrimary: true,
+        },
+      },
+    },
+  });
+
+  const hrUser = await prisma.user.upsert({
     where: { email: 'hr@ctu.edu.in' },
     update: {},
     create: {
       employeeId: 'EMP-201',
       email: 'hr@ctu.edu.in',
       passwordHash: devPasswordHash,
+      accountStatus: AccountStatus.ACTIVE,
       userRoles: { create: { roleId: roleMap[UserRoleType.HR] } },
       profile: {
         create: {
@@ -148,14 +232,31 @@ async function main() {
     },
   });
 
-  // Faculty A
-  const facultyA = await prisma.user.upsert({
+  await prisma.employee.upsert({
+    where: { employeeId: 'EMP-201' },
+    update: { userId: hrUser.id },
+    create: {
+      employeeId: 'EMP-201',
+      displayName: 'Priya Sharma',
+      firstName: 'Priya',
+      lastName: 'Sharma',
+      primaryEmail: 'hr@ctu.edu.in',
+      designation: 'HR Executive',
+      employmentType: 'REGULAR',
+      employmentStatus: EmployeeStatus.ACTIVE,
+      userId: hrUser.id,
+      source: 'SEED',
+    },
+  });
+
+  const facultyAUser = await prisma.user.upsert({
     where: { email: 'facultya@ctu.edu.in' },
     update: {},
     create: {
       employeeId: 'EMP-301',
       email: 'facultya@ctu.edu.in',
       passwordHash: devPasswordHash,
+      accountStatus: AccountStatus.ACTIVE,
       userRoles: { create: { roleId: roleMap[UserRoleType.FACULTY] } },
       profile: {
         create: {
@@ -168,14 +269,38 @@ async function main() {
     },
   });
 
-  // Faculty B
-  const facultyB = await prisma.user.upsert({
+  await prisma.employee.upsert({
+    where: { employeeId: 'EMP-301' },
+    update: { userId: facultyAUser.id },
+    create: {
+      employeeId: 'EMP-301',
+      displayName: 'Harmandeep Singh',
+      firstName: 'Harmandeep',
+      lastName: 'Singh',
+      primaryEmail: 'facultya@ctu.edu.in',
+      designation: 'Assistant Professor',
+      employmentType: 'REGULAR',
+      employmentStatus: EmployeeStatus.ACTIVE,
+      userId: facultyAUser.id,
+      source: 'SEED',
+      memberships: {
+        create: {
+          organizationUnitId: cseDeptOrg.id,
+          membershipType: MembershipType.PRIMARY,
+          isPrimary: true,
+        },
+      },
+    },
+  });
+
+  const facultyBUser = await prisma.user.upsert({
     where: { email: 'facultyb@ctu.edu.in' },
     update: {},
     create: {
       employeeId: 'EMP-302',
       email: 'facultyb@ctu.edu.in',
       passwordHash: devPasswordHash,
+      accountStatus: AccountStatus.ACTIVE,
       userRoles: { create: { roleId: roleMap[UserRoleType.FACULTY] } },
       profile: {
         create: {
@@ -185,6 +310,23 @@ async function main() {
           departmentId: cseDept.id,
         },
       },
+    },
+  });
+
+  await prisma.employee.upsert({
+    where: { employeeId: 'EMP-302' },
+    update: { userId: facultyBUser.id },
+    create: {
+      employeeId: 'EMP-302',
+      displayName: 'Amit Verma',
+      firstName: 'Amit',
+      lastName: 'Verma',
+      primaryEmail: 'facultyb@ctu.edu.in',
+      designation: 'Associate Professor',
+      employmentType: 'REGULAR',
+      employmentStatus: EmployeeStatus.ACTIVE,
+      userId: facultyBUser.id,
+      source: 'SEED',
     },
   });
 
@@ -203,8 +345,8 @@ async function main() {
       title: 'Prepare NBA Accreditation Curriculum Syllabus',
       description: 'Review and update B.Tech CSE syllabus as per NBA accreditation guidelines.',
       instructions: 'Include industry 4.0 modules and practical lab exercises.',
-      creatorId: cseHead.id,
-      assigneeId: facultyA.id,
+      creatorId: cseHeadUser.id,
+      assigneeId: facultyAUser.id,
       departmentId: cseDept.id,
       priority: PriorityLevel.HIGH,
       status: TaskStatus.IN_PROGRESS,
@@ -218,51 +360,6 @@ async function main() {
           { title: 'Draft Artificial Intelligence Module', sequence: 2, isCompleted: false },
         ],
       },
-    },
-  });
-
-  // Task 2: High Priority Submitted Task
-  await prisma.task.upsert({
-    where: { taskCode: 'CTU-1002' },
-    update: {},
-    create: {
-      taskCode: 'CTU-1002',
-      title: 'Submit End-Semester Exam Question Papers',
-      description: 'Upload end-term examination papers for Data Structures and Algorithms.',
-      creatorId: cseHead.id,
-      assigneeId: facultyB.id,
-      departmentId: cseDept.id,
-      priority: PriorityLevel.URGENT,
-      status: TaskStatus.SUBMITTED,
-      deadlineHealth: DeadlineHealth.YELLOW,
-      progressPercent: 100,
-      startDate: now,
-      deadline: deadlineIn2Days,
-      submissions: {
-        create: {
-          notes: 'Completed question paper set with answer key attached.',
-        },
-      },
-    },
-  });
-
-  // Task 3: Overdue Task
-  await prisma.task.upsert({
-    where: { taskCode: 'CTU-1003' },
-    update: {},
-    create: {
-      taskCode: 'CTU-1003',
-      title: 'Submit Monthly Faculty Research Report',
-      description: 'Compile research papers published in Scopus/SCI journals during July.',
-      creatorId: cseHead.id,
-      assigneeId: facultyA.id,
-      departmentId: cseDept.id,
-      priority: PriorityLevel.MEDIUM,
-      status: TaskStatus.OVERDUE,
-      deadlineHealth: DeadlineHealth.RED,
-      progressPercent: 20,
-      startDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
-      deadline: pastDeadline,
     },
   });
 

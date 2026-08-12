@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/dashboard/presentation/startup_screen.dart';
+import '../../features/auth/presentation/login_screen.dart';
+import '../../features/dashboard/presentation/dashboard_hub_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -8,8 +9,13 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/',
-        name: 'startup',
-        builder: (context, state) => const StartupScreen(),
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard',
+        name: 'dashboard',
+        builder: (context, state) => const DashboardHubScreen(),
       ),
     ],
   );
