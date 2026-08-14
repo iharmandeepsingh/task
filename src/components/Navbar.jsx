@@ -34,6 +34,7 @@ export default function Navbar({
 
   const currentRole = authUser?.role || 'faculty';
   const roleBadgeColor = badgeColorMap[currentRole] || '#3b82f6';
+  const isFaculty = currentRole === 'faculty';
 
   return (
     <header className="navbar-container">
@@ -129,7 +130,7 @@ export default function Navbar({
             </button>
           )}
 
-          {currentRole === 'faculty' && (
+          {isFaculty && (
             <button className="btn-primary" onClick={onOpenReportCard} style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
               <Award size={16} />
               <span>My Report Card</span>
@@ -152,12 +153,16 @@ export default function Navbar({
           >
             Task List & Filters
           </button>
-          <button 
-            className={`nav-tab ${activeView === 'team' ? 'active' : ''}`}
-            onClick={() => setActiveView('team')}
-          >
-            Faculty Directory & HR
-          </button>
+          
+          {/* Strictly Hidden for Faculty Members per Security Rules */}
+          {!isFaculty && (
+            <button 
+              className={`nav-tab ${activeView === 'team' ? 'active' : ''}`}
+              onClick={() => setActiveView('team')}
+            >
+              Faculty Directory & HR
+            </button>
+          )}
         </nav>
 
         <div className="search-filter-bar" style={{ display: 'flex', gap: '10px' }}>

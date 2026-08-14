@@ -74,6 +74,8 @@ export default function ListView({
               ) : (
                 sortedTasks.map((task) => {
                   const assignee = getAssignee(task.assigneeId);
+                  const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
+
                   return (
                     <tr 
                       key={task.id} 
@@ -89,6 +91,11 @@ export default function ListView({
                         <div style={{ fontSize: '11px', color: '#64748b' }}>
                           {task.description}
                         </div>
+                        {hasPendingExt && (
+                          <div style={{ fontSize: '10px', fontWeight: '700', color: '#b45309', background: '#fffbeb', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '4px' }}>
+                            <Clock size={11} /> Extension Requested
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <select 
@@ -135,11 +142,11 @@ export default function ListView({
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => onOpenChat && onOpenChat(task)}
                             title="Chat"
-                            style={{ padding: '6px 10px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '6px 10px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                           >
                             <MessageSquare size={13} />
                             <span>Chat</span>
@@ -148,10 +155,11 @@ export default function ListView({
                           {task.stage !== 'Accepted' && (
                             <button
                               onClick={() => onOpenExtensionModal && onOpenExtensionModal(task)}
-                              title="Extension"
-                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#fffbeb', color: '#b45309', border: 'none', cursor: 'pointer', fontSize: '11px' }}
+                              title="Deadline Extension Request"
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: hasPendingExt ? '#fef3c7' : '#fffbeb', color: '#b45309', border: hasPendingExt ? '1px solid #f59e0b' : 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
                               <Clock size={13} />
+                              <span>Ext Request</span>
                             </button>
                           )}
 
@@ -159,7 +167,7 @@ export default function ListView({
                             <button
                               onClick={() => onOpenReviewModal && onOpenReviewModal(task)}
                               title="Review"
-                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
                               <Send size={13} />
                               <span>Review</span>
@@ -170,7 +178,7 @@ export default function ListView({
                             <button
                               onClick={() => onDeleteTask && onDeleteTask(task.id)}
                               title="Delete Task"
-                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: '11px' }}
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
                             >
                               <Trash2 size={13} />
                             </button>
@@ -195,6 +203,8 @@ export default function ListView({
         ) : (
           sortedTasks.map((task) => {
             const assignee = getAssignee(task.assigneeId);
+            const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
+
             return (
               <div key={task.id} style={{ background: '#ffffff', borderRadius: '14px', padding: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
                 {/* Mobile Card Header */}
@@ -219,6 +229,14 @@ export default function ListView({
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px 0' }}>
                   {task.description}
                 </p>
+
+                {/* Pending Extension Request Alert Banner on Mobile Card */}
+                {hasPendingExt && (
+                  <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Clock size={13} />
+                    <span>Extension Requested (Pending Review)</span>
+                  </div>
+                )}
 
                 {/* Mobile Stage Move Selector */}
                 <div style={{ marginBottom: '10px' }}>
@@ -248,10 +266,10 @@ export default function ListView({
                 </div>
 
                 {/* Mobile Touch Actions */}
-                <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => onOpenChat && onOpenChat(task)}
-                    style={{ flex: 1, padding: '6px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                    style={{ flex: 1, minWidth: '70px', padding: '8px 6px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                   >
                     <MessageSquare size={13} /> Chat
                   </button>
@@ -259,16 +277,16 @@ export default function ListView({
                   {task.stage !== 'Accepted' && (
                     <button
                       onClick={() => onOpenExtensionModal && onOpenExtensionModal(task)}
-                      style={{ padding: '6px 10px', borderRadius: '8px', background: '#fffbeb', color: '#b45309', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                      style={{ flex: 1, minWidth: '100px', padding: '8px 6px', borderRadius: '8px', background: hasPendingExt ? '#fef3c7' : '#fffbeb', color: '#b45309', border: hasPendingExt ? '1px solid #f59e0b' : 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                     >
-                      <Clock size={13} />
+                      <Clock size={13} /> Ext Request
                     </button>
                   )}
 
                   {isLeader && (
                     <button
                       onClick={() => onOpenReviewModal && onOpenReviewModal(task)}
-                      style={{ flex: 1, padding: '6px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      style={{ flex: 1, minWidth: '70px', padding: '8px 6px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                     >
                       <Send size={13} /> Review
                     </button>
@@ -277,7 +295,7 @@ export default function ListView({
                   {isLeader && (
                     <button
                       onClick={() => onDeleteTask && onDeleteTask(task.id)}
-                      style={{ padding: '6px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                      style={{ padding: '8px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
                     >
                       <Trash2 size={13} />
                     </button>

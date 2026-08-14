@@ -250,29 +250,37 @@ export default function App() {
 
   // Extension request application handler
   const handleRequestExtension = (taskId, extensionObj) => {
-    setTasks(tasks.map(t => {
-      if (t.id === taskId) {
-        const updatedExtensions = [...(t.extensions || []), extensionObj];
-        return { ...t, extensions: updatedExtensions };
-      }
-      return t;
-    }));
+    setTasks((prevTasks) => {
+      const updated = prevTasks.map((t) => {
+        if (t.id === taskId) {
+          const updatedExtensions = [...(t.extensions || []), extensionObj];
+          return { ...t, extensions: updatedExtensions };
+        }
+        return t;
+      });
+      localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+      return updated;
+    });
     alert('Deadline extension request submitted to your Head of Department!');
   };
 
   // Extension approval handler
   const handleApproveExtension = (taskId, extensionId, newDeadline) => {
-    setTasks(tasks.map(t => {
-      if (t.id === taskId) {
-        return {
-          ...t,
-          dueDate: newDeadline,
-          deadlineHealth: 'Green',
-          extensions: (t.extensions || []).map(e => e.id === extensionId ? { ...e, status: 'APPROVED' } : e),
-        };
-      }
-      return t;
-    }));
+    setTasks((prevTasks) => {
+      const updated = prevTasks.map((t) => {
+        if (t.id === taskId) {
+          return {
+            ...t,
+            dueDate: newDeadline,
+            deadlineHealth: 'Green',
+            extensions: (t.extensions || []).map(e => e.id === extensionId ? { ...e, status: 'APPROVED' } : e),
+          };
+        }
+        return t;
+      });
+      localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+      return updated;
+    });
     alert(`Extension approved! New deadline set to ${newDeadline}`);
     setActiveExtensionTask(null);
   };
@@ -392,12 +400,18 @@ export default function App() {
         )}
 
         {activeView === 'team' && (
-          <TeamDirectory 
-            team={team} 
-            tasks={tasks}
-            currentRole={currentRole}
-            onOpenHRImport={() => setIsHRImportOpen(true)}
-          />
+          currentRole !== 'faculty' ? (
+            <TeamDirectory 
+              team={team} 
+              tasks={tasks}
+              currentRole={currentRole}
+              onOpenHRImport={() => setIsHRImportOpen(true)}
+            />
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #fee2e2', color: '#dc2626', fontWeight: '700', fontSize: '14px', marginTop: '20px' }}>
+              ⚠️ Access Restricted: Faculty accounts do not have authorization to view Employee Master Directory or HR Data.
+            </div>
+          )
         )}
       </main>
 

@@ -36,6 +36,7 @@ export default function KanbanBoard({
                 {stageTasks.map((task) => {
                   const assignee = team ? team.find((u) => u.id === task.assigneeId) : null;
                   const isIdle = task.isIdle;
+                  const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
 
                   return (
                     <div key={task.id} className={`kanban-card ${isIdle ? 'idle-border' : ''}`}>
@@ -44,6 +45,14 @@ export default function KanbanBoard({
                         <div className="idle-flag-banner">
                           <AlertTriangle size={12} />
                           <span>Idle Flag: No update for 3-5 days</span>
+                        </div>
+                      )}
+
+                      {/* Pending Extension Request Alert Banner */}
+                      {hasPendingExt && (
+                        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} />
+                          <span>Extension Requested (Pending HOD Review)</span>
                         </div>
                       )}
 
@@ -129,7 +138,7 @@ export default function KanbanBoard({
                         </div>
                       )}
 
-                      <div className="card-footer" style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="card-footer" style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
                         <div className="assignee-info" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <div className="avatar-small" style={{ width: '24px', height: '24px', fontSize: '10px' }}>
                             {assignee ? assignee.avatar : 'HS'}
@@ -139,15 +148,15 @@ export default function KanbanBoard({
                           </span>
                         </div>
 
-                        <div className="card-actions" style={{ display: 'flex', gap: '6px' }}>
+                        <div className="card-actions" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                           <button
                             className="chat-btn"
                             title="Task Chat Thread"
                             onClick={() => onOpenChat(task)}
-                            style={{ padding: '4px 8px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '6px 10px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                           >
-                            <MessageSquare size={14} />
-                            <span>{task.chatMessages ? task.chatMessages.length : 0}</span>
+                            <MessageSquare size={13} />
+                            <span>Chat</span>
                           </button>
 
                           {task.stage !== 'Accepted' && (
@@ -155,9 +164,10 @@ export default function KanbanBoard({
                               className="action-btn-small ext"
                               title="Request or View Extension"
                               onClick={() => onOpenExtensionModal(task)}
-                              style={{ padding: '4px 8px', borderRadius: '6px', background: '#fffbeb', color: '#b45309', border: 'none', cursor: 'pointer', fontSize: '11px' }}
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: hasPendingExt ? '#fef3c7' : '#fffbeb', color: '#b45309', border: hasPendingExt ? '1px solid #f59e0b' : 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
                               <Clock size={13} />
+                              <span>Ext Request</span>
                             </button>
                           )}
 
@@ -166,7 +176,7 @@ export default function KanbanBoard({
                               className="action-btn-small review"
                               title="Review Submission"
                               onClick={() => onOpenReviewModal(task)}
-                              style={{ padding: '4px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#047857', border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
                               <Send size={13} />
                               <span>Review</span>
