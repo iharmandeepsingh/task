@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield, ClipboardList } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
@@ -8,6 +8,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
   const [isParsed, setIsParsed] = useState(false);
   const [stagingRows, setStagingRows] = useState([]);
   const [sheetName, setSheetName] = useState('');
+  const [pastedText, setPastedText] = useState('');
+  const [showPasteBox, setShowPasteBox] = useState(false);
   
   // Staging metrics
   const [metrics, setMetrics] = useState({ valid: 0, warning: 0, error: 0, duplicate: 0 });
@@ -22,40 +24,51 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
     const counts = { valid: 0, warning: 0, error: 0, duplicate: 0 };
 
     rawRows.forEach((row, index) => {
-      const rowNum = index + 2; // Row 1 is header
-      const rowKeys = Object.keys(row);
+      const rowNum = index + 1;
+      let empId = '';
+      let displayName = '';
+      let emailStr = '';
+      let phoneStr = '';
+      let dept = '';
+      let rawDesignation = '';
 
-      // Ultra-flexible column detection from any spreadsheet format
-      const findKey = (candidates) => {
-        for (const candidate of candidates) {
-          const match = rowKeys.find(k => k.trim().toLowerCase() === candidate.toLowerCase());
-          if (match && row[match] !== undefined && String(row[match]).trim() !== '') return row[match];
-        }
-        return null;
-      };
+      if (Array.isArray(row)) {
+        // Array of values per row (e.g. from header: 1 or pasted text lines)
+        empId = String(row[0] || '').trim();
+        displayName = String(row[1] || row[0] || '').trim();
+        emailStr = String(row[2] || '').trim();
+        phoneStr = String(row[3] || '').trim();
+        dept = String(row[4] || '').trim();
+        rawDesignation = String(row[5] || '').trim();
+      } else if (typeof row === 'object' && row !== null) {
+        const rowKeys = Object.keys(row);
+        const findKey = (candidates) => {
+          for (const candidate of candidates) {
+            const match = rowKeys.find(k => k.trim().toLowerCase() === candidate.toLowerCase());
+            if (match && row[match] !== undefined && String(row[match]).trim() !== '') return row[match];
+          }
+          return null;
+        };
 
-      // Positional fallbacks if headers are unnamed (e.g. col 0, col 1)
-      const colValues = Object.values(row).map(v => String(v).trim()).filter(Boolean);
+        const colValues = Object.values(row).map(v => String(v).trim()).filter(Boolean);
 
-      const rawId = findKey(['emp code', 'employee id', 'emp id', 'staff id', 'id', 'code', 'sr no', 's.no']) || colValues[0] || `260${10 + index}`;
-      const rawName = findKey(['faculty name', 'name', 'employee name', 'staff name', 'full name']) || colValues[1] || `Staff Member ${index + 1}`;
-      const rawEmail = findKey(['email', 'e-mail', 'official email', 'mail']) || colValues[2] || `${String(rawName).toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
-      const rawPhone = findKey(['contact no', 'mobile', 'phone', 'contact']) || colValues[3] || '';
-      const rawDept = findKey(['department', 'dept', 'school', 'branch']) || colValues[4] || (category === 'faculty' ? 'School of Management & Sciences' : 'University Administration');
-      const rawDesignation = findKey(['designation', 'role', 'title', 'post']) || colValues[5] || (category === 'faculty' ? 'Faculty Member' : 'Administrative Officer');
+        empId = String(findKey(['emp code', 'employee id', 'emp id', 'staff id', 'id', 'code', 'sr no', 's.no']) || colValues[0] || `260${10 + index}`).trim();
+        displayName = String(findKey(['faculty name', 'name', 'employee name', 'staff name', 'full name']) || colValues[1] || `Staff Member ${index + 1}`).trim();
+        emailStr = String(findKey(['email', 'e-mail', 'official email', 'mail']) || colValues[2] || '').trim();
+        phoneStr = String(findKey(['contact no', 'mobile', 'phone', 'contact']) || colValues[3] || '').trim();
+        dept = String(findKey(['department', 'dept', 'school', 'branch']) || colValues[4] || '').trim();
+        rawDesignation = String(findKey(['designation', 'role', 'title', 'post']) || colValues[5] || '').trim();
+      }
 
-      const empId = String(rawId).trim();
-      const displayName = String(rawName).trim();
-      const emailStr = String(rawEmail).trim();
-      const phoneStr = String(rawPhone).trim();
-      const dept = String(rawDept).trim();
+      if (!empId) empId = `260${10 + index}`;
+      if (!displayName) displayName = `Staff Member ${index + 1}`;
+      if (!emailStr) emailStr = `${displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
+      if (!dept) dept = category === 'faculty' ? 'School of Management & Sciences' : 'University Administration';
+      if (!rawDesignation) rawDesignation = category === 'faculty' ? 'Faculty Member' : 'Administrative Staff';
 
       const errors = [];
       const warnings = [];
       let status = 'VALID';
-
-      if (!empId) errors.push('Missing Employee ID');
-      if (!displayName) errors.push('Missing Name');
 
       // Duplicate check
       if (empId && seenIds.has(empId)) {
@@ -63,12 +76,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         warnings.push(`Duplicate Employee ID "${empId}"`);
       } else if (empId) {
         seenIds.add(empId);
-      }
-
-      if (status === 'VALID' && errors.length > 0) {
-        status = 'ERROR';
-      } else if (status === 'VALID' && warnings.length > 0) {
-        status = 'WARNING';
       }
 
       if (status === 'VALID') counts.valid++;
@@ -98,7 +105,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
     setIsParsed(true);
   };
 
-  // Handle Real Native File Selection
+  // Handle Native File Selection
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,20 +118,44 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        // Parse with raw header detection
-        const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        // 1. Try standard object parsing
+        let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-        if (!rawJson || rawJson.length === 0) {
-          alert('Selected file contains no data rows.');
+        // 2. Fallback to raw matrix array-of-arrays parsing
+        if (!rawData || rawData.length === 0) {
+          rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+        }
+
+        if (!rawData || rawData.length === 0) {
+          alert('Selected file contains no readable data rows.');
           return;
         }
 
-        processRawRows(rawJson, file.name, firstSheetName, importCategory);
+        processRawRows(rawData, file.name, firstSheetName, importCategory);
       } catch (err) {
-        alert('Failed to parse Excel/CSV spreadsheet. Please ensure a valid .xlsx or .csv file.');
+        alert('Failed to parse spreadsheet file. Please ensure a valid .xlsx, .xls or .csv file.');
       }
     };
     reader.readAsArrayBuffer(file);
+    e.target.value = ''; // Reset input element so re-upload works every time!
+  };
+
+  // Parse Raw Text Copied from Excel / Google Sheets
+  const handleParsePastedText = () => {
+    if (!pastedText.trim()) {
+      alert('Please paste copied Excel data or text lines first.');
+      return;
+    }
+
+    const lines = pastedText.trim().split('\n').filter(l => l.trim().length > 0);
+    const parsedRows = lines.map(line => {
+      // Split by tab (\t), comma (,), or multiple spaces
+      const parts = line.split(/[\t,]+/).map(p => p.trim()).filter(Boolean);
+      return parts;
+    });
+
+    processRawRows(parsedRows, 'Pasted_Spreadsheet_Data.txt', 'Pasted Sheet', importCategory);
+    setShowPasteBox(false);
   };
 
   // Quick Preset Sample Files
@@ -156,7 +187,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
       onImportSuccess(stagingRows, importCategory);
     }
 
-    alert(`Successfully uploaded & saved ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Employee Directory!`);
+    alert(`Successfully uploaded ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Master Directory!`);
     onClose();
   };
 
@@ -180,7 +211,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".xlsx, .xls, .csv"
+        accept=".xlsx, .xls, .csv, text/plain"
         style={{ display: 'none' }}
       />
 
@@ -222,7 +253,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                 CT University Staff & Faculty Data Upload
               </h3>
               <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
-                Upload Real Excel / CSV Spreadsheet into Master Directory
+                Upload Real Excel/CSV File or Paste Excel Text Data Directly
               </p>
             </div>
           </div>
@@ -308,22 +339,22 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
 
         {/* Content Body */}
         <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-          {/* File Upload Dropzone */}
+          {/* File Upload / Paste Box */}
           {!isParsed ? (
             <div style={{
               border: `2px dashed ${importCategory === 'faculty' ? '#3b82f6' : '#10b981'}`,
               borderRadius: '14px',
-              padding: '30px 20px',
+              padding: '24px 20px',
               textAlign: 'center',
               background: importCategory === 'faculty' ? '#eff6ff40' : '#ecfdf540',
               transition: 'all 0.2s ease'
             }}>
-              <Upload size={40} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} style={{ marginBottom: '10px' }} />
+              <Upload size={38} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} style={{ marginBottom: '8px' }} />
               <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: '#1e293b' }}>
-                Select {importCategory === 'faculty' ? 'Faculty / Staff' : 'Admin'} Spreadsheet File (.xlsx / .csv)
+                Upload {importCategory === 'faculty' ? 'Faculty / Staff' : 'Admin'} Spreadsheet (.xlsx / .csv)
               </h4>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 18px 0' }}>
-                Select any spreadsheet file from your device. All records will be imported directly into the directory.
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 16px 0' }}>
+                Select any <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> file or paste Excel lines below.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -345,11 +376,68 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                   }}
                 >
                   <FolderPlus size={18} />
-                  <span>Choose File from Computer / Mobile</span>
+                  <span>Choose File from Computer / Phone</span>
                 </button>
 
+                <button
+                  onClick={() => setShowPasteBox(!showPasteBox)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    color: '#1e293b',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <ClipboardList size={15} color="#2563eb" />
+                  <span>{showPasteBox ? 'Hide Paste Box' : '📋 Or Paste Copied Excel Rows Directly'}</span>
+                </button>
+
+                {showPasteBox && (
+                  <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
+                    <textarea
+                      rows={4}
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder="Paste copied rows from Excel here (e.g., 26010    Shilpa Debnath    shilpa.debnath@ctu.edu.in)..."
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <button
+                      onClick={handleParsePastedText}
+                      style={{
+                        marginTop: '8px',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Parse & Stage Pasted Data
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
-                  ── OR LOAD PRESET DEMO FILE ──
+                  ── OR LOAD PRESET SPREADSHEET DEMO ──
                 </div>
 
                 <button
@@ -397,7 +485,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                 </div>
 
                 <button
-                  onClick={() => { setSelectedFileName(null); setIsParsed(false); setStagingRows([]); }}
+                  onClick={() => { setSelectedFileName(null); setIsParsed(false); setStagingRows([]); setPastedText(''); }}
                   style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                 >
                   Choose Different File
