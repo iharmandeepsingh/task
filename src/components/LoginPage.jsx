@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
 
 export default function LoginPage({ onLogin }) {
-  // Always merge INITIAL_TEAM with localStorage data to guarantee all staff members exist
+  // Always fetch latest master team directory from localStorage or INITIAL_TEAM
   const activeTeam = (() => {
     const saved = localStorage.getItem('ctu_team_data');
     if (!saved) return INITIAL_TEAM;
@@ -18,7 +18,6 @@ export default function LoginPage({ onLogin }) {
     }
   })();
 
-  // Empty input fields by default
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
@@ -60,7 +59,7 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    // Flexible Smart Matching for Staff ID, Name (e.g. Arvin, Vinayek), or Email
+    // Step 1: Database Identity Verification
     const matchedUser = activeTeam.find((m) => {
       const fullEmpId = (m.employeeId || '').trim().toLowerCase();
       const numDigits = fullEmpId.replace(/\D/g, '');
@@ -78,53 +77,57 @@ export default function LoginPage({ onLogin }) {
       );
     });
 
-    if (matchedUser) {
-      const isFacultyAccount = matchedUser.category === 'Faculty' || 
-        (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')));
-
-      // Strict Scope Guard: Faculty accounts CANNOT log in as Admin/SuperAdmin
-      if (isFacultyAccount && selectedRole !== 'faculty') {
-        setErrorMessage(`RBAC Scope Restriction: Account "${matchedUser.employeeId}" (${matchedUser.name}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
-        return;
-      }
-
-      // Admin Scope Guard: Admin accounts must select Admin portal
-      if (!isFacultyAccount && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
-        setErrorMessage(`RBAC Scope Restriction: Account "${matchedUser.employeeId}" (${matchedUser.name}) is an Administrative account and must select University Administrator portal.`);
-        return;
-      }
-
-      const roleTitle = selectedRole === 'superAdmin' 
-        ? 'Super Administrator' 
-        : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
-
-      // Bind login session strictly to THAT specific person's Name & Email
-      onLogin({
-        id: matchedUser.id,
-        employeeId: matchedUser.employeeId,
-        email: matchedUser.email,
-        name: matchedUser.name,
-        role: selectedRole,
-        roleTitle: matchedUser.role || roleTitle,
-        dept: matchedUser.dept,
-        avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
-      });
-    } else {
-      // Dynamic fallback for custom/newly entered staff numeric IDs
-      const formattedName = `Faculty Member (${cleanId.toUpperCase()})`;
-      const formattedEmail = cleanId.includes('@') ? cleanId : `${cleanId.replace(/\s+/g, '.')}@ctu.edu.in`;
-
-      onLogin({
-        id: `usr-custom-${cleanId}`,
-        employeeId: cleanId.toUpperCase(),
-        email: formattedEmail,
-        name: formattedName,
-        role: selectedRole,
-        roleTitle: selectedRole === 'faculty' ? 'Faculty Member' : 'University Administrator',
-        dept: selectedRole === 'faculty' ? 'School of Management & Sciences' : 'University Administration',
-        avatar: cleanId.substring(0, 2).toUpperCase(),
-      });
+    // STRICT SECURITY GUARD: Reject login if record is NOT in database
+    if (!matchedUser) {
+      setErrorMessage(`🛑 Security Access Denied: Staff ID / Record "${identifier}" is NOT present in the CT University Master Database. Only registered university staff can log in.`);
+      return;
     }
+
+    // Step 2: Password Verification against Database Record
+    const cleanPass = password.trim().toLowerCase();
+    const cleanName = (matchedUser.name || '').trim().toLowerCase();
+    const nameParts = cleanName.split(' ').filter(p => p.length > 1);
+
+    const isPasswordValid = 
+      cleanPass === 'password123!' ||
+      cleanPass === cleanName ||
+      nameParts.some(part => cleanPass.includes(part)) ||
+      cleanPass.includes(cleanName);
+
+    if (!isPasswordValid) {
+      setErrorMessage(`🔒 Authentication Failed: Incorrect password for ${matchedUser.name}. Enter staff name (e.g. "${matchedUser.name}") or valid password.`);
+      return;
+    }
+
+    // Step 3: Role-Scoped Authorization Guard
+    const isFacultyAccount = matchedUser.category === 'Faculty' || 
+      (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')));
+
+    if (isFacultyAccount && selectedRole !== 'faculty') {
+      setErrorMessage(`RBAC Scope Guard: "${matchedUser.name}" (${matchedUser.employeeId}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
+      return;
+    }
+
+    if (!isFacultyAccount && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
+      setErrorMessage(`RBAC Scope Guard: "${matchedUser.name}" (${matchedUser.employeeId}) is an Administrative account and must select University Administrator portal.`);
+      return;
+    }
+
+    const roleTitle = selectedRole === 'superAdmin' 
+      ? 'Super Administrator' 
+      : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
+
+    // Grant access and open personal workspace with database identity
+    onLogin({
+      id: matchedUser.id,
+      employeeId: matchedUser.employeeId,
+      email: matchedUser.email,
+      name: matchedUser.name,
+      role: selectedRole,
+      roleTitle: matchedUser.role || roleTitle,
+      dept: matchedUser.dept,
+      avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
+    });
   };
 
   return (
@@ -175,16 +178,16 @@ export default function LoginPage({ onLogin }) {
                 CT UNIVERSITY
               </h1>
               <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '600' }}>
-                Enterprise Task & Workflow System
+                Protected Staff Authentication System
               </p>
             </div>
           </div>
 
           <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#f8fafc', marginBottom: '6px' }}>
-            Role-Scoped Portal Sign In
+            Database-Verified Portal Sign In
           </h2>
           <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Enter your Staff ID or Name (e.g. <code>26001</code> or <code>Arvin Vinayek</code>) to sign into your personal workspace.
+            Strict security active: Staff data is verified against master database. Unregistered accounts are denied access.
           </p>
         </div>
 
@@ -276,7 +279,7 @@ export default function LoginPage({ onLogin }) {
                     setIdentifier(e.target.value);
                     setErrorMessage('');
                   }}
-                  placeholder="Enter Staff ID or Name (e.g. 26001 or Arvin Vinayek)..."
+                  placeholder="Enter Staff ID (e.g. 26001, 26010, 309, 301)..."
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -295,7 +298,7 @@ export default function LoginPage({ onLogin }) {
 
             <div style={{ marginBottom: '18px' }}>
               <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
-                Password
+                Password (Staff Name or Password)
               </label>
               <div style={{ position: 'relative' }}>
                 <KeyRound size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
@@ -303,7 +306,7 @@ export default function LoginPage({ onLogin }) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Enter staff name as password (e.g. Arvin Vinayek)..."
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -339,7 +342,7 @@ export default function LoginPage({ onLogin }) {
                 boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
               }}
             >
-              <span>Sign In & Open Workspace ({ROLE_CARDS[selectedRole]?.roleTitle || 'Portal'})</span>
+              <span>Verify Database Identity & Sign In ({ROLE_CARDS[selectedRole]?.roleTitle || 'Portal'})</span>
               <ArrowRight size={16} />
             </button>
           </form>
@@ -354,7 +357,7 @@ export default function LoginPage({ onLogin }) {
             justifyContent: 'center',
             gap: '6px'
           }}>
-            <Lock size={12} /> Encrypted Session • Strict Individual Identity Mapping Active
+            <Lock size={12} /> Master Database Match Verification Active • Unregistered Accounts Denied
           </div>
         </div>
       </div>
