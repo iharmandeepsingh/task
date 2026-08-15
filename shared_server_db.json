@@ -5,7 +5,6 @@
       "employeeId": "CTU-EMP-001",
       "name": "Dr. Manjit Singh",
       "role": "Super Admin",
-      "category": "Admin",
       "dept": "University Administration",
       "email": "superadmin@ctu.edu.in",
       "avatar": "MS"
@@ -15,7 +14,6 @@
       "employeeId": "CTU-EMP-102",
       "name": "Dr. Gurpreet Singh",
       "role": "Admin / Head",
-      "category": "Admin",
       "dept": "Computer Science & Engineering",
       "email": "head.cse@ctu.edu.in",
       "avatar": "GS"
@@ -25,7 +23,6 @@
       "employeeId": "CTU-EMP-205",
       "name": "Ms. Pooja Rani",
       "role": "HR Lead",
-      "category": "Admin",
       "dept": "Human Resources",
       "email": "hr.head@ctu.edu.in",
       "avatar": "PR"
@@ -35,7 +32,6 @@
       "employeeId": "CTU-EMP-309",
       "name": "Dr. Harmanpreet Singh",
       "role": "Faculty",
-      "category": "Faculty",
       "dept": "Computer Science & Engineering",
       "email": "harman.faculty@ctu.edu.in",
       "avatar": "HS"
@@ -45,86 +41,12 @@
       "employeeId": "CTU-EMP-312",
       "name": "Prof. Ananya Sharma",
       "role": "Faculty",
-      "category": "Faculty",
       "dept": "School of Law",
       "email": "ananya.law@ctu.edu.in",
       "avatar": "AS"
     },
     {
-      "id": "usr-5",
-      "employeeId": "CTU-EMP-315",
-      "name": "Dr. Rajesh Kumar",
-      "role": "Faculty",
-      "category": "Faculty",
-      "dept": "Computer Science & Engineering",
-      "email": "rajesh@ctu.edu.in",
-      "avatar": "RK"
-    },
-    {
-      "id": "usr-6",
-      "employeeId": "CTU-EMP-301",
-      "name": "Dr. Preeti Verma",
-      "role": "Assistant Professor",
-      "category": "Faculty",
-      "dept": "School of Engineering",
-      "email": "preeti@ctu.edu.in",
-      "avatar": "PV"
-    },
-    {
-      "id": "usr-7",
-      "employeeId": "CTU-EMP-302",
-      "name": "Er. Vikramjeet Singh",
-      "role": "Senior Lecturer",
-      "category": "Faculty",
-      "dept": "Mechanical Engineering",
-      "email": "vikram@ctu.edu.in",
-      "avatar": "VS"
-    },
-    {
-      "id": "usr-8",
-      "employeeId": "CTU-EMP-303",
-      "name": "Dr. Simranjeet Kaur",
-      "role": "Associate Professor",
-      "category": "Faculty",
-      "dept": "Computer Science & Engineering",
-      "email": "simran@ctu.edu.in",
-      "avatar": "SK"
-    },
-    {
-      "id": "usr-imp-1786832808061-170",
-      "employeeId": "26010",
-      "name": "Shilpa Debnath",
-      "role": "Faculty Member",
-      "category": "Faculty",
-      "dept": "School of Pharmaceutical  Sciences",
-      "email": "Shilpa26010@ctuniversity.in",
-      "avatar": "SD",
-      "status": "Active",
-      "source": "EXCEL_IMPORT",
-      "hasAccount": true
-    },
-    {
-      "id": "usr-9",
-      "employeeId": "CTU-EMP-304",
-      "name": "Prof. Amit Sharma",
-      "role": "Professor",
-      "category": "Faculty",
-      "dept": "School of Management",
-      "email": "amit.sharma@ctu.edu.in",
-      "avatar": "AS"
-    },
-    {
-      "id": "usr-10",
-      "employeeId": "CTU-ADM-102",
-      "name": "Mr. Suresh Grover",
-      "role": "Finance Officer",
-      "category": "Admin",
-      "dept": "Accounts & Finance",
-      "email": "suresh.accounts@ctu.edu.in",
-      "avatar": "SG"
-    },
-    {
-      "id": "usr-imp-1786832808061-0",
+      "id": "usr-imp-1786833037141-0",
       "employeeId": "26006",
       "name": "Rohit",
       "role": "Faculty Member",
@@ -137,7 +59,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-1",
+      "id": "usr-imp-1786833037141-1",
       "employeeId": "25084",
       "name": "Amanpreet Kaur",
       "role": "Faculty Member",
@@ -150,7 +72,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-2",
+      "id": "usr-imp-1786833037141-2",
       "employeeId": "24002",
       "name": "Monu Sharma",
       "role": "Faculty Member",
@@ -163,7 +85,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-3",
+      "id": "usr-imp-1786833037141-3",
       "employeeId": "17847",
       "name": "Tanisha Narula",
       "role": "Faculty Member",
@@ -176,7 +98,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-4",
+      "id": "usr-imp-1786833037141-4",
       "employeeId": "17886",
       "name": "Gurdeep Singh",
       "role": "Faculty Member",
@@ -189,7 +111,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-5",
+      "id": "usr-imp-1786833037141-5",
       "employeeId": "24187",
       "name": "Tanvi Sharma",
       "role": "Faculty Member",
@@ -202,7 +124,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-6",
+      "id": "usr-imp-1786833037141-6",
       "employeeId": "25145",
       "name": "Hardilpreet Kaur Grewal",
       "role": "Faculty Member",
@@ -215,7 +137,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-7",
+      "id": "usr-imp-1786833037141-7",
       "employeeId": "25026",
       "name": "Garvit Kurl",
       "role": "Faculty Member",
@@ -228,7 +150,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-8",
+      "id": "usr-imp-1786833037141-8",
       "employeeId": "25272",
       "name": "Ishita Lall",
       "role": "Faculty Member",
@@ -241,7 +163,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-9",
+      "id": "usr-imp-1786833037141-9",
       "employeeId": "25112",
       "name": "Pranjal Pal",
       "role": "Faculty Member",
@@ -254,7 +176,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-10",
+      "id": "usr-imp-1786833037141-10",
       "employeeId": "25155",
       "name": "Divya",
       "role": "Faculty Member",
@@ -267,7 +189,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-11",
+      "id": "usr-imp-1786833037141-11",
       "employeeId": "25073",
       "name": "Dr Arvind Kumar",
       "role": "Faculty Member",
@@ -280,7 +202,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-12",
+      "id": "usr-imp-1786833037141-12",
       "employeeId": "17623",
       "name": "Dr. Rupali",
       "role": "Faculty Member",
@@ -293,7 +215,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-13",
+      "id": "usr-imp-1786833037141-13",
       "employeeId": "23227",
       "name": "Harinder Pal Singh Bassi",
       "role": "Faculty Member",
@@ -306,7 +228,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-14",
+      "id": "usr-imp-1786833037141-14",
       "employeeId": "23236",
       "name": "Dr. Mandeep Kaur",
       "role": "Faculty Member",
@@ -319,7 +241,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-15",
+      "id": "usr-imp-1786833037141-15",
       "employeeId": "25169",
       "name": "Dr. Priyanka Nanda",
       "role": "Faculty Member",
@@ -332,7 +254,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-16",
+      "id": "usr-imp-1786833037141-16",
       "employeeId": "24111",
       "name": "Dr. Ankita",
       "role": "Faculty Member",
@@ -345,7 +267,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-17",
+      "id": "usr-imp-1786833037141-17",
       "employeeId": "24166",
       "name": "Arvin Vinayek",
       "role": "Faculty Member",
@@ -358,7 +280,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-18",
+      "id": "usr-imp-1786833037141-18",
       "employeeId": "23004",
       "name": "Kanika Handa",
       "role": "Faculty Member",
@@ -371,7 +293,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-19",
+      "id": "usr-imp-1786833037141-19",
       "employeeId": "24196",
       "name": "Shreya Gandhi",
       "role": "Faculty Member",
@@ -384,7 +306,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-20",
+      "id": "usr-imp-1786833037141-20",
       "employeeId": "24252",
       "name": "Simrandeep Kaur",
       "role": "Faculty Member",
@@ -397,7 +319,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-21",
+      "id": "usr-imp-1786833037141-21",
       "employeeId": "24261",
       "name": "Anchal Singh",
       "role": "Faculty Member",
@@ -410,7 +332,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-22",
+      "id": "usr-imp-1786833037141-22",
       "employeeId": "24302",
       "name": "Jasmeet Kaur",
       "role": "Faculty Member",
@@ -423,7 +345,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-23",
+      "id": "usr-imp-1786833037141-23",
       "employeeId": "24058",
       "name": "Rupinder Kaur Grewal",
       "role": "Faculty Member",
@@ -436,7 +358,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-24",
+      "id": "usr-imp-1786833037141-24",
       "employeeId": "25214",
       "name": "Anchal Singh",
       "role": "Faculty Member",
@@ -449,7 +371,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-25",
+      "id": "usr-imp-1786833037141-25",
       "employeeId": "25029",
       "name": "Simranjit Kaur",
       "role": "Faculty Member",
@@ -462,7 +384,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-26",
+      "id": "usr-imp-1786833037141-26",
       "employeeId": "25046",
       "name": "Touseef Ahmad Lone",
       "role": "Faculty Member",
@@ -475,7 +397,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-27",
+      "id": "usr-imp-1786833037141-27",
       "employeeId": "26005",
       "name": "Umer Gull",
       "role": "Faculty Member",
@@ -488,7 +410,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-28",
+      "id": "usr-imp-1786833037141-28",
       "employeeId": "24321",
       "name": "Vashisht Singh",
       "role": "Faculty Member",
@@ -501,7 +423,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-29",
+      "id": "usr-imp-1786833037141-29",
       "employeeId": "26007",
       "name": "Mamta",
       "role": "Faculty Member",
@@ -514,7 +436,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-30",
+      "id": "usr-imp-1786833037141-30",
       "employeeId": "24347",
       "name": "Anureet Kaur",
       "role": "Faculty Member",
@@ -527,7 +449,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-31",
+      "id": "usr-imp-1786833037141-31",
       "employeeId": "25042",
       "name": "Silky Arora",
       "role": "Faculty Member",
@@ -540,7 +462,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-32",
+      "id": "usr-imp-1786833037141-32",
       "employeeId": "24330",
       "name": "Naveen Kumar",
       "role": "Faculty Member",
@@ -553,7 +475,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-33",
+      "id": "usr-imp-1786833037141-33",
       "employeeId": "25150",
       "name": "Ankush",
       "role": "Faculty Member",
@@ -566,7 +488,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-34",
+      "id": "usr-imp-1786833037141-34",
       "employeeId": "25184",
       "name": "Harmeet Kaur",
       "role": "Faculty Member",
@@ -579,7 +501,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-35",
+      "id": "usr-imp-1786833037141-35",
       "employeeId": "25156",
       "name": "Nikhil Talwal",
       "role": "Faculty Member",
@@ -592,7 +514,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-36",
+      "id": "usr-imp-1786833037141-36",
       "employeeId": "25203",
       "name": "Ishita",
       "role": "Faculty Member",
@@ -605,7 +527,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-37",
+      "id": "usr-imp-1786833037141-37",
       "employeeId": "25041",
       "name": "Rosham Sharma",
       "role": "Faculty Member",
@@ -618,7 +540,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-38",
+      "id": "usr-imp-1786833037141-38",
       "employeeId": "25244",
       "name": "Raunaq Dey",
       "role": "Faculty Member",
@@ -631,7 +553,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-39",
+      "id": "usr-imp-1786833037141-39",
       "employeeId": "24001",
       "name": "Dr. Satvir Singh",
       "role": "Faculty Member",
@@ -644,7 +566,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-40",
+      "id": "usr-imp-1786833037141-40",
       "employeeId": "24210",
       "name": "Dr. Vibha Verma",
       "role": "Faculty Member",
@@ -657,7 +579,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-41",
+      "id": "usr-imp-1786833037141-41",
       "employeeId": "25253",
       "name": "Dr. Ashima Mahajan",
       "role": "Faculty Member",
@@ -670,7 +592,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-42",
+      "id": "usr-imp-1786833037141-42",
       "employeeId": "25154",
       "name": "Bhupinderpal Singh Grewal",
       "role": "Faculty Member",
@@ -683,7 +605,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-43",
+      "id": "usr-imp-1786833037141-43",
       "employeeId": "18058",
       "name": "Simran Narang",
       "role": "Faculty Member",
@@ -696,7 +618,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-44",
+      "id": "usr-imp-1786833037141-44",
       "employeeId": "23048",
       "name": "Jaspreet Kaur",
       "role": "Faculty Member",
@@ -709,7 +631,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-45",
+      "id": "usr-imp-1786833037141-45",
       "employeeId": "24146",
       "name": "Gurjot Kaur",
       "role": "Faculty Member",
@@ -722,7 +644,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-46",
+      "id": "usr-imp-1786833037141-46",
       "employeeId": "24188",
       "name": "Jaspreet Kaur",
       "role": "Faculty Member",
@@ -735,7 +657,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-47",
+      "id": "usr-imp-1786833037141-47",
       "employeeId": "25060",
       "name": "Dr. .Jagdeep Singh Nafri",
       "role": "Faculty Member",
@@ -748,7 +670,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-48",
+      "id": "usr-imp-1786833037141-48",
       "employeeId": "26008",
       "name": "Bhupinder Singh",
       "role": "Faculty Member",
@@ -761,7 +683,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-49",
+      "id": "usr-imp-1786833037141-49",
       "employeeId": "17990",
       "name": "Karan Pal Singh",
       "role": "Faculty Member",
@@ -774,7 +696,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-50",
+      "id": "usr-imp-1786833037141-50",
       "employeeId": "23137",
       "name": "Amarjeet Singh Sandhu",
       "role": "Faculty Member",
@@ -787,7 +709,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-51",
+      "id": "usr-imp-1786833037141-51",
       "employeeId": "24251",
       "name": "Kulwant Singh",
       "role": "Faculty Member",
@@ -800,7 +722,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-52",
+      "id": "usr-imp-1786833037141-52",
       "employeeId": "23160",
       "name": "Dr. Abhilash Thakur",
       "role": "Faculty Member",
@@ -813,7 +735,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-53",
+      "id": "usr-imp-1786833037141-53",
       "employeeId": "17632",
       "name": "Jaspreet Kaur",
       "role": "Faculty Member",
@@ -826,7 +748,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-54",
+      "id": "usr-imp-1786833037141-54",
       "employeeId": "26004",
       "name": "Nitin Kumar",
       "role": "Faculty Member",
@@ -839,7 +761,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-55",
+      "id": "usr-imp-1786833037141-55",
       "employeeId": "25130",
       "name": "Ajit Singh",
       "role": "Faculty Member",
@@ -852,7 +774,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-56",
+      "id": "usr-imp-1786833037141-56",
       "employeeId": "23133",
       "name": "Dr. Ashish Raina",
       "role": "Airlines & Tourism",
@@ -865,7 +787,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-57",
+      "id": "usr-imp-1786833037141-57",
       "employeeId": "23229",
       "name": "Dr. Gaurav Bathla",
       "role": "Airlines & Tourism",
@@ -878,7 +800,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-58",
+      "id": "usr-imp-1786833037141-58",
       "employeeId": "25070",
       "name": "Dr. Shiv Raj",
       "role": "Airlines & Tourism",
@@ -891,7 +813,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-59",
+      "id": "usr-imp-1786833037141-59",
       "employeeId": "25149",
       "name": "Dr. Anuj Kumar",
       "role": "Airlines & Tourism",
@@ -904,7 +826,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-60",
+      "id": "usr-imp-1786833037141-60",
       "employeeId": "25167",
       "name": "Dr.Vikas Sharma",
       "role": "Airlines & Tourism",
@@ -917,7 +839,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-61",
+      "id": "usr-imp-1786833037141-61",
       "employeeId": "25129",
       "name": "Surender Rana",
       "role": "Airlines & Tourism",
@@ -930,7 +852,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-62",
+      "id": "usr-imp-1786833037141-62",
       "employeeId": "25027",
       "name": "Siddhi Vinayak",
       "role": "Airlines & Tourism",
@@ -943,7 +865,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-63",
+      "id": "usr-imp-1786833037141-63",
       "employeeId": "25010",
       "name": "Rani Kumari",
       "role": "Airlines & Tourism",
@@ -956,7 +878,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-64",
+      "id": "usr-imp-1786833037141-64",
       "employeeId": "17299",
       "name": "Manpreet Singh Sinhmar",
       "role": "Airlines & Tourism",
@@ -969,7 +891,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-65",
+      "id": "usr-imp-1786833037141-65",
       "employeeId": "25235",
       "name": "Dr. Anurag",
       "role": "Airlines & Tourism",
@@ -982,7 +904,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-66",
+      "id": "usr-imp-1786833037141-66",
       "employeeId": "25236",
       "name": "Ayush",
       "role": "Airlines & Tourism",
@@ -995,7 +917,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-67",
+      "id": "usr-imp-1786833037141-67",
       "employeeId": "25058",
       "name": "Akshay Gupta",
       "role": "Airlines & Tourism",
@@ -1008,7 +930,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-68",
+      "id": "usr-imp-1786833037141-68",
       "employeeId": "23237",
       "name": "Jasleen Kaur",
       "role": "Airlines & Tourism",
@@ -1021,7 +943,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-69",
+      "id": "usr-imp-1786833037141-69",
       "employeeId": "17765",
       "name": "Dr. Shafayat Hussain Bhat",
       "role": "Faculty Member",
@@ -1034,7 +956,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-70",
+      "id": "usr-imp-1786833037141-70",
       "employeeId": "17324",
       "name": "Dr. Tehseem Saleem",
       "role": "Faculty Member",
@@ -1047,7 +969,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-71",
+      "id": "usr-imp-1786833037141-71",
       "employeeId": "23203",
       "name": "Dr. Rameez Manzoor",
       "role": "Faculty Member",
@@ -1060,7 +982,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-72",
+      "id": "usr-imp-1786833037141-72",
       "employeeId": "17642",
       "name": "Dr. Nancy",
       "role": "Faculty Member",
@@ -1073,7 +995,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-73",
+      "id": "usr-imp-1786833037141-73",
       "employeeId": "24138",
       "name": "Dr. Azaz Ahmad Dar",
       "role": "Faculty Member",
@@ -1086,7 +1008,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-74",
+      "id": "usr-imp-1786833037141-74",
       "employeeId": "17273",
       "name": "Dr. Seema Parihar",
       "role": "Faculty Member",
@@ -1099,7 +1021,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-75",
+      "id": "usr-imp-1786833037141-75",
       "employeeId": "24003",
       "name": "Dr. Parwinder Kaur",
       "role": "Faculty Member",
@@ -1112,7 +1034,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-76",
+      "id": "usr-imp-1786833037141-76",
       "employeeId": "24004",
       "name": "Dr. Lakhwinder Kaur",
       "role": "Faculty Member",
@@ -1125,7 +1047,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-77",
+      "id": "usr-imp-1786833037141-77",
       "employeeId": "24061",
       "name": "Navneet Kaur",
       "role": "Faculty Member",
@@ -1138,7 +1060,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-78",
+      "id": "usr-imp-1786833037141-78",
       "employeeId": "23145",
       "name": "Isha Bhumak",
       "role": "Faculty Member",
@@ -1151,7 +1073,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-79",
+      "id": "usr-imp-1786833037141-79",
       "employeeId": "24300",
       "name": "Kanchan Kandiara",
       "role": "Faculty Member",
@@ -1164,7 +1086,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-80",
+      "id": "usr-imp-1786833037141-80",
       "employeeId": "24179",
       "name": "Ridhi",
       "role": "Faculty Member",
@@ -1177,7 +1099,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-81",
+      "id": "usr-imp-1786833037141-81",
       "employeeId": "25140",
       "name": "Komal Varunjeet Singh",
       "role": "Faculty Member",
@@ -1190,7 +1112,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-82",
+      "id": "usr-imp-1786833037141-82",
       "employeeId": "24254",
       "name": "Diksha Bajaj",
       "role": "Faculty Member",
@@ -1203,7 +1125,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-83",
+      "id": "usr-imp-1786833037141-83",
       "employeeId": "24304",
       "name": "Preeti Sapna",
       "role": "Faculty Member",
@@ -1216,7 +1138,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-84",
+      "id": "usr-imp-1786833037141-84",
       "employeeId": "25187",
       "name": "Nancy",
       "role": "Faculty Member",
@@ -1229,7 +1151,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-85",
+      "id": "usr-imp-1786833037141-85",
       "employeeId": "25144",
       "name": "Dilpreet Kaur",
       "role": "Faculty Member",
@@ -1242,7 +1164,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-86",
+      "id": "usr-imp-1786833037141-86",
       "employeeId": "25194",
       "name": "Tanya",
       "role": "Faculty Member",
@@ -1255,7 +1177,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-87",
+      "id": "usr-imp-1786833037141-87",
       "employeeId": "25004",
       "name": "Kamalpreet Kaur Kular",
       "role": "Faculty Member",
@@ -1268,7 +1190,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-88",
+      "id": "usr-imp-1786833037141-88",
       "employeeId": "23180",
       "name": "Dr. Arief Hussain Ganaie",
       "role": "Faculty Member",
@@ -1281,7 +1203,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-89",
+      "id": "usr-imp-1786833037141-89",
       "employeeId": "17724",
       "name": "Dr. Aishwarya",
       "role": "Faculty Member",
@@ -1294,7 +1216,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-90",
+      "id": "usr-imp-1786833037141-90",
       "employeeId": "17892",
       "name": "Dr. Cheena Abrol",
       "role": "Faculty Member",
@@ -1307,7 +1229,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-91",
+      "id": "usr-imp-1786833037141-91",
       "employeeId": "17330",
       "name": "Raminder Singh",
       "role": "Faculty Member",
@@ -1320,7 +1242,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-92",
+      "id": "usr-imp-1786833037141-92",
       "employeeId": "24246",
       "name": "Aakanksha Gupta",
       "role": "Faculty Member",
@@ -1333,7 +1255,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-93",
+      "id": "usr-imp-1786833037141-93",
       "employeeId": "25021",
       "name": "Dr. Ishu Gupta",
       "role": "Faculty Member",
@@ -1346,7 +1268,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-94",
+      "id": "usr-imp-1786833037141-94",
       "employeeId": "25126",
       "name": "Kamya Tripathi",
       "role": "Faculty Member",
@@ -1359,7 +1281,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-95",
+      "id": "usr-imp-1786833037141-95",
       "employeeId": "25163",
       "name": "Arushi Khajuria",
       "role": "Faculty Member",
@@ -1372,7 +1294,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-96",
+      "id": "usr-imp-1786833037141-96",
       "employeeId": "25164",
       "name": "Ramnik Bali",
       "role": "Faculty Member",
@@ -1385,7 +1307,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-97",
+      "id": "usr-imp-1786833037141-97",
       "employeeId": "25171",
       "name": "Kunal Arora",
       "role": "Faculty Member",
@@ -1398,7 +1320,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-98",
+      "id": "usr-imp-1786833037141-98",
       "employeeId": "17929",
       "name": "Khushi Nahar",
       "role": "Faculty Member",
@@ -1411,7 +1333,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-99",
+      "id": "usr-imp-1786833037141-99",
       "employeeId": "25175",
       "name": "Vanshika Bhatia",
       "role": "Faculty Member",
@@ -1424,7 +1346,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-100",
+      "id": "usr-imp-1786833037141-100",
       "employeeId": "25178",
       "name": "Shreya Ranjit Isher",
       "role": "Faculty Member",
@@ -1437,7 +1359,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-101",
+      "id": "usr-imp-1786833037141-101",
       "employeeId": "25183",
       "name": "Ashutosh Tripathi",
       "role": "Faculty Member",
@@ -1450,7 +1372,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-102",
+      "id": "usr-imp-1786833037141-102",
       "employeeId": "25185",
       "name": "Nahiema Kosser",
       "role": "Faculty Member",
@@ -1463,7 +1385,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-103",
+      "id": "usr-imp-1786833037141-103",
       "employeeId": "26011",
       "name": "Meera Bansal",
       "role": "Faculty Member",
@@ -1476,7 +1398,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-104",
+      "id": "usr-imp-1786833037141-104",
       "employeeId": "25216",
       "name": "Nandita Aggarwal",
       "role": "Faculty Member",
@@ -1489,7 +1411,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-105",
+      "id": "usr-imp-1786833037141-105",
       "employeeId": "24342",
       "name": "Dr. Pankaj Jain",
       "role": "Faculty Member",
@@ -1502,7 +1424,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-106",
+      "id": "usr-imp-1786833037141-106",
       "employeeId": "17828",
       "name": "Dr. Kamalpreet Kaur",
       "role": "Faculty Member",
@@ -1515,7 +1437,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-107",
+      "id": "usr-imp-1786833037141-107",
       "employeeId": "25133",
       "name": "Manisha Sood",
       "role": "Faculty Member",
@@ -1528,7 +1450,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-108",
+      "id": "usr-imp-1786833037141-108",
       "employeeId": "25146",
       "name": "Dr. Aijaz  Ahmad Bhat",
       "role": "Faculty Member",
@@ -1541,7 +1463,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-109",
+      "id": "usr-imp-1786833037141-109",
       "employeeId": "23171",
       "name": "Dr. Manisha Agarwal",
       "role": "Faculty Member",
@@ -1554,7 +1476,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-110",
+      "id": "usr-imp-1786833037141-110",
       "employeeId": "18020",
       "name": "Dr. Kangan Sayal",
       "role": "Faculty Member",
@@ -1567,7 +1489,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-111",
+      "id": "usr-imp-1786833037141-111",
       "employeeId": "25211",
       "name": "Dr. Mudasir Ahmad Tass",
       "role": "Faculty Member",
@@ -1580,7 +1502,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-112",
+      "id": "usr-imp-1786833037141-112",
       "employeeId": "25232",
       "name": "Anurag Sharma",
       "role": "Faculty Member",
@@ -1593,7 +1515,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-113",
+      "id": "usr-imp-1786833037141-113",
       "employeeId": "23156",
       "name": "Gurjeet Kaur",
       "role": "Faculty Member",
@@ -1606,7 +1528,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-114",
+      "id": "usr-imp-1786833037141-114",
       "employeeId": "17951",
       "name": "Gurpreet Kaur",
       "role": "Faculty Member",
@@ -1619,7 +1541,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-115",
+      "id": "usr-imp-1786833037141-115",
       "employeeId": "24220",
       "name": "Dr. Davinder Kaur",
       "role": "Faculty Member",
@@ -1632,7 +1554,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-116",
+      "id": "usr-imp-1786833037141-116",
       "employeeId": "24257",
       "name": "Ashima Thakur",
       "role": "Faculty Member",
@@ -1645,7 +1567,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-117",
+      "id": "usr-imp-1786833037141-117",
       "employeeId": "25014",
       "name": "Amrit Kaur",
       "role": "Faculty Member",
@@ -1658,7 +1580,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-118",
+      "id": "usr-imp-1786833037141-118",
       "employeeId": "25015",
       "name": "Bhawna",
       "role": "Faculty Member",
@@ -1671,7 +1593,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-119",
+      "id": "usr-imp-1786833037141-119",
       "employeeId": "25162",
       "name": "Sanjeev Kumar",
       "role": "Faculty Member",
@@ -1684,7 +1606,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-120",
+      "id": "usr-imp-1786833037141-120",
       "employeeId": "25076",
       "name": "Dixa Rani",
       "role": "Faculty Member",
@@ -1697,7 +1619,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-121",
+      "id": "usr-imp-1786833037141-121",
       "employeeId": "25096",
       "name": "Shivani Thakur",
       "role": "Faculty Member",
@@ -1710,7 +1632,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-122",
+      "id": "usr-imp-1786833037141-122",
       "employeeId": "25158",
       "name": "Vani Walia",
       "role": "Faculty Member",
@@ -1723,7 +1645,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-123",
+      "id": "usr-imp-1786833037141-123",
       "employeeId": "24307",
       "name": "Swati",
       "role": "Faculty Member",
@@ -1736,7 +1658,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-124",
+      "id": "usr-imp-1786833037141-124",
       "employeeId": "24353",
       "name": "Mani Kapoor",
       "role": "Faculty Member",
@@ -1749,7 +1671,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-125",
+      "id": "usr-imp-1786833037141-125",
       "employeeId": "25252",
       "name": "Dr.Sampy Duggal",
       "role": "Faculty Member",
@@ -1762,7 +1684,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-126",
+      "id": "usr-imp-1786833037141-126",
       "employeeId": "24156",
       "name": "Dr.Gaurav Verma",
       "role": "Faculty Member",
@@ -1775,7 +1697,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-127",
+      "id": "usr-imp-1786833037141-127",
       "employeeId": "24364",
       "name": "Dr. Pinky",
       "role": "Faculty Member",
@@ -1788,7 +1710,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-128",
+      "id": "usr-imp-1786833037141-128",
       "employeeId": "23007",
       "name": "Shivakshi",
       "role": "Faculty Member",
@@ -1801,7 +1723,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-129",
+      "id": "usr-imp-1786833037141-129",
       "employeeId": "24152",
       "name": "Shaminder Kaur",
       "role": "Faculty Member",
@@ -1814,7 +1736,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-130",
+      "id": "usr-imp-1786833037141-130",
       "employeeId": "25147",
       "name": "Amrinder Kaur",
       "role": "Faculty Member",
@@ -1827,7 +1749,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-131",
+      "id": "usr-imp-1786833037141-131",
       "employeeId": "24147",
       "name": "Pankaj Kumar",
       "role": "Faculty Member",
@@ -1840,7 +1762,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-132",
+      "id": "usr-imp-1786833037141-132",
       "employeeId": "24144",
       "name": "Aadil Rashid Malik",
       "role": "Faculty Member",
@@ -1853,7 +1775,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-133",
+      "id": "usr-imp-1786833037141-133",
       "employeeId": "24130",
       "name": "Mudasir Mohi Ud Din",
       "role": "Faculty Member",
@@ -1866,7 +1788,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-134",
+      "id": "usr-imp-1786833037141-134",
       "employeeId": "24176",
       "name": "Qaisar Farooq",
       "role": "Faculty Member",
@@ -1879,7 +1801,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-135",
+      "id": "usr-imp-1786833037141-135",
       "employeeId": "25246",
       "name": "Dogin Loda",
       "role": "Faculty Member",
@@ -1892,7 +1814,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-136",
+      "id": "usr-imp-1786833037141-136",
       "employeeId": "24258",
       "name": "Amanpreet Kaur",
       "role": "Faculty Member",
@@ -1905,7 +1827,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-137",
+      "id": "usr-imp-1786833037141-137",
       "employeeId": "24216",
       "name": "Bhumika Sharma",
       "role": "Faculty Member",
@@ -1918,7 +1840,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-138",
+      "id": "usr-imp-1786833037141-138",
       "employeeId": "24312",
       "name": "Neha",
       "role": "Faculty Member",
@@ -1931,7 +1853,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-139",
+      "id": "usr-imp-1786833037141-139",
       "employeeId": "25207",
       "name": "Vishaka Sathoo",
       "role": "Faculty Member",
@@ -1944,7 +1866,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-140",
+      "id": "usr-imp-1786833037141-140",
       "employeeId": "24237",
       "name": "Diljot Kaur",
       "role": "Faculty Member",
@@ -1957,7 +1879,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-141",
+      "id": "usr-imp-1786833037141-141",
       "employeeId": "25138",
       "name": "Tamanna Dhawan",
       "role": "Faculty Member",
@@ -1970,7 +1892,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-142",
+      "id": "usr-imp-1786833037141-142",
       "employeeId": "25261",
       "name": "Mohd. Tahir",
       "role": "Faculty Member",
@@ -1983,7 +1905,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-143",
+      "id": "usr-imp-1786833037141-143",
       "employeeId": "25186",
       "name": "Tarun Kumar",
       "role": "Faculty Member",
@@ -1996,7 +1918,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-144",
+      "id": "usr-imp-1786833037141-144",
       "employeeId": "26012",
       "name": "Palak Sharma",
       "role": "Faculty Member",
@@ -2009,7 +1931,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-145",
+      "id": "usr-imp-1786833037141-145",
       "employeeId": "26018",
       "name": "Dr. Kirandeep Kaur Ahluwalia",
       "role": "Faculty Member",
@@ -2022,7 +1944,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-146",
+      "id": "usr-imp-1786833037141-146",
       "employeeId": "24280",
       "name": "Gaganjit Kaur",
       "role": "Faculty Member",
@@ -2035,7 +1957,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-147",
+      "id": "usr-imp-1786833037141-147",
       "employeeId": "18008",
       "name": "Dr. Vir Vikram",
       "role": "Faculty Member",
@@ -2048,7 +1970,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-148",
+      "id": "usr-imp-1786833037141-148",
       "employeeId": "25102",
       "name": "Dr. Lakhvir Kaur",
       "role": "Faculty Member",
@@ -2061,7 +1983,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-149",
+      "id": "usr-imp-1786833037141-149",
       "employeeId": "25197",
       "name": "Dr. Amandeep Kaur Gill",
       "role": "Faculty Member",
@@ -2074,7 +1996,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-150",
+      "id": "usr-imp-1786833037141-150",
       "employeeId": "25196",
       "name": "Dr. Shipra Thapar",
       "role": "Faculty Member",
@@ -2087,7 +2009,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-151",
+      "id": "usr-imp-1786833037141-151",
       "employeeId": "25031",
       "name": "Dr. Dilpreet Singh",
       "role": "Faculty Member",
@@ -2100,7 +2022,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-152",
+      "id": "usr-imp-1786833037141-152",
       "employeeId": "25051",
       "name": "Dr. Jaswinder Kaur",
       "role": "Faculty Member",
@@ -2113,7 +2035,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-153",
+      "id": "usr-imp-1786833037141-153",
       "employeeId": "25011",
       "name": "Rinka Juneja",
       "role": "Faculty Member",
@@ -2126,7 +2048,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-154",
+      "id": "usr-imp-1786833037141-154",
       "employeeId": "25121",
       "name": "Rohit",
       "role": "Faculty Member",
@@ -2139,7 +2061,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-155",
+      "id": "usr-imp-1786833037141-155",
       "employeeId": "25262",
       "name": "Hardik Kumar",
       "role": "Faculty Member",
@@ -2152,7 +2074,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-156",
+      "id": "usr-imp-1786833037141-156",
       "employeeId": "23211",
       "name": "Teena Ahuja",
       "role": "Faculty Member",
@@ -2165,7 +2087,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-157",
+      "id": "usr-imp-1786833037141-157",
       "employeeId": "23212",
       "name": "Rajesh Gautam",
       "role": "Faculty Member",
@@ -2178,7 +2100,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-158",
+      "id": "usr-imp-1786833037141-158",
       "employeeId": "24076",
       "name": "Muskaan Kapoor",
       "role": "Faculty Member",
@@ -2191,7 +2113,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-159",
+      "id": "usr-imp-1786833037141-159",
       "employeeId": "24032",
       "name": "Gourav Thakur",
       "role": "Faculty Member",
@@ -2204,7 +2126,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-160",
+      "id": "usr-imp-1786833037141-160",
       "employeeId": "23176",
       "name": "Kaunava Roy Chowdhury",
       "role": "Faculty Member",
@@ -2217,7 +2139,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-161",
+      "id": "usr-imp-1786833037141-161",
       "employeeId": "24205",
       "name": "Ankita Rangra",
       "role": "Faculty Member",
@@ -2230,7 +2152,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-162",
+      "id": "usr-imp-1786833037141-162",
       "employeeId": "24227",
       "name": "Navneet Kaur",
       "role": "Faculty Member",
@@ -2243,7 +2165,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-163",
+      "id": "usr-imp-1786833037141-163",
       "employeeId": "24206",
       "name": "Shreya Chauhan",
       "role": "Faculty Member",
@@ -2256,7 +2178,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-164",
+      "id": "usr-imp-1786833037141-164",
       "employeeId": "25125",
       "name": "Shikha",
       "role": "Faculty Member",
@@ -2269,7 +2191,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-165",
+      "id": "usr-imp-1786833037141-165",
       "employeeId": "25141",
       "name": "Akshay Thakur",
       "role": "Faculty Member",
@@ -2282,7 +2204,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-166",
+      "id": "usr-imp-1786833037141-166",
       "employeeId": "25142",
       "name": "Akshay Kumar",
       "role": "Faculty Member",
@@ -2295,7 +2217,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-167",
+      "id": "usr-imp-1786833037141-167",
       "employeeId": "25143",
       "name": "Ankita",
       "role": "Faculty Member",
@@ -2308,7 +2230,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-168",
+      "id": "usr-imp-1786833037141-168",
       "employeeId": "25199",
       "name": "Pallvi Kumari",
       "role": "Faculty Member",
@@ -2321,7 +2243,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-169",
+      "id": "usr-imp-1786833037141-169",
       "employeeId": "25040",
       "name": "Bishal Singh",
       "role": "Faculty Member",
@@ -2334,7 +2256,20 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-171",
+      "id": "usr-imp-1786833037141-170",
+      "employeeId": "26010",
+      "name": "Shilpa Debnath",
+      "role": "Faculty Member",
+      "category": "Faculty",
+      "dept": "School of Pharmaceutical  Sciences",
+      "email": "Shilpa26010@ctuniversity.in",
+      "avatar": "SD",
+      "status": "Active",
+      "source": "EXCEL_IMPORT",
+      "hasAccount": true
+    },
+    {
+      "id": "usr-imp-1786833037141-171",
       "employeeId": "25035",
       "name": "Robin Singh",
       "role": "Faculty Member",
@@ -2347,7 +2282,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-172",
+      "id": "usr-imp-1786833037141-172",
       "employeeId": "17510",
       "name": "Dr. Roop Kanwal",
       "role": "Faculty Member",
@@ -2360,7 +2295,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-173",
+      "id": "usr-imp-1786833037141-173",
       "employeeId": "17754",
       "name": "Ritu Bhalla",
       "role": "Faculty Member",
@@ -2373,7 +2308,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-174",
+      "id": "usr-imp-1786833037141-174",
       "employeeId": "17003",
       "name": "Rishabh Sharma",
       "role": "Faculty Member",
@@ -2386,7 +2321,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-175",
+      "id": "usr-imp-1786833037141-175",
       "employeeId": "17722",
       "name": "Anshu Mala Sharma",
       "role": "Faculty Member",
@@ -2399,7 +2334,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-176",
+      "id": "usr-imp-1786833037141-176",
       "employeeId": "23040",
       "name": "Jasmeet Kaur",
       "role": "Faculty Member",
@@ -2412,7 +2347,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-177",
+      "id": "usr-imp-1786833037141-177",
       "employeeId": "23043",
       "name": "Sahil Sharma",
       "role": "Faculty Member",
@@ -2425,7 +2360,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-178",
+      "id": "usr-imp-1786833037141-178",
       "employeeId": "23079",
       "name": "Prabhjot Kaur",
       "role": "Faculty Member",
@@ -2438,7 +2373,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-179",
+      "id": "usr-imp-1786833037141-179",
       "employeeId": "23033",
       "name": "Aabid Rehman Pala",
       "role": "Faculty Member",
@@ -2451,7 +2386,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-180",
+      "id": "usr-imp-1786833037141-180",
       "employeeId": "25119",
       "name": "Prabhjot Singh",
       "role": "Faculty Member",
@@ -2464,7 +2399,7 @@
       "hasAccount": true
     },
     {
-      "id": "usr-imp-1786832808061-181",
+      "id": "usr-imp-1786833037141-181",
       "employeeId": "26016",
       "name": "Hanna Binoy",
       "role": "Faculty Member",
@@ -2487,9 +2422,9 @@
       "assigneeName": "Dr. Harmanpreet Singh",
       "departmentName": "Computer Science & Engineering",
       "priority": "High",
-      "stage": "Assigned",
+      "stage": "In Progress",
       "deadlineHealth": "Yellow",
-      "progressPercent": 90,
+      "progressPercent": 60,
       "dueDate": "2026-08-18",
       "isIdle": false,
       "subtasks": [
@@ -2506,7 +2441,7 @@
         {
           "id": "st-3",
           "text": "Draft PDF annexure summary",
-          "done": true
+          "done": false
         }
       ],
       "extensions": [
@@ -2542,9 +2477,9 @@
       "assigneeName": "Dr. Harmanpreet Singh",
       "departmentName": "Computer Science & Engineering",
       "priority": "Urgent",
-      "stage": "In Progress",
+      "stage": "Assigned",
       "deadlineHealth": "Green",
-      "progressPercent": 30,
+      "progressPercent": 0,
       "dueDate": "2026-08-22",
       "isIdle": false,
       "subtasks": [
@@ -2571,7 +2506,7 @@
       "assigneeName": "Prof. Ananya Sharma",
       "departmentName": "School of Law",
       "priority": "Urgent",
-      "stage": "Submitted for Review",
+      "stage": "Completed",
       "deadlineHealth": "Green",
       "progressPercent": 90,
       "dueDate": "2026-08-16",
@@ -2643,35 +2578,6 @@
         {
           "id": "st-18",
           "text": "Verify IEEE Xplore format",
-          "done": true
-        }
-      ],
-      "extensions": [],
-      "chatMessages": []
-    },
-    {
-      "id": "CTU-CSE-109",
-      "title": "End-Semester Exam Outcome & Grade Upload",
-      "description": "Final marks compilation and grade roster submission on CT University ERP portal.",
-      "creatorName": "Dr. Gurpreet Singh (Head)",
-      "assigneeId": "usr-3",
-      "assigneeName": "Dr. Harmanpreet Singh",
-      "departmentName": "Computer Science & Engineering",
-      "priority": "High",
-      "stage": "Completed",
-      "deadlineHealth": "Green",
-      "progressPercent": 100,
-      "dueDate": "2026-08-14",
-      "isIdle": false,
-      "subtasks": [
-        {
-          "id": "st-30",
-          "text": "Upload internal assessment marks",
-          "done": true
-        },
-        {
-          "id": "st-31",
-          "text": "Submit signed grade roster",
           "done": true
         }
       ],
