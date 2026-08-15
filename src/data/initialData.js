@@ -11,7 +11,12 @@ export const INITIAL_TEAM = [
   { id: 'usr-2', employeeId: 'CTU-EMP-205', name: 'Ms. Pooja Rani', role: 'HR Lead', category: 'Admin', dept: 'Human Resources', email: 'hr.head@ctu.edu.in', avatar: 'PR' },
   { id: 'usr-3', employeeId: 'CTU-EMP-309', name: 'Dr. Harmanpreet Singh', role: 'Faculty', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'harman.faculty@ctu.edu.in', avatar: 'HS' },
   { id: 'usr-4', employeeId: 'CTU-EMP-312', name: 'Prof. Ananya Sharma', role: 'Faculty', category: 'Faculty', dept: 'School of Law', email: 'ananya.law@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-5', employeeId: 'CTU-EMP-315', name: 'Dr. Rajesh Kumar', role: 'Faculty', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'rajesh@ctu.edu.in', avatar: 'RK' }
+  { id: 'usr-5', employeeId: 'CTU-EMP-315', name: 'Dr. Rajesh Kumar', role: 'Faculty', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'rajesh@ctu.edu.in', avatar: 'RK' },
+  { id: 'usr-6', employeeId: 'CTU-EMP-301', name: 'Dr. Preeti Verma', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering', email: 'preeti@ctu.edu.in', avatar: 'PV' },
+  { id: 'usr-7', employeeId: 'CTU-EMP-302', name: 'Er. Vikramjeet Singh', role: 'Senior Lecturer', category: 'Faculty', dept: 'Mechanical Engineering', email: 'vikram@ctu.edu.in', avatar: 'VS' },
+  { id: 'usr-8', employeeId: 'CTU-EMP-303', name: 'Dr. Simranjeet Kaur', role: 'Associate Professor', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'simran@ctu.edu.in', avatar: 'SK' },
+  { id: 'usr-9', employeeId: 'CTU-EMP-304', name: 'Prof. Amit Sharma', role: 'Professor', category: 'Faculty', dept: 'School of Management', email: 'amit.sharma@ctu.edu.in', avatar: 'AS' },
+  { id: 'usr-10', employeeId: 'CTU-ADM-102', name: 'Mr. Suresh Grover', role: 'Finance Officer', category: 'Admin', dept: 'Accounts & Finance', email: 'suresh.accounts@ctu.edu.in', avatar: 'SG' }
 ];
 
 export const INITIAL_TASKS = [

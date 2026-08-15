@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, Building2, UserCheck, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, Building2, UserCheck, KeyRound, AlertCircle, ArrowRight, User } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
 
 export default function LoginPage({ onLogin }) {
-  const [email, setEmail] = useState('superadmin@ctu.edu.in');
-  const [password, setPassword] = useState('Password123!');
-  const [selectedRole, setSelectedRole] = useState('superAdmin'); // 'superAdmin', 'admin', 'faculty'
+  const [identifier, setIdentifier] = useState('CTU-EMP-309'); // Employee ID or Email
+  const [password, setPassword] = useState('Dr. Harmanpreet Singh'); // Password set as Name
+  const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
   const [errorMessage, setErrorMessage] = useState('');
 
-  // CT University Quick Demo Accounts (Strictly 3 authorized roles)
+  // CT University Quick Demo Accounts
   const DEMO_ACCOUNTS = {
     superAdmin: {
       id: 'usr-0',
+      employeeId: 'CTU-EMP-001',
       email: 'superadmin@ctu.edu.in',
       name: 'Dr. Manjit Singh',
       roleTitle: 'Super Administrator',
@@ -21,24 +22,26 @@ export default function LoginPage({ onLogin }) {
       desc: 'Full global system administration, user roles, system configs & audit logs.'
     },
     admin: {
-      id: 'usr-0',
-      email: 'admin@ctu.edu.in',
-      name: 'Dr. Manjit Singh',
-      roleTitle: 'University Administrator',
-      dept: 'Central Academic Affairs',
-      avatar: 'MS',
+      id: 'usr-1',
+      employeeId: 'CTU-EMP-102',
+      email: 'head.cse@ctu.edu.in',
+      name: 'Dr. Gurpreet Singh',
+      roleTitle: 'University Administrator (HOD)',
+      dept: 'Computer Science & Engineering',
+      avatar: 'GS',
       badgeColor: '#3b82f6',
       desc: 'University-wide administrative oversight, department reports & scope controls.'
     },
     faculty: {
       id: 'usr-3',
+      employeeId: 'CTU-EMP-309',
       email: 'harman.faculty@ctu.edu.in',
       name: 'Dr. Harmanpreet Singh',
-      roleTitle: 'Faculty Member',
+      roleTitle: 'Faculty Member (Staff)',
       dept: 'Computer Science & Engineering',
       avatar: 'HS',
       badgeColor: '#f59e0b',
-      desc: 'Strictly view self-assigned tasks, update progress, request extensions & submit work.'
+      desc: 'Log in with Employee ID (e.g. CTU-EMP-309) & Password set as Name.'
     }
   };
 
@@ -46,40 +49,66 @@ export default function LoginPage({ onLogin }) {
     setSelectedRole(roleKey);
     const acc = DEMO_ACCOUNTS[roleKey];
     if (acc) {
-      setEmail(acc.email);
-      setPassword('Password123!');
+      setIdentifier(acc.employeeId);
+      setPassword(acc.name);
       setErrorMessage('');
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanId = identifier.trim().toLowerCase();
+    const cleanPass = password.trim().toLowerCase();
 
-    if (!cleanEmail) {
-      setErrorMessage('Please enter your CT University official email');
+    if (!cleanId) {
+      setErrorMessage('Please enter your CT University Employee ID or Email address.');
       return;
     }
 
-    // Check if email matches existing team member
-    const teamMatch = INITIAL_TEAM.find((m) => m.email.toLowerCase() === cleanEmail);
-    const demoAcc = DEMO_ACCOUNTS[selectedRole] || DEMO_ACCOUNTS.superAdmin;
+    // Look up staff record in Master Staff Directory by Employee ID or Email
+    const staffMatch = INITIAL_TEAM.find((m) => 
+      m.employeeId.toLowerCase() === cleanId || 
+      m.email.toLowerCase() === cleanId ||
+      m.name.toLowerCase().includes(cleanId)
+    );
 
-    if (teamMatch) {
+    const demoAcc = DEMO_ACCOUNTS[selectedRole] || DEMO_ACCOUNTS.faculty;
+
+    if (staffMatch) {
+      // Validate Password (Pass matches staff Name, first/last name, or standard fallback)
+      const staffNameClean = staffMatch.name.toLowerCase();
+      const isNamePasswordMatch = 
+        cleanPass.length > 0 && 
+        (staffNameClean.includes(cleanPass) || 
+         cleanPass.includes(staffNameClean) || 
+         cleanPass === 'password123!' || 
+         cleanPass === 'password' ||
+         cleanPass.split(' ').some(part => part.length > 2 && staffNameClean.includes(part)));
+
+      if (!isNamePasswordMatch && cleanPass !== '') {
+        setErrorMessage(`Invalid Password! Password for Staff ID ${staffMatch.employeeId} is set as your Name (e.g. "${staffMatch.name}").`);
+        return;
+      }
+
+      const roleType = staffMatch.category === 'Admin' ? 'admin' : (selectedRole === 'superAdmin' ? 'superAdmin' : 'faculty');
+
       onLogin({
-        id: teamMatch.id,
-        email: teamMatch.email,
-        name: teamMatch.name,
-        role: selectedRole,
-        roleTitle: demoAcc.roleTitle,
-        dept: teamMatch.dept,
-        avatar: teamMatch.avatar,
+        id: staffMatch.id,
+        employeeId: staffMatch.employeeId,
+        email: staffMatch.email,
+        name: staffMatch.name,
+        role: roleType,
+        roleTitle: staffMatch.role || demoAcc.roleTitle,
+        dept: staffMatch.dept,
+        avatar: staffMatch.avatar,
       });
     } else {
+      // General or newly provisioned account
       onLogin({
         id: demoAcc.id,
-        email: cleanEmail,
-        name: demoAcc.name,
+        employeeId: cleanId.toUpperCase(),
+        email: cleanId.includes('@') ? cleanId : `${cleanId.toLowerCase()}@ctu.edu.in`,
+        name: password || demoAcc.name,
         role: selectedRole,
         roleTitle: demoAcc.roleTitle,
         dept: demoAcc.dept,
@@ -112,13 +141,13 @@ export default function LoginPage({ onLogin }) {
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Top / Left Header Branding */}
+        {/* Top Header Branding */}
         <div style={{
           padding: '24px 20px',
           background: 'linear-gradient(180deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{
               width: '40px',
               height: '40px',
@@ -136,23 +165,23 @@ export default function LoginPage({ onLogin }) {
                 CT UNIVERSITY
               </h1>
               <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '600' }}>
-                Enterprise Task & Workflow System
+                Staff & Faculty Task Portal Sign In
               </p>
             </div>
           </div>
 
           <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#f8fafc', marginBottom: '6px' }}>
-            Role-Scoped Portal Sign In
+            Staff ID-Based Sign In Portal
           </h2>
           <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Select your role below or enter official credentials to open authorized workspace.
+            Staff members can log in directly using their <strong>Employee ID</strong> (e.g. <code>CTU-EMP-309</code>) and set password as their <strong>Name</strong>.
           </p>
         </div>
 
-        {/* Middle Role Selector Cards (3 Authorized Roles) */}
+        {/* Middle Account Quick Selection Cards */}
         <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <label style={{ fontSize: '11px', fontWeight: '700', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px' }}>
-            Choose Authorized User Account:
+            Choose Authorized Account:
           </label>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
@@ -177,8 +206,8 @@ export default function LoginPage({ onLogin }) {
                   }}
                 >
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '34px',
+                    height: '34px',
                     borderRadius: '8px',
                     background: acc.badgeColor,
                     color: '#ffffff',
@@ -193,10 +222,10 @@ export default function LoginPage({ onLogin }) {
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {acc.roleTitle}
+                      {acc.name}
                     </div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {acc.name}
+                      ID: {acc.employeeId} • {acc.roleTitle}
                     </div>
                   </div>
                 </div>
@@ -226,16 +255,16 @@ export default function LoginPage({ onLogin }) {
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
-                University Institutional Email
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
+                Staff Employee ID or Email
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                <User size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. superadmin@ctu.edu.in"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="e.g. CTU-EMP-309 or harman.faculty@ctu.edu.in"
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -250,11 +279,14 @@ export default function LoginPage({ onLogin }) {
                   required
                 />
               </div>
+              <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                Enter your official CTU Staff Employee ID (e.g. <code>CTU-EMP-309</code>)
+              </span>
             </div>
 
             <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
-                Password
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
+                Password (Set as Staff Name)
               </label>
               <div style={{ position: 'relative' }}>
                 <KeyRound size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
@@ -262,7 +294,7 @@ export default function LoginPage({ onLogin }) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Enter your Name (e.g. Dr. Harmanpreet Singh)"
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -277,6 +309,9 @@ export default function LoginPage({ onLogin }) {
                   required
                 />
               </div>
+              <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                Rule: Password is set as your staff <strong>Name</strong> (e.g. <code>Dr. Harmanpreet Singh</code> or <code>Harmanpreet</code>)
+              </span>
             </div>
 
             <button
@@ -298,7 +333,7 @@ export default function LoginPage({ onLogin }) {
                 boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
               }}
             >
-              <span>Sign In & Open Workspace ({DEMO_ACCOUNTS[selectedRole]?.roleTitle || 'Portal'})</span>
+              <span>Sign In with Staff ID & Open Workspace</span>
               <ArrowRight size={16} />
             </button>
           </form>
@@ -313,7 +348,7 @@ export default function LoginPage({ onLogin }) {
             justifyContent: 'center',
             gap: '6px'
           }}>
-            <Lock size={12} /> Encrypted Session • Scope Authorization Active
+            <Lock size={12} /> Staff ID Authentication • Name Password Verification Active
           </div>
         </div>
       </div>
