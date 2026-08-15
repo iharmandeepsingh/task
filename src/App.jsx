@@ -56,13 +56,64 @@ export default function App() {
   const [isHRImportOpen, setIsHRImportOpen] = useState(false);
   const [isReportCardOpen, setIsReportCardOpen] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem('ctu_tasks_data', JSON.stringify(tasks));
-  }, [tasks]);
-
+  // Sync team state to server and localStorage
   useEffect(() => {
     localStorage.setItem('ctu_team_data', JSON.stringify(team));
+    fetch('/api/sync-team', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(team),
+    }).catch(() => {});
   }, [team]);
+
+  // Sync tasks state to server and localStorage
+  useEffect(() => {
+    localStorage.setItem('ctu_tasks_data', JSON.stringify(tasks));
+    fetch('/api/sync-tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tasks),
+    }).catch(() => {});
+  }, [tasks]);
+
+  // Auto-fetch latest team & tasks from shared server on mount and every 5 seconds
+  useEffect(() => {
+    const syncFromCloud = () => {
+      fetch('/api/sync-team')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data && Array.isArray(data.team) && data.team.length > 0) {
+            setTeam((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.team)) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(data.team));
+                return data.team;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+
+      fetch('/api/sync-tasks')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data && Array.isArray(data.tasks) && data.tasks.length > 0) {
+            setTasks((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.tasks)) {
+                localStorage.setItem('ctu_tasks_data', JSON.stringify(data.tasks));
+                return data.tasks;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    syncFromCloud();
+    const interval = setInterval(syncFromCloud, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (authUser) {
