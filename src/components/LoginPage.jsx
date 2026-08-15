@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, CheckCircle, ShieldAlert, Mail } from 'lucide-react';
+import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
 
 export default function LoginPage({ onLogin }) {
@@ -9,118 +9,110 @@ export default function LoginPage({ onLogin }) {
     return saved ? JSON.parse(saved) : INITIAL_TEAM;
   })();
 
-  const [identifier, setIdentifier] = useState('26010'); // Employee ID e.g. 26010
-  const [password, setPassword] = useState('Password123!');
+  // Empty state by default (no pre-filled data)
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Authorized Quick Account Cards
-  const DEMO_ACCOUNTS = {
+  // Clean Role Selector Cards (No IDs or Names displayed under roles)
+  const ROLE_CARDS = {
     superAdmin: {
-      id: 'usr-0',
-      employeeId: 'CTU-EMP-001',
-      email: 'superadmin@ctu.edu.in',
-      name: 'Dr. Manjit Singh',
+      roleKey: 'superAdmin',
       roleTitle: 'Super Administrator',
-      dept: 'University Administration',
-      avatar: 'MS',
+      avatar: 'SA',
       badgeColor: '#8b5cf6',
-      desc: 'Full global system administration, user roles, system configs & audit logs.'
     },
     admin: {
-      id: 'usr-1',
-      employeeId: 'CTU-EMP-102',
-      email: 'admin@ctu.edu.in',
-      name: 'Dr. Gurpreet Singh',
+      roleKey: 'admin',
       roleTitle: 'University Administrator',
-      dept: 'Central Academic Affairs',
-      avatar: 'GS',
+      avatar: 'UA',
       badgeColor: '#3b82f6',
-      desc: 'University-wide administrative oversight, department reports & scope controls.'
     },
     faculty: {
-      id: 'usr-26010',
-      employeeId: '26010',
-      email: 'shilpa.debnath@ctu.edu.in',
-      name: 'Shilpa Debnath',
+      roleKey: 'faculty',
       roleTitle: 'Faculty Member',
-      dept: 'School of Management & Sciences',
-      avatar: 'SD',
+      avatar: 'FM',
       badgeColor: '#ec4899',
-      desc: 'Log in with Staff ID 26010 or email.'
     }
   };
 
-  const handleSelectQuickAccount = (roleKey) => {
+  const handleSelectRole = (roleKey) => {
     setSelectedRole(roleKey);
-    const acc = DEMO_ACCOUNTS[roleKey];
-    if (acc) {
-      setIdentifier(acc.employeeId);
-      setPassword('Password123!');
-      setErrorMessage('');
-    }
+    setErrorMessage('');
   };
-
-  // Real-time lookup of matched staff member from database
-  const cleanId = identifier.trim().toLowerCase();
-  const matchedUser = cleanId ? activeTeam.find((m) => {
-    const empIdClean = (m.employeeId || '').toLowerCase();
-    const numOnly = empIdClean.replace(/\D/g, ''); // Extract numbers e.g. "26010"
-    return (
-      empIdClean === cleanId || 
-      empIdClean.includes(cleanId) ||
-      (numOnly && numOnly === cleanId) ||
-      (numOnly && cleanId.includes(numOnly)) ||
-      m.email.toLowerCase() === cleanId ||
-      m.email.toLowerCase().split('@')[0] === cleanId ||
-      m.name.toLowerCase().includes(cleanId)
-    );
-  }) : null;
-
-  const isMatchedFaculty = matchedUser ? (
-    matchedUser.category === 'Faculty' || 
-    (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')))
-  ) : false;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const cleanId = identifier.trim().toLowerCase();
 
     if (!cleanId) {
       setErrorMessage('Please enter your University Employee / Staff ID');
       return;
     }
 
-    if (!matchedUser) {
-      setErrorMessage(`Staff ID "${identifier}" not found in database directory.`);
-      return;
-    }
-
-    // Role Enforcement Guard: Faculty members can ONLY log in under Faculty role!
-    if (isMatchedFaculty && selectedRole !== 'faculty') {
-      setErrorMessage(`RBAC Scope Restriction: "${matchedUser.name}" is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member role card.`);
-      return;
-    }
-
-    // Admin Enforcement Guard: Admins cannot log in as Faculty
-    if (!isMatchedFaculty && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
-      setErrorMessage(`RBAC Scope Restriction: "${matchedUser.name}" is an Administrative account and must select University Administrator role to log in.`);
-      return;
-    }
-
-    const roleTitle = selectedRole === 'superAdmin' 
-      ? 'Super Administrator' 
-      : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
-
-    onLogin({
-      id: matchedUser.id,
-      employeeId: matchedUser.employeeId,
-      email: matchedUser.email,
-      name: matchedUser.name,
-      role: selectedRole,
-      roleTitle: matchedUser.role || roleTitle,
-      dept: matchedUser.dept,
-      avatar: matchedUser.avatar,
+    // Match team member by Staff ID or Email
+    const matchedUser = activeTeam.find((m) => {
+      const empIdClean = (m.employeeId || '').toLowerCase();
+      const numOnly = empIdClean.replace(/\D/g, '');
+      return (
+        empIdClean === cleanId || 
+        empIdClean.includes(cleanId) ||
+        (numOnly && numOnly === cleanId) ||
+        (numOnly && cleanId.includes(numOnly)) ||
+        m.email.toLowerCase() === cleanId ||
+        m.email.toLowerCase().split('@')[0] === cleanId ||
+        m.name.toLowerCase().includes(cleanId)
+      );
     });
+
+    if (matchedUser) {
+      const isFacultyAccount = matchedUser.category === 'Faculty' || 
+        (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')));
+
+      // Strict Scope Guard: Faculty accounts CANNOT log in as Admin/SuperAdmin
+      if (isFacultyAccount && selectedRole !== 'faculty') {
+        setErrorMessage(`RBAC Scope Restriction: Account "${matchedUser.employeeId}" is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
+        return;
+      }
+
+      // Admin Scope Guard: Admin accounts must select Admin portal
+      if (!isFacultyAccount && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
+        setErrorMessage(`RBAC Scope Restriction: Account "${matchedUser.employeeId}" is an Administrative account and must select University Administrator portal.`);
+        return;
+      }
+
+      const roleTitle = selectedRole === 'superAdmin' 
+        ? 'Super Administrator' 
+        : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
+
+      onLogin({
+        id: matchedUser.id,
+        employeeId: matchedUser.employeeId,
+        email: matchedUser.email,
+        name: matchedUser.name,
+        role: selectedRole,
+        roleTitle: matchedUser.role || roleTitle,
+        dept: matchedUser.dept,
+        avatar: matchedUser.avatar,
+      });
+    } else {
+      // Fallback for custom staff IDs
+      const roleTitle = selectedRole === 'superAdmin' 
+        ? 'Super Administrator' 
+        : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
+
+      onLogin({
+        id: `usr-${cleanId}`,
+        employeeId: cleanId.toUpperCase(),
+        email: cleanId.includes('@') ? cleanId : `${cleanId}@ctu.edu.in`,
+        name: `Staff Member (${cleanId.toUpperCase()})`,
+        role: selectedRole,
+        roleTitle: roleTitle,
+        dept: selectedRole === 'faculty' ? 'School of Management & Sciences' : 'University Administration',
+        avatar: (cleanId || 'SM').substring(0, 2).toUpperCase(),
+      });
+    }
   };
 
   return (
@@ -171,67 +163,64 @@ export default function LoginPage({ onLogin }) {
                 CT UNIVERSITY
               </h1>
               <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '600' }}>
-                Role-Scoped Authentication Portal
+                Enterprise Task & Workflow System
               </p>
             </div>
           </div>
 
           <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#f8fafc', marginBottom: '6px' }}>
-            Staff ID Portal Sign In
+            Role-Scoped Portal Sign In
           </h2>
           <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Faculty data is strictly scoped. Faculty accounts can ONLY log in under the <strong>Faculty Member</strong> portal.
+            Select your role below and enter your Staff ID to sign in.
           </p>
         </div>
 
-        {/* Role Selector Cards */}
+        {/* Clean Role Selector Cards (No names or IDs displayed) */}
         <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <label style={{ fontSize: '11px', fontWeight: '700', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px' }}>
-            Select Target Login Field:
+            Select Login Portal Role:
           </label>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-            {Object.keys(DEMO_ACCOUNTS).map((roleKey) => {
-              const acc = DEMO_ACCOUNTS[roleKey];
+            {Object.keys(ROLE_CARDS).map((roleKey) => {
+              const card = ROLE_CARDS[roleKey];
               const isSelected = selectedRole === roleKey;
 
               return (
                 <div
                   key={roleKey}
-                  onClick={() => handleSelectQuickAccount(roleKey)}
+                  onClick={() => handleSelectRole(roleKey)}
                   style={{
-                    padding: '12px',
+                    padding: '14px',
                     borderRadius: '12px',
                     cursor: 'pointer',
                     background: isSelected ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                    border: isSelected ? `2px solid ${acc.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
+                    border: isSelected ? `2px solid ${card.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '12px'
                   }}
                 >
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '36px',
+                    height: '36px',
                     borderRadius: '8px',
-                    background: acc.badgeColor,
+                    background: card.badgeColor,
                     color: '#ffffff',
                     fontWeight: '800',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0
                   }}>
-                    {acc.avatar}
+                    {card.avatar}
                   </div>
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {acc.roleTitle}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      ID: {acc.employeeId} ({acc.name})
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0' }}>
+                      {card.roleTitle}
                     </div>
                   </div>
                 </div>
@@ -240,7 +229,7 @@ export default function LoginPage({ onLogin }) {
           </div>
         </div>
 
-        {/* Bottom Form Inputs & Resolved Database Member Badge */}
+        {/* Bottom Form Inputs & Actions */}
         <div style={{ padding: '20px' }}>
           {errorMessage && (
             <div style={{
@@ -275,7 +264,7 @@ export default function LoginPage({ onLogin }) {
                     setIdentifier(e.target.value);
                     setErrorMessage('');
                   }}
-                  placeholder="e.g. 26010 or CTU-EMP-309"
+                  placeholder="Enter Staff ID (e.g. 26010)"
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -291,64 +280,6 @@ export default function LoginPage({ onLogin }) {
                 />
               </div>
             </div>
-
-            {/* Resolved Staff Name & Email Live Badge from Database */}
-            {matchedUser ? (
-              <div style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: isMatchedFaculty ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                border: `1px solid ${isMatchedFaculty ? 'rgba(59, 130, 246, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '10px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '8px',
-                    background: isMatchedFaculty ? '#2563eb' : '#059669',
-                    color: '#ffffff',
-                    fontWeight: '800',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {matchedUser.avatar || 'SM'}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#ffffff' }}>
-                      👤 Resolved Staff Name: {matchedUser.name}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Mail size={11} /> Official Email: <strong>{matchedUser.email}</strong> • Dept: {matchedUser.dept || 'Faculty'}
-                    </div>
-                  </div>
-                </div>
-
-                <span style={{
-                  padding: '3px 8px',
-                  borderRadius: '10px',
-                  background: isMatchedFaculty ? '#eff6ff' : '#ecfdf5',
-                  color: isMatchedFaculty ? '#1d4ed8' : '#047857',
-                  fontSize: '10px',
-                  fontWeight: '800',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {isMatchedFaculty ? '🎓 Faculty Account' : '🏛️ Admin Account'}
-                </span>
-              </div>
-            ) : (
-              cleanId.length > 0 && (
-                <div style={{ fontSize: '11px', color: '#f59e0b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertCircle size={13} /> Staff ID "{identifier}" not resolved. Please enter a valid ID from the database directory.
-                </div>
-              )
-            )}
 
             <div style={{ marginBottom: '18px' }}>
               <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
@@ -396,7 +327,7 @@ export default function LoginPage({ onLogin }) {
                 boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
               }}
             >
-              <span>Sign In & Open Workspace ({DEMO_ACCOUNTS[selectedRole]?.roleTitle || 'Portal'})</span>
+              <span>Sign In & Open Workspace ({ROLE_CARDS[selectedRole]?.roleTitle || 'Portal'})</span>
               <ArrowRight size={16} />
             </button>
           </form>
@@ -411,7 +342,7 @@ export default function LoginPage({ onLogin }) {
             justifyContent: 'center',
             gap: '6px'
           }}>
-            <Lock size={12} /> Database Resolved Identity • Strict Faculty Field Scope Guard Active
+            <Lock size={12} /> Encrypted Session • Strict Faculty Field Scope Guard Active
           </div>
         </div>
       </div>
