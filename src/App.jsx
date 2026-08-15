@@ -26,7 +26,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(saved);
         const parsedStages = new Set(parsed.map((t) => t.stage));
-        if (parsed.length < 5 || parsed.every((t) => t.stage === 'Assigned') || !parsedStages.has('Accepted') || !parsedStages.has('In Progress')) {
+        if (parsed.length < 5 || parsed.every((t) => t.stage === 'Assigned') || !parsedStages.has('Completed')) {
           localStorage.setItem('ctu_tasks_data', JSON.stringify(INITIAL_TASKS));
           return INITIAL_TASKS;
         }
@@ -72,15 +72,12 @@ export default function App() {
     }
   }, [authUser]);
 
-  // Handle Login & Logout
-  const handleLogin = (user) => {
-    setAuthUser(user);
-    setActiveView('kanban');
+  const handleLogin = (userObj) => {
+    setAuthUser(userObj);
   };
 
   const handleLogout = () => {
     setAuthUser(null);
-    localStorage.removeItem('ctu_auth_user');
   };
 
   // Handle Batch Import Execution
@@ -181,7 +178,7 @@ export default function App() {
           let progressPercent = t.progressPercent;
           let deadlineHealth = t.deadlineHealth;
 
-          if (newStage === 'Accepted') {
+          if (newStage === 'Accepted' || newStage === 'Completed') {
             progressPercent = 100;
             deadlineHealth = 'Green';
           } else if (newStage === 'Submitted for Review') {

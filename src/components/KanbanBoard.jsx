@@ -294,6 +294,7 @@ function getStageColorClass(stage) {
     case 'Submitted for Review': return 'purple';
     case 'Under Review': return 'amber';
     case 'Accepted': return 'green';
+    case 'Completed': return 'emerald';
     case 'Rejected': return 'red';
     case 'Re-issued': return 'cyan';
     default: return 'gray';

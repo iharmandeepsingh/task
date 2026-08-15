@@ -132,6 +132,27 @@ export const INITIAL_TASKS = [
     chatMessages: []
   },
   {
+    id: 'CTU-CSE-109',
+    title: 'End-Semester Exam Outcome & Grade Upload',
+    description: 'Final marks compilation and grade roster submission on CT University ERP portal.',
+    creatorName: 'Dr. Gurpreet Singh (Head)',
+    assigneeId: 'usr-3',
+    assigneeName: 'Dr. Harmanpreet Singh',
+    departmentName: 'Computer Science & Engineering',
+    priority: 'High',
+    stage: 'Completed',
+    deadlineHealth: 'Green',
+    progressPercent: 100,
+    dueDate: '2026-08-14',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-30', text: 'Upload internal assessment marks', done: true },
+      { id: 'st-31', text: 'Submit signed grade roster', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
     id: 'CTU-CSE-107',
     title: 'Lab Equipment Maintenance Audit',
     description: 'Conduct physical inventory audit of IoT and High-Performance Computing labs.',
@@ -184,5 +205,5 @@ export const INITIAL_TASKS = [
   }
 ];
 
-export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Accepted', 'Rejected', 'Re-issued'];
+export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Accepted', 'Completed', 'Rejected', 'Re-issued'];
 export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
