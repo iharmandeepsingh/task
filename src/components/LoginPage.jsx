@@ -3,19 +3,28 @@ import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, 
 import { INITIAL_TEAM } from '../data/initialData';
 
 export default function LoginPage({ onLogin }) {
-  // Read master team directory from localStorage or initialData
+  // Always merge INITIAL_TEAM with localStorage data to guarantee all staff members exist
   const activeTeam = (() => {
     const saved = localStorage.getItem('ctu_team_data');
-    return saved ? JSON.parse(saved) : INITIAL_TEAM;
+    if (!saved) return INITIAL_TEAM;
+    try {
+      const parsed = JSON.parse(saved);
+      const teamMap = new Map();
+      INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+      parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+      return Array.from(teamMap.values());
+    } catch (e) {
+      return INITIAL_TEAM;
+    }
   })();
 
-  // Empty state by default (no pre-filled input data)
+  // Empty input fields by default
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Clean Role Selector Cards
+  // Role Selector Cards
   const ROLE_CARDS = {
     superAdmin: {
       roleKey: 'superAdmin',
@@ -51,16 +60,21 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    // Exact matching logic for specific Staff ID / Email / Username
+    // Flexible Smart Matching for Staff ID, Name (e.g. Arvin, Vinayek), or Email
     const matchedUser = activeTeam.find((m) => {
       const fullEmpId = (m.employeeId || '').trim().toLowerCase();
-      const numDigits = fullEmpId.replace(/\D/g, ''); // Extract only numbers e.g. "309", "26010", "301"
-      
+      const numDigits = fullEmpId.replace(/\D/g, '');
+      const fullName = (m.name || '').trim().toLowerCase();
+      const fullEmail = (m.email || '').trim().toLowerCase();
+      const emailPrefix = fullEmail.split('@')[0];
+
       return (
-        fullEmpId === cleanId ||                                // Exact match e.g. "ctu-emp-309" or "26010"
-        (numDigits && numDigits === cleanId) ||                 // Exact numeric match e.g. "309" === "309"
-        m.email.trim().toLowerCase() === cleanId ||             // Exact email match
-        m.email.trim().toLowerCase().split('@')[0] === cleanId  // Email prefix match
+        fullEmpId === cleanId ||
+        (numDigits && numDigits === cleanId) ||
+        fullName === cleanId ||
+        fullName.includes(cleanId) ||
+        fullEmail === cleanId ||
+        emailPrefix === cleanId
       );
     });
 
@@ -68,7 +82,7 @@ export default function LoginPage({ onLogin }) {
       const isFacultyAccount = matchedUser.category === 'Faculty' || 
         (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')));
 
-      // Strict Scope Guard: Faculty accounts CANNOT log in under Admin/SuperAdmin role
+      // Strict Scope Guard: Faculty accounts CANNOT log in as Admin/SuperAdmin
       if (isFacultyAccount && selectedRole !== 'faculty') {
         setErrorMessage(`RBAC Scope Restriction: Account "${matchedUser.employeeId}" (${matchedUser.name}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
         return;
@@ -93,12 +107,12 @@ export default function LoginPage({ onLogin }) {
         role: selectedRole,
         roleTitle: matchedUser.role || roleTitle,
         dept: matchedUser.dept,
-        avatar: matchedUser.avatar,
+        avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
       });
     } else {
       // Dynamic fallback for custom/newly entered staff numeric IDs
-      const formattedName = `Faculty Member (ID: ${cleanId.toUpperCase()})`;
-      const formattedEmail = cleanId.includes('@') ? cleanId : `faculty.${cleanId}@ctu.edu.in`;
+      const formattedName = `Faculty Member (${cleanId.toUpperCase()})`;
+      const formattedEmail = cleanId.includes('@') ? cleanId : `${cleanId.replace(/\s+/g, '.')}@ctu.edu.in`;
 
       onLogin({
         id: `usr-custom-${cleanId}`,
@@ -170,7 +184,7 @@ export default function LoginPage({ onLogin }) {
             Role-Scoped Portal Sign In
           </h2>
           <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Enter your Staff ID to log into your personal faculty workspace.
+            Enter your Staff ID or Name (e.g. <code>26001</code> or <code>Arvin Vinayek</code>) to sign into your personal workspace.
           </p>
         </div>
 
@@ -262,7 +276,7 @@ export default function LoginPage({ onLogin }) {
                     setIdentifier(e.target.value);
                     setErrorMessage('');
                   }}
-                  placeholder="Enter your Staff ID (e.g. 309, 301, 302, 26010)..."
+                  placeholder="Enter Staff ID or Name (e.g. 26001 or Arvin Vinayek)..."
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
