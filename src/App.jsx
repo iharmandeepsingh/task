@@ -170,6 +170,20 @@ export default function App() {
     setActiveView('team');
   };
 
+  // Delete Faculty / Admin Employee Record Handler
+  const handleDeleteEmployee = (memberId) => {
+    setTeam((prevTeam) => {
+      const updated = prevTeam.filter((m) => m.id !== memberId);
+      localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+      fetch('/api/sync-team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+      return updated;
+    });
+  };
+
   // If not logged in, render Login Page entry gate
   if (!authUser) {
     return <LoginPage onLogin={handleLogin} />;
@@ -482,6 +496,7 @@ export default function App() {
               tasks={tasks}
               currentRole={currentRole}
               onOpenHRImport={() => setIsHRImportOpen(true)}
+              onDeleteEmployee={handleDeleteEmployee}
             />
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #fee2e2', color: '#dc2626', fontWeight: '700', fontSize: '14px', marginTop: '20px' }}>

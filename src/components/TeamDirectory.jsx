@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Mail, ShieldCheck, CheckCircle, UserPlus, Building2, Smartphone, Users, UserCheck, Shield, Search, X } from 'lucide-react';
+import { Mail, ShieldCheck, CheckCircle, UserPlus, Building2, Smartphone, Users, UserCheck, Shield, Search, X, Trash2 } from 'lucide-react';
 
-export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport }) {
+export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport, onDeleteEmployee }) {
   const [selectedFilter, setSelectedFilter] = useState('ALL'); // 'ALL', 'FACULTY', 'ADMIN'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -26,6 +26,8 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
     return matchesCategory && matchesSearch;
   });
 
+  const canDelete = currentRole === 'superAdmin' || currentRole === 'admin' || currentRole === 'hr';
+
   return (
     <div>
       {/* Header & Main Controls */}
@@ -35,7 +37,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
             CT University Employee Directory & HR
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Search & Manage Faculty and Administrative Staff Records.
+            Search, Manage, and Delete Faculty & Administrative Staff Records.
           </p>
         </div>
 
@@ -68,7 +70,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search faculty by Name (e.g. Shilpa, Harmanpreet) or Staff ID (e.g. 26010, 309)..."
+            placeholder="Search faculty by Name (e.g. Shilpa, Harmanpreet, Arvin) or Staff ID (e.g. 26001, 26010, 309)..."
             style={{
               width: '100%',
               padding: '10px 36px 10px 38px',
@@ -167,7 +169,6 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
             const memberTasks = tasks.filter(t => t.assigneeId === member.id);
             const activeTasks = memberTasks.filter(t => t.stage !== 'Accepted' && t.stage !== 'Completed').length;
             const completedTasks = memberTasks.filter(t => t.stage === 'Accepted' || t.stage === 'Completed').length;
-            const hasAccount = member.id !== 'usr-3-unprovisioned'; // Demo account check
             const isFacultyRole = member.category === 'Faculty' || (member.role && member.role.toLowerCase().includes('faculty')) || (member.role && member.role.toLowerCase().includes('professor'));
 
             return (
@@ -181,22 +182,54 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{member.name}</h4>
                       
-                      {/* Classification Badge */}
-                      <span style={{ 
-                        fontSize: '10px', 
-                        padding: '2px 8px', 
-                        borderRadius: '10px',
-                        background: isFacultyRole ? '#eff6ff' : '#ecfdf5',
-                        color: isFacultyRole ? '#1d4ed8' : '#047857',
-                        fontWeight: '800',
-                        border: `1px solid ${isFacultyRole ? '#bfdbfe' : '#a7f3d0'}`
-                      }}>
-                        {isFacultyRole ? '🎓 Faculty' : '🏛️ Admin'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {/* Classification Badge */}
+                        <span style={{ 
+                          fontSize: '10px', 
+                          padding: '2px 8px', 
+                          borderRadius: '10px',
+                          background: isFacultyRole ? '#eff6ff' : '#ecfdf5',
+                          color: isFacultyRole ? '#1d4ed8' : '#047857',
+                          fontWeight: '800',
+                          border: `1px solid ${isFacultyRole ? '#bfdbfe' : '#a7f3d0'}`
+                        }}>
+                          {isFacultyRole ? '🎓 Faculty' : '🏛️ Admin'}
+                        </span>
+
+                        {/* 🗑️ Delete Faculty / Admin Button */}
+                        {canDelete && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete "${member.name}" (Staff ID: ${member.employeeId || member.id}) from the Master Directory?`)) {
+                                if (onDeleteEmployee) {
+                                  onDeleteEmployee(member.id);
+                                }
+                              }
+                            }}
+                            style={{
+                              background: '#fee2e2',
+                              color: '#dc2626',
+                              border: '1px solid #fca5a5',
+                              padding: '3px 7px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title={`Delete ${member.name} from directory`}
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <p style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '3px 0', fontSize: '12px', color: 'var(--primary-blue)', fontWeight: '600' }}>
-                      <Building2 size={13} /> {member.dept || 'Computer Science & Engineering'}
+                      <Building2 size={13} /> {member.dept || 'School of Engineering'}
                     </p>
 
                     <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -222,15 +255,6 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
                         <span style={{ color: 'var(--text-secondary)', marginLeft: '8px' }}>Completed: </span>
                         <strong style={{ color: '#10b981' }}>{completedTasks}</strong>
                       </div>
-
-                      {(currentRole === 'hr' || currentRole === 'superAdmin') && !hasAccount && (
-                        <button 
-                          style={{ background: 'var(--primary-blue)', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}
-                          onClick={() => alert(`Provisioning application account for ${member.name}...`)}
-                        >
-                          Provision Account
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
