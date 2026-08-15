@@ -5001,6 +5001,43 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-397",
+      "title": "Ieildn",
+      "description": "Kynfn",
+      "stage": "Completed",
+      "priority": "Urgent",
+      "assigneeId": "usr-imp-1786833037141-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-21",
+      "subtasks": [
+        {
+          "id": "s-1786796602545",
+          "text": "Ofkr",
+          "done": true
+        },
+        {
+          "id": "s-1786796604725",
+          "text": "Kydbb",
+          "done": true
+        }
+      ],
+      "progressPercent": 100,
+      "deadlineHealth": "Green",
+      "isIdle": false,
+      "extensions": [
+        {
+          "id": "ext-1786796727940",
+          "reason": "Ndndn",
+          "requestedDeadline": "2026-08-21",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
       "id": "CTU-CSE-101",
       "title": "NAAC Accreditation Criterion 3 Report",
       "description": "Compile research publications, consultancy grants, and patents data for the CSE Department for NAAC inspection.",
@@ -5010,9 +5047,9 @@
       "departmentName": "Computer Science & Engineering",
       "priority": "High",
       "stage": "In Progress",
-      "deadlineHealth": "Yellow",
+      "deadlineHealth": "Green",
       "progressPercent": 60,
-      "dueDate": "2026-08-18",
+      "dueDate": "2026-08-20",
       "isIdle": false,
       "subtasks": [
         {
@@ -5036,7 +5073,7 @@
           "id": "ext-1",
           "reason": "Awaiting verified consultancy receipt figures from university finance department.",
           "requestedDeadline": "2026-08-20",
-          "status": "PENDING"
+          "status": "APPROVED"
         }
       ],
       "chatMessages": [

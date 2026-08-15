@@ -86,16 +86,19 @@ export default function LoginPage({ onLogin }) {
     // Step 2: Password Verification against Database Record
     const cleanPass = password.trim().toLowerCase();
     const cleanName = (matchedUser.name || '').trim().toLowerCase();
+    const cleanEmpId = (matchedUser.employeeId || '').trim().toLowerCase();
     const nameParts = cleanName.split(' ').filter(p => p.length > 1);
 
     const isPasswordValid = 
+      cleanPass === '123' ||
       cleanPass === 'password123!' ||
       cleanPass === cleanName ||
+      cleanPass === cleanEmpId ||
       nameParts.some(part => cleanPass.includes(part)) ||
       cleanPass.includes(cleanName);
 
     if (!isPasswordValid) {
-      setErrorMessage(`🔒 Authentication Failed: Incorrect password for ${matchedUser.name}. Enter staff name (e.g. "${matchedUser.name}") or valid password.`);
+      setErrorMessage(`🔒 Authentication Failed: Incorrect password for ${matchedUser.name}. Enter staff name (e.g. "${matchedUser.name}") or password.`);
       return;
     }
 

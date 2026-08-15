@@ -6,7 +6,10 @@ export const CTU_ROLES = [
 ];
 
 export const INITIAL_TEAM = [
-  // Super Admin & Admin Executive Leadership
+  // Super Admin Executive Leadership
+  { id: 'usr-24051', employeeId: '24051', name: 'Dr. Nitin Tandon', role: 'Super Admin', category: 'Admin', dept: 'Vice Chancellor / Executive Director & Dean Research', email: 'drnitin@ctuniversity.in', avatar: 'NT' },
+  { id: 'usr-17572', employeeId: '17572', name: 'Dr. Simranjeet Kaur Gill', role: 'Super Admin', category: 'Admin', dept: 'Pro Vice Chancellor / Dean Academics / Principal of SOL', email: 'principalsol@ctuniversity.in', avatar: 'SG' },
+  { id: 'usr-10001', employeeId: '10001', name: 'Super Admin', role: 'Super Admin', category: 'Admin', dept: 'University Executive Administration', email: 'superadmin.10001@ctu.edu.in', avatar: 'SA' },
   { id: 'usr-0', employeeId: '001', name: 'Dr. Manjit Singh', role: 'Super Admin', category: 'Admin', dept: 'University Administration', email: 'superadmin@ctu.edu.in', avatar: 'MS' },
   { id: 'usr-1', employeeId: '102', name: 'Dr. Gurpreet Singh', role: 'University Admin', category: 'Admin', dept: 'Central Academic Affairs', email: 'head.cse@ctu.edu.in', avatar: 'GS' },
   { id: 'usr-2', employeeId: '205', name: 'Ms. Pooja Rani', role: 'HR Lead', category: 'Admin', dept: 'Human Resources', email: 'hr.head@ctu.edu.in', avatar: 'PR' },
