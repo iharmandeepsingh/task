@@ -23,14 +23,26 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
 
     rawRows.forEach((row, index) => {
       const rowNum = index + 2; // Row 1 is header
-      
-      // Auto-detect columns
-      const rawId = row['EMP CODE'] || row['Employee ID'] || row['ID'] || row['Id'] || row['Code'] || `CTU-${category === 'faculty' ? 'EMP' : 'ADM'}-${401 + index}`;
-      const rawName = row['Faculty Name'] || row['Name'] || row['NAME'] || row['Employee Name'] || (category === 'faculty' ? 'Faculty Member' : 'Admin Staff');
-      const rawEmail = row['Email'] || row['E-mail'] || row['email'] || row['EMAIL'] || '';
-      const rawPhone = row['Contact No'] || row['Mobile'] || row['Phone'] || row['PHONE'] || '';
-      const rawDept = row['Department'] || row['Dept'] || row['School'] || row['DEPT'] || (category === 'faculty' ? 'Computer Science & Engineering' : 'University Administration');
-      const rawDesignation = row['Designation'] || row['Role'] || row['DESIGNATION'] || (category === 'faculty' ? 'Assistant Professor' : 'Administrative Officer');
+      const rowKeys = Object.keys(row);
+
+      // Ultra-flexible column detection from any spreadsheet format
+      const findKey = (candidates) => {
+        for (const candidate of candidates) {
+          const match = rowKeys.find(k => k.trim().toLowerCase() === candidate.toLowerCase());
+          if (match && row[match] !== undefined && String(row[match]).trim() !== '') return row[match];
+        }
+        return null;
+      };
+
+      // Positional fallbacks if headers are unnamed (e.g. col 0, col 1)
+      const colValues = Object.values(row).map(v => String(v).trim()).filter(Boolean);
+
+      const rawId = findKey(['emp code', 'employee id', 'emp id', 'staff id', 'id', 'code', 'sr no', 's.no']) || colValues[0] || `260${10 + index}`;
+      const rawName = findKey(['faculty name', 'name', 'employee name', 'staff name', 'full name']) || colValues[1] || `Staff Member ${index + 1}`;
+      const rawEmail = findKey(['email', 'e-mail', 'official email', 'mail']) || colValues[2] || `${String(rawName).toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
+      const rawPhone = findKey(['contact no', 'mobile', 'phone', 'contact']) || colValues[3] || '';
+      const rawDept = findKey(['department', 'dept', 'school', 'branch']) || colValues[4] || (category === 'faculty' ? 'School of Management & Sciences' : 'University Administration');
+      const rawDesignation = findKey(['designation', 'role', 'title', 'post']) || colValues[5] || (category === 'faculty' ? 'Faculty Member' : 'Administrative Officer');
 
       const empId = String(rawId).trim();
       const displayName = String(rawName).trim();
@@ -44,13 +56,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
 
       if (!empId) errors.push('Missing Employee ID');
       if (!displayName) errors.push('Missing Name');
-
-      // Email warning check
-      if (emailStr.includes('/') || emailStr.includes(',') || emailStr.includes(';')) {
-        warnings.push('Multiple emails parsed (Primary selected)');
-      } else if (emailStr && !emailStr.includes('@')) {
-        warnings.push('Malformed email address');
-      }
 
       // Duplicate check
       if (empId && seenIds.has(empId)) {
@@ -105,6 +110,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Parse with raw header detection
         const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
         if (!rawJson || rawJson.length === 0) {
@@ -125,36 +132,31 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
     setImportCategory(presetType);
     if (presetType === 'faculty') {
       const sampleFaculty = [
-        { 'EMP CODE': 'CTU-EMP-301', 'Faculty Name': 'Dr. Harmanpreet Singh', 'Email': 'harman@ctu.edu.in', 'Contact No': '9876543210', 'Dept': 'Computer Science & Engg', 'Designation': 'Assistant Professor' },
-        { 'EMP CODE': 'CTU-EMP-302', 'Faculty Name': 'Prof. Ananya Sharma', 'Email': 'ananya@ctu.edu.in', 'Contact No': '9876543211', 'Dept': 'School of Law', 'Designation': 'Associate Professor' },
-        { 'EMP CODE': 'CTU-EMP-303', 'Faculty Name': 'Dr. Rajesh Kumar', 'Email': 'rajesh@ctu.edu.in', 'Contact No': '9876543212', 'Dept': 'Computer Science & Engg', 'Designation': 'Professor' },
-        { 'EMP CODE': 'CTU-EMP-304', 'Faculty Name': 'Dr. Preeti Verma', 'Email': 'preeti@ctu.edu.in', 'Contact No': '9876543213', 'Dept': 'School of Engineering', 'Designation': 'Assistant Professor' },
-        { 'EMP CODE': 'CTU-EMP-305', 'Faculty Name': 'Er. Vikramjeet Singh', 'Email': 'vikram@ctu.edu.in', 'Contact No': '9876543214', 'Dept': 'Mechanical Engineering', 'Designation': 'Senior Lecturer' }
+        { 'EMP CODE': '26010', 'Faculty Name': 'Shilpa Debnath', 'Email': 'shilpa.debnath@ctu.edu.in', 'Contact No': '9876543210', 'Dept': 'School of Management & Sciences', 'Designation': 'Faculty Member' },
+        { 'EMP CODE': 'CTU-EMP-301', 'Faculty Name': 'Dr. Preeti Verma', 'Email': 'preeti@ctu.edu.in', 'Contact No': '9876543213', 'Dept': 'School of Engineering', 'Designation': 'Assistant Professor' },
+        { 'EMP CODE': 'CTU-EMP-302', 'Faculty Name': 'Er. Vikramjeet Singh', 'Email': 'vikram@ctu.edu.in', 'Contact No': '9876543214', 'Dept': 'Mechanical Engineering', 'Designation': 'Senior Lecturer' }
       ];
       processRawRows(sampleFaculty, 'Faculty_Data_2026.xlsx', 'Faculty Records', 'faculty');
     } else {
       const sampleAdmin = [
         { 'Employee ID': 'CTU-ADM-101', 'Name': 'Ms. Pooja Rani', 'E-mail': 'pooja.hr@ctu.edu.in', 'Mobile': '9812345678', 'Department': 'Human Resources', 'Role': 'HR Lead' },
-        { 'Employee ID': 'CTU-ADM-102', 'Name': 'Mr. Suresh Grover', 'E-mail': 'suresh.accounts@ctu.edu.in', 'Mobile': '9812345679', 'Department': 'Accounts & Finance', 'Role': 'Finance Officer' },
-        { 'Employee ID': 'CTU-ADM-103', 'Name': 'Dr. Manjit Singh', 'E-mail': 'superadmin@ctu.edu.in', 'Mobile': '9812345680', 'Department': 'University Administration', 'Role': 'Registrar' }
+        { 'Employee ID': 'CTU-ADM-102', 'Name': 'Mr. Suresh Grover', 'E-mail': 'suresh.accounts@ctu.edu.in', 'Mobile': '9812345679', 'Department': 'Accounts & Finance', 'Role': 'Finance Officer' }
       ];
       processRawRows(sampleAdmin, 'Admin_Data_2026.xlsx', 'Admin Records', 'admin');
     }
   };
 
   const handleExecuteImport = () => {
-    const validRowsToImport = stagingRows.filter(r => r.status === 'VALID' || r.status === 'WARNING');
-    
-    if (validRowsToImport.length === 0) {
-      alert('No valid rows available to import.');
+    if (stagingRows.length === 0) {
+      alert('No data rows available to import.');
       return;
     }
 
     if (onImportSuccess) {
-      onImportSuccess(validRowsToImport, importCategory);
+      onImportSuccess(stagingRows, importCategory);
     }
 
-    alert(`Successfully imported ${validRowsToImport.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Employee Directory!\n\nRecords have been tagged under "${importCategory === 'faculty' ? 'Faculty' : 'Admin'}" classification.`);
+    alert(`Successfully uploaded & saved ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Employee Directory!`);
     onClose();
   };
 
@@ -217,10 +219,10 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
             </div>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
-                CT University Bulk Employee Data Import
+                CT University Staff & Faculty Data Upload
               </h3>
               <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
-                Separated Import Fields for Faculty & Admin Data Classification
+                Upload Real Excel / CSV Spreadsheet into Master Directory
               </p>
             </div>
           </div>
@@ -244,7 +246,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
           </button>
         </div>
 
-        {/* Category Selection Tabs: Faculty vs Admin */}
+        {/* Category Selection Tabs */}
         <div style={{
           padding: '12px 20px',
           background: '#f8fafc',
@@ -256,7 +258,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
           gap: '10px'
         }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
-            Select Upload Field Category:
+            Target Data Section:
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -278,7 +280,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               }}
             >
               <UserCheck size={15} />
-              <span>🎓 Faculty Data Upload</span>
+              <span>🎓 Faculty / Staff Section</span>
             </button>
 
             <button
@@ -299,7 +301,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               }}
             >
               <Shield size={15} />
-              <span>🏛️ Admin Data Upload</span>
+              <span>🏛️ Admin Section</span>
             </button>
           </div>
         </div>
@@ -318,10 +320,10 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
             }}>
               <Upload size={40} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} style={{ marginBottom: '10px' }} />
               <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: '#1e293b' }}>
-                Upload {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Data File (.xlsx / .csv)
+                Select {importCategory === 'faculty' ? 'Faculty / Staff' : 'Admin'} Spreadsheet File (.xlsx / .csv)
               </h4>
               <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 18px 0' }}>
-                Data will be tagged and stored strictly under <strong>{importCategory === 'faculty' ? 'Faculty / Academic' : 'Admin / Executive'}</strong> classification.
+                Select any spreadsheet file from your device. All records will be imported directly into the directory.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -343,11 +345,11 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                   }}
                 >
                   <FolderPlus size={18} />
-                  <span>Browse {importCategory === 'faculty' ? 'Faculty' : 'Admin'} File from Computer</span>
+                  <span>Choose File from Computer / Mobile</span>
                 </button>
 
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
-                  ── OR LOAD PRESET DEMO DATA ──
+                  ── OR LOAD PRESET DEMO FILE ──
                 </div>
 
                 <button
@@ -367,7 +369,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                   }}
                 >
                   <FileText size={14} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} />
-                  <span>Load Sample {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Spreadsheet</span>
+                  <span>Load Preset {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Spreadsheet</span>
                 </button>
               </div>
             </div>
@@ -389,7 +391,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                   <div>
                     <strong style={{ fontSize: '13px', color: '#0f172a' }}>{selectedFileName}</strong>
                     <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '8px' }}>
-                      Category: <strong>{importCategory === 'faculty' ? 'Faculty Data' : 'Admin Data'}</strong> • Sheet: "{sheetName}"
+                      Parsed {stagingRows.length} Rows • Ready for Upload
                     </span>
                   </div>
                 </div>
@@ -398,38 +400,28 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                   onClick={() => { setSelectedFileName(null); setIsParsed(false); setStagingRows([]); }}
                   style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                 >
-                  Change File
+                  Choose Different File
                 </button>
               </div>
 
               {/* Staging Metrics Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                 <div style={{ padding: '10px', borderRadius: '10px', background: '#dcfce7', border: '1px solid #86efac', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d' }}>{metrics.valid}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534' }}>Valid Rows</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d' }}>{stagingRows.length}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534' }}>Parsed Rows</div>
                 </div>
 
-                <div style={{ padding: '10px', borderRadius: '10px', background: '#fef9c3', border: '1px solid #fde047', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#a16207' }}>{metrics.warning}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#854d0e' }}>Warnings</div>
-                </div>
-
-                <div style={{ padding: '10px', borderRadius: '10px', background: '#fee2e2', border: '1px solid #fca5a5', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#b91c1c' }}>{metrics.error}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#991b1b' }}>Errors</div>
-                </div>
-
-                <div style={{ padding: '10px', borderRadius: '10px', background: '#ffedd5', border: '1px solid #fdba74', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c' }}>{metrics.duplicate}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#9a3412' }}>Duplicates</div>
+                <div style={{ padding: '10px', borderRadius: '10px', background: '#eff6ff', border: '1px solid #bfdbfe', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#1d4ed8' }}>{importCategory === 'faculty' ? 'Faculty' : 'Admin'}</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af' }}>Target Section</div>
                 </div>
               </div>
 
-              {/* Staging Preview Table with Target Classification Column */}
+              {/* Staging Preview Table */}
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
                 <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
-                    Staging Preview ({stagingRows.length} {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Rows)
+                    Staged Employee Data ({stagingRows.length} Staff Records)
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: importCategory === 'faculty' ? '#2563eb' : '#059669' }}>
                     Category: {importCategory === 'faculty' ? '🎓 Faculty' : '🏛️ Admin'}
@@ -441,44 +433,31 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
                         <th style={{ padding: '8px 12px' }}>Row</th>
-                        <th style={{ padding: '8px 12px' }}>ID</th>
+                        <th style={{ padding: '8px 12px' }}>Staff ID</th>
                         <th style={{ padding: '8px 12px' }}>Name</th>
-                        <th style={{ padding: '8px 12px' }}>Target Role</th>
                         <th style={{ padding: '8px 12px' }}>Department</th>
                         <th style={{ padding: '8px 12px' }}>Designation</th>
-                        <th style={{ padding: '8px 12px' }}>Status</th>
+                        <th style={{ padding: '8px 12px' }}>Upload Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {stagingRows.map((row) => (
                         <tr key={row.rowNum} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '8px 12px', color: '#64748b' }}>#{row.rowNum}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: '700', color: '#2563eb' }}>{row.empId}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: '600' }}>{row.displayName}</td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <span style={{
-                              padding: '2px 8px',
-                              borderRadius: '10px',
-                              background: row.targetRole === 'Faculty' ? '#eff6ff' : '#ecfdf5',
-                              color: row.targetRole === 'Faculty' ? '#1d4ed8' : '#047857',
-                              fontWeight: '800',
-                              fontSize: '10px'
-                            }}>
-                              {row.targetRole}
-                            </span>
-                          </td>
+                          <td style={{ padding: '8px 12px', fontWeight: '800', color: '#2563eb' }}>{row.empId}</td>
+                          <td style={{ padding: '8px 12px', fontWeight: '700' }}>{row.displayName}</td>
                           <td style={{ padding: '8px 12px' }}>{row.dept}</td>
                           <td style={{ padding: '8px 12px', color: '#64748b' }}>{row.designation}</td>
                           <td style={{ padding: '8px 12px' }}>
                             <span style={{
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: row.status === 'VALID' ? '#dcfce7' : row.status === 'WARNING' ? '#fef9c3' : '#fee2e2',
-                              color: row.status === 'VALID' ? '#15803d' : row.status === 'WARNING' ? '#a16207' : '#b91c1c',
+                              background: '#dcfce7',
+                              color: '#15803d',
                               fontWeight: '700',
                               fontSize: '10px'
                             }}>
-                              {row.status} {row.warnings ? `(${row.warnings})` : ''}
+                              Ready to Upload
                             </span>
                           </td>
                         </tr>
@@ -535,7 +514,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               }}
             >
               <CheckCircle size={16} />
-              <span>Confirm & Save {metrics.valid + metrics.warning} {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Records</span>
+              <span>Confirm & Upload {stagingRows.length} {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Records</span>
             </button>
           )}
         </div>

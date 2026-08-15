@@ -80,33 +80,42 @@ export default function App() {
     setAuthUser(null);
   };
 
-  // Handle Batch Import Execution
-  const handleImportEmployees = (validRows, category = 'faculty') => {
-    const formattedMembers = validRows.map((emp, idx) => {
+  // Handle Batch Import Execution with Smart Upsert Merge
+  const handleImportEmployees = (importedRows, category = 'faculty') => {
+    const formattedMembers = importedRows.map((emp, idx) => {
       const names = (emp.displayName || 'Employee').split(' ');
       const initials = names.map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'EM';
+      const cleanEmpId = emp.empId || `26${100 + idx}`;
 
       return {
         id: `usr-imp-${Date.now()}-${idx}`,
-        employeeId: emp.empId || `CTU-${category === 'faculty' ? 'EMP' : 'ADM'}-${400 + idx}`,
-        name: emp.displayName,
+        employeeId: cleanEmpId,
+        name: emp.displayName || 'Staff Member',
         role: emp.designation || (category === 'faculty' ? 'Faculty Member' : 'Administrative Staff'),
-        category: emp.targetRole || (category === 'faculty' ? 'Faculty' : 'Admin'),
+        category: category === 'faculty' ? 'Faculty' : 'Admin',
         dept: emp.dept || (category === 'faculty' ? 'Computer Science & Engineering' : 'University Administration'),
-        email: emp.email || `${emp.displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`,
+        email: emp.email || `${(emp.displayName || 'staff').toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`,
         avatar: initials,
         status: 'Active',
         source: 'EXCEL_IMPORT',
-        hasAccount: false
+        hasAccount: true
       };
     });
 
-    const existingEmpIds = new Set(team.map((m) => m.employeeId));
-    const newUniqueMembers = formattedMembers.filter((m) => !existingEmpIds.has(m.employeeId));
+    setTeam((prevTeam) => {
+      const teamMap = new Map();
+      prevTeam.forEach(m => teamMap.set(m.employeeId, m));
 
-    const updatedTeam = [...team, ...newUniqueMembers];
-    setTeam(updatedTeam);
-    localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam));
+      // Smart Upsert: add new members or update existing
+      formattedMembers.forEach(newMem => {
+        teamMap.set(newMem.employeeId, newMem);
+      });
+
+      const updated = Array.from(teamMap.values());
+      localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+      return updated;
+    });
+
     setActiveView('team');
   };
 
