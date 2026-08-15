@@ -434,6 +434,12 @@ body {
   max-height: 90vh;
 }
 
+@media (min-width: 769px) {
+  .mobile-stage-filter-bar {
+    display: none !important;
+  }
+}
+
 /* Responsive Breakpoints for Tablets and Smartphones */
 @media (max-width: 768px) {
   .navbar-container {
@@ -492,9 +498,20 @@ body {
     gap: 10px;
   }
 
+  .mobile-stage-filter-bar {
+    display: block !important;
+  }
+
+  .kanban-container {
+    padding-bottom: 20px;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
   .kanban-column {
-    width: 82vw;
+    width: 85vw;
     min-width: 280px;
+    scroll-snap-align: center;
   }
 
   .desktop-table-container {
