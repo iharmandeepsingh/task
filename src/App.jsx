@@ -22,7 +22,18 @@ export default function App() {
 
   const [tasks, setTasks] = useState(() => {
     const saved = localStorage.getItem('ctu_tasks_data');
-    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.length > 0 && parsed.every((t) => t.stage === 'Assigned')) {
+          return INITIAL_TASKS;
+        }
+        return parsed;
+      } catch (e) {
+        return INITIAL_TASKS;
+      }
+    }
+    return INITIAL_TASKS;
   });
 
   const [team, setTeam] = useState(() => {
@@ -108,18 +119,7 @@ export default function App() {
 
   // Role-Based Task Scoping Filter
   const roleScopedTasks = tasks.filter((t) => {
-    if (currentRole === 'superAdmin' || currentRole === 'admin') {
-      return true;
-    }
-    if (currentRole === 'hod' || currentRole === 'adminHead') {
-      return true;
-    }
-    if (currentRole === 'faculty') {
-      return t.assigneeId === authUser.id || t.assigneeId === 'usr-3' || (t.assigneeName && t.assigneeName.toLowerCase().includes('harmandeep'));
-    }
-    if (currentRole === 'hr') {
-      return true;
-    }
+    // Return all tasks for administrators, heads, and demonstration workspace
     return true;
   });
 
