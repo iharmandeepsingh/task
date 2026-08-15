@@ -191,16 +191,40 @@ export default function App() {
 
   const currentRole = authUser.role; // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
 
-  // Role-Based Task Scoping Filter (Strict Faculty Self-Assigned Task Isolation)
+  // Role-Based Task Scoping Filter (Strict RBAC Scoping)
   const roleScopedTasks = tasks.filter((t) => {
-    if (currentRole === 'faculty' && authUser) {
-      const authId = (authUser.id || '').toLowerCase();
-      const authEmpId = (authUser.employeeId || '').toLowerCase();
-      const authName = (authUser.name || '').toLowerCase().trim();
+    // 1. Super Admin: Permission to see ALL tasks assigned across the university
+    if (currentRole === 'superAdmin') {
+      return true;
+    }
 
-      const taskAssigneeId = (t.assigneeId || '').toLowerCase();
-      const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+    const authId = (authUser?.id || '').toLowerCase();
+    const authEmpId = (authUser?.employeeId || '').toLowerCase();
+    const authName = (authUser?.name || '').toLowerCase().trim();
 
+    const taskAssigneeId = (t.assigneeId || '').toLowerCase();
+    const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+    const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
+    const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
+
+    // 2. University Admin: Can ONLY view tasks assigned BY this specific person
+    if (currentRole === 'admin' || currentRole === 'adminHead' || currentRole === 'hod') {
+      const isCreatorOfTask = 
+        (authId && taskCreatorId === authId) ||
+        (authName && taskCreatorName.includes(authName)) ||
+        (authName && authName.includes(taskCreatorName)) ||
+        (authEmpId && taskCreatorId === authEmpId);
+
+      const isAssignedToAdmin = 
+        (authId && taskAssigneeId === authId) ||
+        (authEmpId && taskAssigneeId === authEmpId) ||
+        (authName && taskAssigneeName.includes(authName));
+
+      return isCreatorOfTask || isAssignedToAdmin;
+    }
+
+    // 3. Faculty Member: Can ONLY view self-assigned tasks
+    if (currentRole === 'faculty') {
       const isAssignedToUser = 
         (authId && taskAssigneeId === authId) ||
         (authEmpId && taskAssigneeId === authEmpId) ||
@@ -209,7 +233,7 @@ export default function App() {
 
       return isAssignedToUser;
     }
-    // Return all tasks for administrators and heads
+
     return true;
   });
 
