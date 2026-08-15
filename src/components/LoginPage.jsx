@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert, CheckCircle2, HelpCircle, X, Sparkles, Mail } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
 
 export default function LoginPage({ onLogin }) {
@@ -22,6 +22,12 @@ export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Forgot Password Modal State
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [recoveryQuery, setRecoveryQuery] = useState('');
+  const [recoveryResult, setRecoveryResult] = useState(null);
+  const [recoveryError, setRecoveryError] = useState('');
 
   // Role Selector Cards
   const ROLE_CARDS = {
@@ -131,6 +137,56 @@ export default function LoginPage({ onLogin }) {
       dept: matchedUser.dept,
       avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
     });
+  };
+
+  // Password Recovery Search Handler
+  const handleRecoverPassword = (e) => {
+    e.preventDefault();
+    const q = recoveryQuery.trim().toLowerCase();
+    if (!q) {
+      setRecoveryError('Please enter your Staff ID or Email.');
+      return;
+    }
+
+    const found = activeTeam.find((m) => {
+      const fullEmpId = (m.employeeId || '').trim().toLowerCase();
+      const numDigits = fullEmpId.replace(/\D/g, '');
+      const fullName = (m.name || '').trim().toLowerCase();
+      const fullEmail = (m.email || '').trim().toLowerCase();
+      return (
+        fullEmpId === q ||
+        (numDigits && numDigits === q) ||
+        fullName === q ||
+        fullName.includes(q) ||
+        fullEmail === q
+      );
+    });
+
+    if (found) {
+      // Password is set as staff member's Name (or 123 for 10001)
+      const expectedPassword = found.employeeId === '10001' ? '123' : found.name;
+      setRecoveryResult({
+        member: found,
+        password: expectedPassword
+      });
+      setRecoveryError('');
+    } else {
+      setRecoveryResult(null);
+      setRecoveryError(`No staff account found for "${recoveryQuery}". Please verify your Staff ID or contact HR.`);
+    }
+  };
+
+  const handleAutofillRecovered = () => {
+    if (recoveryResult?.member) {
+      setIdentifier(recoveryResult.member.employeeId || recoveryResult.member.name);
+      setPassword(recoveryResult.password);
+      const isFaculty = recoveryResult.member.category === 'Faculty' || 
+        (recoveryResult.member.role && recoveryResult.member.role.toLowerCase().includes('faculty'));
+      setSelectedRole(isFaculty ? 'faculty' : 'superAdmin');
+      setIsForgotModalOpen(false);
+      setRecoveryResult(null);
+      setRecoveryQuery('');
+    }
   };
 
   return (
@@ -282,7 +338,7 @@ export default function LoginPage({ onLogin }) {
                     setIdentifier(e.target.value);
                     setErrorMessage('');
                   }}
-                  placeholder="Enter Staff ID (e.g. 26001, 26010, 309, 301)..."
+                  placeholder="Enter Staff ID (e.g. 26001, 26010, 309, 301, 24051)..."
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -300,9 +356,24 @@ export default function LoginPage({ onLogin }) {
             </div>
 
             <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
-                Password (Staff Name or Password)
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', margin: 0 }}>
+                  Password (Staff Name or Password)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotModalOpen(true);
+                    setRecoveryQuery(identifier);
+                    setRecoveryResult(null);
+                    setRecoveryError('');
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#60a5fa', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <HelpCircle size={12} />
+                  <span>Forgot Password?</span>
+                </button>
+              </div>
               <div style={{ position: 'relative' }}>
                 <KeyRound size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
                 <input
@@ -364,6 +435,130 @@ export default function LoginPage({ onLogin }) {
           </div>
         </div>
       </div>
+
+      {/* 🔑 Forgot Password Recovery Modal */}
+      {isForgotModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '16px'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '480px',
+            background: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)',
+            overflow: 'hidden',
+            color: '#0f172a'
+          }}>
+            <div style={{
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <KeyRound size={18} color="#60a5fa" />
+                <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+                  Account Password Recovery & Reset
+                </h3>
+              </div>
+              <button
+                onClick={() => { setIsForgotModalOpen(false); setRecoveryResult(null); setRecoveryError(''); }}
+                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#ffffff', cursor: 'pointer' }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 14px 0' }}>
+                Enter your <strong>Staff ID</strong> or <strong>Official Email</strong> to recover your account password.
+              </p>
+
+              <form onSubmit={handleRecoverPassword} style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={recoveryQuery}
+                    onChange={(e) => setRecoveryQuery(e.target.value)}
+                    placeholder="Enter Staff ID (e.g. 26001, 26010, 309)..."
+                    style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    style={{ padding: '10px 16px', borderRadius: '8px', background: '#2563eb', color: '#ffffff', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                  >
+                    Verify ID
+                  </button>
+                </div>
+              </form>
+
+              {recoveryError && (
+                <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#dc2626', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={16} />
+                  <span>{recoveryError}</span>
+                </div>
+              )}
+
+              {recoveryResult && (
+                <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <CheckCircle2 size={18} color="#059669" />
+                    <strong style={{ fontSize: '13px', color: '#065f46' }}>Database Account Identity Verified!</strong>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#1e293b', lineHeight: '1.6' }}>
+                    <div>👤 <strong>Staff Name:</strong> {recoveryResult.member.name}</div>
+                    <div>🆔 <strong>Staff ID:</strong> {recoveryResult.member.employeeId || recoveryResult.member.id}</div>
+                    <div>📧 <strong>Official Email:</strong> {recoveryResult.member.email}</div>
+                    <div style={{ marginTop: '8px', padding: '8px', background: '#ffffff', borderRadius: '6px', border: '1px solid #6ee7b7' }}>
+                      🔑 <strong>Your Account Password:</strong> <code style={{ fontSize: '13px', color: '#047857', fontWeight: '800' }}>{recoveryResult.password}</code>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleAutofillRecovered}
+                    style={{
+                      width: '100%',
+                      marginTop: '12px',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                      color: '#ffffff',
+                      fontWeight: '700',
+                      fontSize: '13px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    <Sparkles size={15} />
+                    <span>Auto-Fill Credentials & Sign In Now</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
