@@ -5,10 +5,10 @@ import { INITIAL_TEAM } from '../data/initialData';
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('superadmin@ctu.edu.in');
   const [password, setPassword] = useState('Password123!');
-  const [selectedRole, setSelectedRole] = useState('superAdmin'); // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
+  const [selectedRole, setSelectedRole] = useState('superAdmin'); // 'superAdmin', 'admin', 'faculty'
   const [errorMessage, setErrorMessage] = useState('');
 
-  // CT University Quick Demo Accounts mapped to system IDs
+  // CT University Quick Demo Accounts (Strictly 3 authorized roles)
   const DEMO_ACCOUNTS = {
     superAdmin: {
       id: 'usr-0',
@@ -30,44 +30,26 @@ export default function LoginPage({ onLogin }) {
       badgeColor: '#3b82f6',
       desc: 'University-wide administrative oversight, department reports & scope controls.'
     },
-    hod: {
-      id: 'usr-1',
-      email: 'head.cse@ctu.edu.in',
-      name: 'Dr. Gurpreet Singh',
-      roleTitle: 'Head of Department (CSE)',
-      dept: 'Computer Science & Engineering',
-      avatar: 'GS',
-      badgeColor: '#10b981',
-      desc: 'Assign department tasks to faculty, review submissions & approve extensions.'
-    },
     faculty: {
       id: 'usr-3',
       email: 'harman.faculty@ctu.edu.in',
       name: 'Dr. Harmanpreet Singh',
-      roleTitle: 'Assistant Professor (Faculty)',
+      roleTitle: 'Faculty Member',
       dept: 'Computer Science & Engineering',
       avatar: 'HS',
       badgeColor: '#f59e0b',
       desc: 'Strictly view self-assigned tasks, update progress, request extensions & submit work.'
-    },
-    hr: {
-      id: 'usr-2',
-      email: 'hr.head@ctu.edu.in',
-      name: 'Ms. Pooja Rani',
-      roleTitle: 'HR Lead',
-      dept: 'Human Resources',
-      avatar: 'PR',
-      badgeColor: '#ec4899',
-      desc: 'Bulk Excel/CSV employee master import, directory management & account provisioning.'
     }
   };
 
   const handleSelectQuickAccount = (roleKey) => {
     setSelectedRole(roleKey);
     const acc = DEMO_ACCOUNTS[roleKey];
-    setEmail(acc.email);
-    setPassword('Password123!');
-    setErrorMessage('');
+    if (acc) {
+      setEmail(acc.email);
+      setPassword('Password123!');
+      setErrorMessage('');
+    }
   };
 
   const handleSubmit = (e) => {
@@ -81,7 +63,7 @@ export default function LoginPage({ onLogin }) {
 
     // Check if email matches existing team member
     const teamMatch = INITIAL_TEAM.find((m) => m.email.toLowerCase() === cleanEmail);
-    const demoAcc = DEMO_ACCOUNTS[selectedRole];
+    const demoAcc = DEMO_ACCOUNTS[selectedRole] || DEMO_ACCOUNTS.superAdmin;
 
     if (teamMatch) {
       onLogin({
@@ -163,17 +145,17 @@ export default function LoginPage({ onLogin }) {
             Role-Scoped Portal Sign In
           </h2>
           <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Select your role below or enter credentials to open authorized workspace.
+            Select your role below or enter official credentials to open authorized workspace.
           </p>
         </div>
 
-        {/* Middle Role Selector Cards */}
+        {/* Middle Role Selector Cards (3 Authorized Roles) */}
         <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <label style={{ fontSize: '11px', fontWeight: '700', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px' }}>
-            Choose Role to Sign In:
+            Choose Authorized User Account:
           </label>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
             {Object.keys(DEMO_ACCOUNTS).map((roleKey) => {
               const acc = DEMO_ACCOUNTS[roleKey];
               const isSelected = selectedRole === roleKey;
@@ -183,25 +165,25 @@ export default function LoginPage({ onLogin }) {
                   key={roleKey}
                   onClick={() => handleSelectQuickAccount(roleKey)}
                   style={{
-                    padding: '10px',
-                    borderRadius: '10px',
+                    padding: '12px',
+                    borderRadius: '12px',
                     cursor: 'pointer',
                     background: isSelected ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                    border: isSelected ? `1.5px solid ${acc.badgeColor}` : '1px solid rgba(255, 255, 255, 0.06)',
+                    border: isSelected ? `2px solid ${acc.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '10px'
                   }}
                 >
                   <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '6px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
                     background: acc.badgeColor,
                     color: '#ffffff',
                     fontWeight: '800',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -210,10 +192,10 @@ export default function LoginPage({ onLogin }) {
                     {acc.avatar}
                   </div>
                   <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {acc.roleTitle}
                     </div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {acc.name}
                     </div>
                   </div>
@@ -253,7 +235,7 @@ export default function LoginPage({ onLogin }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. faculty@ctu.edu.in"
+                  placeholder="e.g. superadmin@ctu.edu.in"
                   style={{
                     width: '100%',
                     padding: '10px 14px 10px 38px',
@@ -316,7 +298,7 @@ export default function LoginPage({ onLogin }) {
                 boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
               }}
             >
-              <span>Sign In & Open Workspace ({DEMO_ACCOUNTS[selectedRole].roleTitle})</span>
+              <span>Sign In & Open Workspace ({DEMO_ACCOUNTS[selectedRole]?.roleTitle || 'Portal'})</span>
               <ArrowRight size={16} />
             </button>
           </form>
