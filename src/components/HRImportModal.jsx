@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
+  const [importCategory, setImportCategory] = useState('faculty'); // 'faculty' or 'admin'
   const [selectedFileName, setSelectedFileName] = useState(null);
   const [isParsed, setIsParsed] = useState(false);
   const [stagingRows, setStagingRows] = useState([]);
@@ -15,7 +16,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
   if (!isOpen) return null;
 
   // Process raw parsed JS objects into normalized staging rows
-  const processRawRows = (rawRows, fileName, sheetTitle = 'Sheet1') => {
+  const processRawRows = (rawRows, fileName, sheetTitle = 'Sheet1', category = importCategory) => {
     const seenIds = new Set();
     const processed = [];
     const counts = { valid: 0, warning: 0, error: 0, duplicate: 0 };
@@ -24,12 +25,12 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
       const rowNum = index + 2; // Row 1 is header
       
       // Auto-detect columns
-      const rawId = row['EMP CODE'] || row['Employee ID'] || row['ID'] || row['Id'] || row['Code'] || `CTU-EMP-${401 + index}`;
-      const rawName = row['Faculty Name'] || row['Name'] || row['NAME'] || row['Employee Name'] || 'Faculty Member';
+      const rawId = row['EMP CODE'] || row['Employee ID'] || row['ID'] || row['Id'] || row['Code'] || `CTU-${category === 'faculty' ? 'EMP' : 'ADM'}-${401 + index}`;
+      const rawName = row['Faculty Name'] || row['Name'] || row['NAME'] || row['Employee Name'] || (category === 'faculty' ? 'Faculty Member' : 'Admin Staff');
       const rawEmail = row['Email'] || row['E-mail'] || row['email'] || row['EMAIL'] || '';
       const rawPhone = row['Contact No'] || row['Mobile'] || row['Phone'] || row['PHONE'] || '';
-      const rawDept = row['Department'] || row['Dept'] || row['School'] || row['DEPT'] || 'General';
-      const rawDesignation = row['Designation'] || row['Role'] || row['DESIGNATION'] || 'Faculty';
+      const rawDept = row['Department'] || row['Dept'] || row['School'] || row['DEPT'] || (category === 'faculty' ? 'Computer Science & Engineering' : 'University Administration');
+      const rawDesignation = row['Designation'] || row['Role'] || row['DESIGNATION'] || (category === 'faculty' ? 'Assistant Professor' : 'Administrative Officer');
 
       const empId = String(rawId).trim();
       const displayName = String(rawName).trim();
@@ -78,6 +79,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         phone: phoneStr,
         dept,
         designation: rawDesignation,
+        targetRole: category === 'faculty' ? 'Faculty' : 'Admin',
         status,
         warnings: warnings.join(', '),
         errors: errors.join(', ')
@@ -110,7 +112,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
           return;
         }
 
-        processRawRows(rawJson, file.name, firstSheetName);
+        processRawRows(rawJson, file.name, firstSheetName, importCategory);
       } catch (err) {
         alert('Failed to parse Excel/CSV spreadsheet. Please ensure a valid .xlsx or .csv file.');
       }
@@ -120,22 +122,23 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
 
   // Quick Preset Sample Files
   const handlePresetSelect = (presetType) => {
+    setImportCategory(presetType);
     if (presetType === 'faculty') {
       const sampleFaculty = [
         { 'EMP CODE': 'CTU-EMP-301', 'Faculty Name': 'Dr. Harmanpreet Singh', 'Email': 'harman@ctu.edu.in', 'Contact No': '9876543210', 'Dept': 'Computer Science & Engg', 'Designation': 'Assistant Professor' },
         { 'EMP CODE': 'CTU-EMP-302', 'Faculty Name': 'Prof. Ananya Sharma', 'Email': 'ananya@ctu.edu.in', 'Contact No': '9876543211', 'Dept': 'School of Law', 'Designation': 'Associate Professor' },
-        { 'EMP CODE': 'CTU-EMP-303', 'Faculty Name': 'Dr. Rajesh Kumar', 'Email': 'rajesh/personal@ctu.edu.in', 'Contact No': '9876543212', 'Dept': 'Computer Science & Engg', 'Designation': 'Professor' },
+        { 'EMP CODE': 'CTU-EMP-303', 'Faculty Name': 'Dr. Rajesh Kumar', 'Email': 'rajesh@ctu.edu.in', 'Contact No': '9876543212', 'Dept': 'Computer Science & Engg', 'Designation': 'Professor' },
         { 'EMP CODE': 'CTU-EMP-304', 'Faculty Name': 'Dr. Preeti Verma', 'Email': 'preeti@ctu.edu.in', 'Contact No': '9876543213', 'Dept': 'School of Engineering', 'Designation': 'Assistant Professor' },
         { 'EMP CODE': 'CTU-EMP-305', 'Faculty Name': 'Er. Vikramjeet Singh', 'Email': 'vikram@ctu.edu.in', 'Contact No': '9876543214', 'Dept': 'Mechanical Engineering', 'Designation': 'Senior Lecturer' }
       ];
-      processRawRows(sampleFaculty, 'Updated_Faculty_2026.xlsx', 'Updated Faculty');
+      processRawRows(sampleFaculty, 'Faculty_Data_2026.xlsx', 'Faculty Records', 'faculty');
     } else {
       const sampleAdmin = [
         { 'Employee ID': 'CTU-ADM-101', 'Name': 'Ms. Pooja Rani', 'E-mail': 'pooja.hr@ctu.edu.in', 'Mobile': '9812345678', 'Department': 'Human Resources', 'Role': 'HR Lead' },
         { 'Employee ID': 'CTU-ADM-102', 'Name': 'Mr. Suresh Grover', 'E-mail': 'suresh.accounts@ctu.edu.in', 'Mobile': '9812345679', 'Department': 'Accounts & Finance', 'Role': 'Finance Officer' },
         { 'Employee ID': 'CTU-ADM-103', 'Name': 'Dr. Manjit Singh', 'E-mail': 'superadmin@ctu.edu.in', 'Mobile': '9812345680', 'Department': 'University Administration', 'Role': 'Registrar' }
       ];
-      processRawRows(sampleAdmin, 'Admin_Employees_2026.xlsx', 'Admin');
+      processRawRows(sampleAdmin, 'Admin_Data_2026.xlsx', 'Admin Records', 'admin');
     }
   };
 
@@ -148,15 +151,15 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
     }
 
     if (onImportSuccess) {
-      onImportSuccess(validRowsToImport);
+      onImportSuccess(validRowsToImport, importCategory);
     }
 
-    alert(`Successfully saved ${validRowsToImport.length} employee master records to the CT University Employee Directory!\n\nSecurity Notice: Imported records created in Master Data. Account provisioning can be triggered from the directory view.`);
+    alert(`Successfully imported ${validRowsToImport.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Employee Directory!\n\nRecords have been tagged under "${importCategory === 'faculty' ? 'Faculty' : 'Admin'}" classification.`);
     onClose();
   };
 
   return (
-    <div className="modal-backdrop" style={{
+    <div className="modal-backdrop" onClick={onClose} style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -168,7 +171,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      padding: '20px'
+      padding: '12px'
     }}>
       {/* Hidden Native File Input */}
       <input
@@ -179,7 +182,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
         style={{ display: 'none' }}
       />
 
-      <div className="modal-card" style={{
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{
         width: '100%',
         maxWidth: '860px',
         background: '#ffffff',
@@ -192,7 +195,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
       }}>
         {/* Modal Header */}
         <div style={{
-          padding: '18px 24px',
+          padding: '16px 20px',
           background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
           color: '#ffffff',
           display: 'flex',
@@ -213,11 +216,11 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               <FileSpreadsheet size={20} color="#60a5fa" />
             </div>
             <div>
-              <h3 style={{ fontSize: '17px', fontWeight: '700', margin: 0, color: '#ffffff' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
                 CT University Bulk Employee Data Import
               </h3>
               <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
-                Enterprise Staging, Multi-Stage Validation & Idempotency Pipeline
+                Separated Import Fields for Faculty & Admin Data Classification
               </p>
             </div>
           </div>
@@ -228,8 +231,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
               borderRadius: '50%',
-              width: '32px',
-              height: '32px',
+              width: '30px',
+              height: '30px',
               color: '#ffffff',
               cursor: 'pointer',
               display: 'flex',
@@ -237,114 +240,135 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               justifyContent: 'center'
             }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Security Rule Banner */}
+        {/* Category Selection Tabs: Faculty vs Admin */}
         <div style={{
           padding: '12px 20px',
-          background: '#eff6ff',
-          borderBottom: '1px solid #bfdbfe',
+          background: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          alignItems: 'flex-start',
-          gap: '10px',
-          fontSize: '12px',
-          color: '#1e40af'
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
-          <ShieldAlert size={18} color="#2563eb" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <strong style={{ color: '#1d4ed8' }}>Security Non-Derivation Policy</strong>: Excel sheet names (<em>"Updated Faculty"</em>, <em>"Admin"</em>) and employee designations do <strong>NOT</strong> grant application roles (`SUPER_ADMIN`, `ADMIN_HEAD`, `HOD`, `HR`, `FACULTY`). Application accounts must be provisioned separately through RBAC.
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
+            Select Upload Field Category:
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => { setImportCategory('faculty'); setIsParsed(false); setSelectedFileName(null); }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: importCategory === 'faculty' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#ffffff',
+                color: importCategory === 'faculty' ? '#ffffff' : '#475569',
+                border: importCategory === 'faculty' ? 'none' : '1px solid #cbd5e1',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: importCategory === 'faculty' ? '0 4px 10px rgba(59, 130, 246, 0.3)' : 'none'
+              }}
+            >
+              <UserCheck size={15} />
+              <span>🎓 Faculty Data Upload</span>
+            </button>
+
+            <button
+              onClick={() => { setImportCategory('admin'); setIsParsed(false); setSelectedFileName(null); }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: importCategory === 'admin' ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : '#ffffff',
+                color: importCategory === 'admin' ? '#ffffff' : '#475569',
+                border: importCategory === 'admin' ? 'none' : '1px solid #cbd5e1',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: importCategory === 'admin' ? '0 4px 10px rgba(16, 185, 129, 0.3)' : 'none'
+              }}
+            >
+              <Shield size={15} />
+              <span>🏛️ Admin Data Upload</span>
+            </button>
           </div>
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
           {/* File Upload Dropzone */}
           {!isParsed ? (
             <div style={{
-              border: '2px dashed #3b82f6',
+              border: `2px dashed ${importCategory === 'faculty' ? '#3b82f6' : '#10b981'}`,
               borderRadius: '14px',
-              padding: '36px',
+              padding: '30px 20px',
               textAlign: 'center',
-              background: '#f8fafc',
+              background: importCategory === 'faculty' ? '#eff6ff40' : '#ecfdf540',
               transition: 'all 0.2s ease'
             }}>
-              <Upload size={44} color="#2563eb" style={{ marginBottom: '12px' }} />
-              <h4 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 6px 0', color: '#1e293b' }}>
-                Upload Real Employee Excel / CSV File
+              <Upload size={40} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} style={{ marginBottom: '10px' }} />
+              <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: '#1e293b' }}>
+                Upload {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Data File (.xlsx / .csv)
               </h4>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px 0' }}>
-                Select any <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> spreadsheet from your computer
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 18px 0' }}>
+                Data will be tagged and stored strictly under <strong>{importCategory === 'faculty' ? 'Faculty / Academic' : 'Admin / Executive'}</strong> classification.
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     padding: '12px 24px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    borderRadius: '10px',
+                    background: importCategory === 'faculty' ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
                     color: '#ffffff',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     fontWeight: '700',
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.4)'
+                    gap: '8px',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
                   }}
                 >
                   <FolderPlus size={18} />
-                  <span>Browse File from Computer</span>
+                  <span>Browse {importCategory === 'faculty' ? 'Faculty' : 'Admin'} File from Computer</span>
                 </button>
 
-                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>── OR CHOOSE A DEMO PRESET ──</span>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                  ── OR LOAD PRESET DEMO DATA ──
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => handlePresetSelect('faculty')}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      background: '#ffffff',
-                      border: '1px solid #cbd5e1',
-                      color: '#334155',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <FileText size={14} color="#2563eb" />
-                    <span>Preset: Updated Faculty Sheet</span>
-                  </button>
-
-                  <button
-                    onClick={() => handlePresetSelect('admin')}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      background: '#ffffff',
-                      border: '1px solid #cbd5e1',
-                      color: '#334155',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <FileText size={14} color="#059669" />
-                    <span>Preset: Admin Employees Sheet</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => handlePresetSelect(importCategory)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#334155',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <FileText size={14} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} />
+                  <span>Load Sample {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Spreadsheet</span>
+                </button>
               </div>
             </div>
           ) : (
@@ -355,93 +379,113 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px 16px',
-                background: '#f1f5f9',
+                background: importCategory === 'faculty' ? '#eff6ff' : '#ecfdf5',
                 borderRadius: '10px',
-                marginBottom: '18px'
+                marginBottom: '16px',
+                border: `1px solid ${importCategory === 'faculty' ? '#bfdbfe' : '#a7f3d0'}`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <FileSpreadsheet size={20} color="#2563eb" />
+                  <FileSpreadsheet size={20} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} />
                   <div>
                     <strong style={{ fontSize: '13px', color: '#0f172a' }}>{selectedFileName}</strong>
-                    <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '8px' }}>Sheet: "{sheetName}" • SHA-256 Verified</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '8px' }}>
+                      Category: <strong>{importCategory === 'faculty' ? 'Faculty Data' : 'Admin Data'}</strong> • Sheet: "{sheetName}"
+                    </span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => { setSelectedFileName(null); setIsParsed(false); setStagingRows([]); }}
-                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                 >
-                  Choose Different File
+                  Change File
                 </button>
               </div>
 
               {/* Staging Metrics Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ padding: '12px', borderRadius: '10px', background: '#dcfce7', border: '1px solid #86efac', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#15803d' }}>{metrics.valid}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ padding: '10px', borderRadius: '10px', background: '#dcfce7', border: '1px solid #86efac', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#15803d' }}>{metrics.valid}</div>
                   <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534' }}>Valid Rows</div>
                 </div>
 
-                <div style={{ padding: '12px', borderRadius: '10px', background: '#fef9c3', border: '1px solid #fde047', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#a16207' }}>{metrics.warning}</div>
+                <div style={{ padding: '10px', borderRadius: '10px', background: '#fef9c3', border: '1px solid #fde047', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#a16207' }}>{metrics.warning}</div>
                   <div style={{ fontSize: '11px', fontWeight: '700', color: '#854d0e' }}>Warnings</div>
                 </div>
 
-                <div style={{ padding: '12px', borderRadius: '10px', background: '#fee2e2', border: '1px solid #fca5a5', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#b91c1c' }}>{metrics.error}</div>
+                <div style={{ padding: '10px', borderRadius: '10px', background: '#fee2e2', border: '1px solid #fca5a5', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#b91c1c' }}>{metrics.error}</div>
                   <div style={{ fontSize: '11px', fontWeight: '700', color: '#991b1b' }}>Errors</div>
                 </div>
 
-                <div style={{ padding: '12px', borderRadius: '10px', background: '#ffedd5', border: '1px solid #fdba74', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#c2410c' }}>{metrics.duplicate}</div>
+                <div style={{ padding: '10px', borderRadius: '10px', background: '#ffedd5', border: '1px solid #fdba74', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c' }}>{metrics.duplicate}</div>
                   <div style={{ fontSize: '11px', fontWeight: '700', color: '#9a3412' }}>Duplicates</div>
                 </div>
               </div>
 
-              {/* Staging Preview Table */}
+              {/* Staging Preview Table with Target Classification Column */}
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
-                    Import Staging Preview ({stagingRows.length} Staged Rows)
+                    Staging Preview ({stagingRows.length} {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Rows)
                   </span>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>Status Policy: VALID & WARNING Eligible</span>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: importCategory === 'faculty' ? '#2563eb' : '#059669' }}>
+                    Category: {importCategory === 'faculty' ? '🎓 Faculty' : '🏛️ Admin'}
+                  </span>
                 </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                      <th style={{ padding: '8px 12px' }}>Row</th>
-                      <th style={{ padding: '8px 12px' }}>Emp ID</th>
-                      <th style={{ padding: '8px 12px' }}>Full Name</th>
-                      <th style={{ padding: '8px 12px' }}>Primary Email</th>
-                      <th style={{ padding: '8px 12px' }}>Department</th>
-                      <th style={{ padding: '8px 12px' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stagingRows.map((row) => (
-                      <tr key={row.rowNum} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '8px 12px', color: '#64748b' }}>#{row.rowNum}</td>
-                        <td style={{ padding: '8px 12px', fontWeight: '700' }}>{row.empId}</td>
-                        <td style={{ padding: '8px 12px', fontWeight: '600' }}>{row.displayName}</td>
-                        <td style={{ padding: '8px 12px' }}>{row.email || '—'}</td>
-                        <td style={{ padding: '8px 12px' }}>{row.dept}</td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <span style={{
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: row.status === 'VALID' ? '#dcfce7' : row.status === 'WARNING' ? '#fef9c3' : '#fee2e2',
-                            color: row.status === 'VALID' ? '#15803d' : row.status === 'WARNING' ? '#a16207' : '#b91c1c',
-                            fontWeight: '700',
-                            fontSize: '10px'
-                          }}>
-                            {row.status} {row.warnings ? `(${row.warnings})` : ''}
-                          </span>
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                        <th style={{ padding: '8px 12px' }}>Row</th>
+                        <th style={{ padding: '8px 12px' }}>ID</th>
+                        <th style={{ padding: '8px 12px' }}>Name</th>
+                        <th style={{ padding: '8px 12px' }}>Target Role</th>
+                        <th style={{ padding: '8px 12px' }}>Department</th>
+                        <th style={{ padding: '8px 12px' }}>Designation</th>
+                        <th style={{ padding: '8px 12px' }}>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {stagingRows.map((row) => (
+                        <tr key={row.rowNum} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '8px 12px', color: '#64748b' }}>#{row.rowNum}</td>
+                          <td style={{ padding: '8px 12px', fontWeight: '700', color: '#2563eb' }}>{row.empId}</td>
+                          <td style={{ padding: '8px 12px', fontWeight: '600' }}>{row.displayName}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              background: row.targetRole === 'Faculty' ? '#eff6ff' : '#ecfdf5',
+                              color: row.targetRole === 'Faculty' ? '#1d4ed8' : '#047857',
+                              fontWeight: '800',
+                              fontSize: '10px'
+                            }}>
+                              {row.targetRole}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 12px' }}>{row.dept}</td>
+                          <td style={{ padding: '8px 12px', color: '#64748b' }}>{row.designation}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: row.status === 'VALID' ? '#dcfce7' : row.status === 'WARNING' ? '#fef9c3' : '#fee2e2',
+                              color: row.status === 'VALID' ? '#15803d' : row.status === 'WARNING' ? '#a16207' : '#b91c1c',
+                              fontWeight: '700',
+                              fontSize: '10px'
+                            }}>
+                              {row.status} {row.warnings ? `(${row.warnings})` : ''}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -449,7 +493,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
 
         {/* Modal Footer Actions */}
         <div style={{
-          padding: '16px 24px',
+          padding: '14px 20px',
           background: '#f8fafc',
           borderTop: '1px solid #e2e8f0',
           display: 'flex',
@@ -460,12 +504,13 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
             onClick={onClose}
             style={{
               padding: '10px 18px',
-              borderRadius: '10px',
+              borderRadius: '8px',
               background: '#ffffff',
               border: '1px solid #cbd5e1',
               color: '#475569',
               fontWeight: '600',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '13px'
             }}
           >
             Cancel
@@ -476,8 +521,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
               onClick={handleExecuteImport}
               style={{
                 padding: '10px 20px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                borderRadius: '8px',
+                background: importCategory === 'faculty' ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
                 color: '#ffffff',
                 fontWeight: '700',
                 border: 'none',
@@ -485,11 +530,12 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                fontSize: '13px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
               }}
             >
               <CheckCircle size={16} />
-              <span>Confirm & Save {metrics.valid + metrics.warning} Employee Records</span>
+              <span>Confirm & Save {metrics.valid + metrics.warning} {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Records</span>
             </button>
           )}
         </div>

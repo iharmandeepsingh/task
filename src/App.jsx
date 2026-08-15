@@ -70,18 +70,18 @@ export default function App() {
   };
 
   // Handle Batch Import Execution
-  const handleImportEmployees = (importedRows) => {
-    const formattedMembers = importedRows.map((emp, idx) => {
-      const initials = emp.displayName
-        ? emp.displayName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
-        : 'EM';
+  const handleImportEmployees = (validRows, category = 'faculty') => {
+    const formattedMembers = validRows.map((emp, idx) => {
+      const names = (emp.displayName || 'Employee').split(' ');
+      const initials = names.map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'EM';
 
       return {
         id: `usr-imp-${Date.now()}-${idx}`,
-        employeeId: emp.empId || `CTU-EMP-${400 + idx}`,
+        employeeId: emp.empId || `CTU-${category === 'faculty' ? 'EMP' : 'ADM'}-${400 + idx}`,
         name: emp.displayName,
-        role: emp.designation || 'Faculty Member',
-        dept: emp.dept || 'General Academic Dept',
+        role: emp.designation || (category === 'faculty' ? 'Faculty Member' : 'Administrative Staff'),
+        category: emp.targetRole || (category === 'faculty' ? 'Faculty' : 'Admin'),
+        dept: emp.dept || (category === 'faculty' ? 'Computer Science & Engineering' : 'University Administration'),
         email: emp.email || `${emp.displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`,
         avatar: initials,
         status: 'Active',
