@@ -25,11 +25,14 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.length > 0 && parsed.every((t) => t.stage === 'Assigned')) {
+        const parsedStages = new Set(parsed.map((t) => t.stage));
+        if (parsed.length < 5 || parsed.every((t) => t.stage === 'Assigned') || !parsedStages.has('Accepted') || !parsedStages.has('In Progress')) {
+          localStorage.setItem('ctu_tasks_data', JSON.stringify(INITIAL_TASKS));
           return INITIAL_TASKS;
         }
         return parsed;
       } catch (e) {
+        localStorage.setItem('ctu_tasks_data', JSON.stringify(INITIAL_TASKS));
         return INITIAL_TASKS;
       }
     }
