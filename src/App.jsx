@@ -177,9 +177,25 @@ export default function App() {
 
   const currentRole = authUser.role; // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
 
-  // Role-Based Task Scoping Filter
+  // Role-Based Task Scoping Filter (Strict Faculty Self-Assigned Task Isolation)
   const roleScopedTasks = tasks.filter((t) => {
-    // Return all tasks for administrators, heads, and demonstration workspace
+    if (currentRole === 'faculty' && authUser) {
+      const authId = (authUser.id || '').toLowerCase();
+      const authEmpId = (authUser.employeeId || '').toLowerCase();
+      const authName = (authUser.name || '').toLowerCase().trim();
+
+      const taskAssigneeId = (t.assigneeId || '').toLowerCase();
+      const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+
+      const isAssignedToUser = 
+        (authId && taskAssigneeId === authId) ||
+        (authEmpId && taskAssigneeId === authEmpId) ||
+        (authName && taskAssigneeName.includes(authName)) ||
+        (authName && authName.includes(taskAssigneeName));
+
+      return isAssignedToUser;
+    }
+    // Return all tasks for administrators and heads
     return true;
   });
 

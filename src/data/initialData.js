@@ -44,6 +44,48 @@ export const INITIAL_TEAM = [
 
 export const INITIAL_TASKS = [
   {
+    id: 'CTU-ENG-301',
+    title: 'Smart City Internet of Things Research Paper Submission',
+    description: 'Prepare and submit peer-reviewed manuscript for IEEE IoT Journal.',
+    creatorName: 'Dr. Gurpreet Singh (Head)',
+    assigneeId: 'usr-26001',
+    assigneeName: 'Arvin Vinayek',
+    departmentName: 'School of Engineering & Technology',
+    priority: 'High',
+    stage: 'In Progress',
+    deadlineHealth: 'Green',
+    progressPercent: 50,
+    dueDate: '2026-08-20',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-av-1', text: 'Compile experimental data plots', done: true },
+      { id: 'st-av-2', text: 'Draft IEEE two-column paper template', done: false }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
+    id: 'CTU-MGT-401',
+    title: 'NAAC Executive Management Documentation',
+    description: 'Assemble School of Management syllabus modules and student feedback audits.',
+    creatorName: 'Dr. Manjit Singh (Super Admin)',
+    assigneeId: 'usr-26010',
+    assigneeName: 'Shilpa Debnath',
+    departmentName: 'School of Management & Sciences',
+    priority: 'Urgent',
+    stage: 'In Progress',
+    deadlineHealth: 'Green',
+    progressPercent: 75,
+    dueDate: '2026-08-22',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-sd-1', text: 'Collect student feedback forms', done: true },
+      { id: 'st-sd-2', text: 'Compile course outcome report', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
     id: 'CTU-CSE-101',
     title: 'NAAC Accreditation Criterion 3 Report',
     description: 'Compile research publications, consultancy grants, and patents data for the CSE Department for NAAC inspection.',
