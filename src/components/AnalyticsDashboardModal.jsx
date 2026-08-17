@@ -23,7 +23,8 @@ export default function AnalyticsDashboardModal({ isOpen, onClose, tasks = [], t
   const totalCount = filteredTasks.length;
   const completedCount = filteredTasks.filter(t => t.stage === 'Accepted' || t.progressPercent === 100).length;
   const inProgressCount = filteredTasks.filter(t => t.stage === 'In Progress' || t.stage === 'Assigned').length;
-  const reviewCount = filteredTasks.filter(t => t.stage === 'Submitted for Review' || t.stage === 'Under Review' || t.stage === 'Re-issued').length;
+  const reviewCount = filteredTasks.filter(t => (t.stage || '').includes('Review') || t.stage === 'Re-issued').length;
+  const urgentCount = filteredTasks.filter(t => t.priority === 'Urgent' || t.priority === 'High').length;
   const completionRate = Math.round((completedCount / (totalCount || 1)) * 100);
 
   // Calculate Velocity Stats per Department
@@ -34,9 +35,10 @@ export default function AnalyticsDashboardModal({ isOpen, onClose, tasks = [], t
       deptVelocityMap[dept] = { total: 0, completed: 0, inProgress: 0, review: 0 };
     }
     deptVelocityMap[dept].total += 1;
-    if (t.stage === 'Accepted' || t.progressPercent === 100) {
+    const stage = t.stage || '';
+    if (stage === 'Accepted' || t.progressPercent === 100) {
       deptVelocityMap[dept].completed += 1;
-    } else if (t.stage.includes('Review')) {
+    } else if (stage.includes('Review') || stage === 'Re-issued') {
       deptVelocityMap[dept].review += 1;
     } else {
       deptVelocityMap[dept].inProgress += 1;
@@ -362,8 +364,8 @@ export default function AnalyticsDashboardModal({ isOpen, onClose, tasks = [], t
                           {t.priority}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', fontWeight: '700', color: t.stage === 'Accepted' || t.stage === 'Completed' ? '#15803d' : '#1d4ed8' }}>
-                        {t.stage}
+                      <td style={{ padding: '10px 12px', fontWeight: '700', color: t.stage === 'Accepted' ? '#15803d' : (t.stage || '').includes('Review') ? '#b45309' : '#1d4ed8' }}>
+                        {t.stage || 'Assigned'}
                       </td>
                     </tr>
                   ))}
