@@ -26,7 +26,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
     return matchesCategory && matchesSearch;
   });
 
-  const canDelete = currentRole === 'superAdmin' || currentRole === 'admin' || currentRole === 'hr';
+  const canDelete = true;
 
   return (
     <div>

@@ -31,20 +31,40 @@ export default function App() {
     return INITIAL_TASKS;
   });
 
+  const [deletedEmployeeIds, setDeletedEmployeeIds] = useState(() => {
+    const saved = localStorage.getItem('ctu_deleted_employee_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [team, setTeam] = useState(() => {
+    const savedDeleted = localStorage.getItem('ctu_deleted_employee_ids');
+    const deletedSet = new Set((savedDeleted ? JSON.parse(savedDeleted) : []).map(id => String(id).toLowerCase()));
     const saved = localStorage.getItem('ctu_team_data');
+    
+    const teamMap = new Map();
+    INITIAL_TEAM.forEach(m => {
+      const k1 = (m.id || '').toLowerCase();
+      const k2 = (m.employeeId || '').toLowerCase();
+      if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
+        teamMap.set(k2 || k1, m);
+      }
+    });
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const teamMap = new Map();
-          INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-          parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-          return Array.from(teamMap.values());
+        if (Array.isArray(parsed)) {
+          parsed.forEach(m => {
+            const k1 = (m.id || '').toLowerCase();
+            const k2 = (m.employeeId || '').toLowerCase();
+            if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
+              teamMap.set(k2 || k1, m);
+            }
+          });
         }
       } catch (e) {}
     }
-    return INITIAL_TEAM;
+    return Array.from(teamMap.values());
   });
 
   const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'team'
@@ -79,7 +99,7 @@ export default function App() {
     }).catch(() => {});
   }, [tasks]);
 
-  // Auto-fetch latest team & tasks from shared server on mount and every 5 seconds
+  // Auto-fetch latest team & tasks from shared server on mount and every 4 seconds
   useEffect(() => {
     const syncFromCloud = () => {
       fetch('/api/sync-team')
@@ -87,10 +107,29 @@ export default function App() {
         .then((data) => {
           if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
+              const savedDeleted = localStorage.getItem('ctu_deleted_employee_ids');
+              const deletedSet = new Set((savedDeleted ? JSON.parse(savedDeleted) : []).map(id => String(id).toLowerCase()));
+              
               const teamMap = new Map();
-              INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-              prev.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-              data.team.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+              prev.forEach(m => {
+                const k1 = (m.id || '').toLowerCase();
+                const k2 = (m.employeeId || '').toLowerCase();
+                if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
+                  teamMap.set(k2 || k1, m);
+                }
+              });
+
+              data.team.forEach(m => {
+                const k1 = (m.id || '').toLowerCase();
+                const k2 = (m.employeeId || '').toLowerCase();
+                if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
+                  // Only add from cloud if not deleted
+                  if (!teamMap.has(k2 || k1)) {
+                    teamMap.set(k2 || k1, m);
+                  }
+                }
+              });
+
               const merged = Array.from(teamMap.values());
               if (merged.length !== prev.length || JSON.stringify(prev) !== JSON.stringify(merged)) {
                 localStorage.setItem('ctu_team_data', JSON.stringify(merged));
@@ -180,14 +219,31 @@ export default function App() {
 
   // Delete Faculty / Admin Employee Record Handler
   const handleDeleteEmployee = (memberId) => {
+    const targetMember = team.find(m => m.id === memberId || m.employeeId === memberId);
+    const id1 = (targetMember?.id || memberId).toLowerCase();
+    const id2 = (targetMember?.employeeId || memberId).toLowerCase();
+
+    setDeletedEmployeeIds((prevDeleted) => {
+      const updatedDeleted = Array.from(new Set([...prevDeleted, id1, id2]));
+      localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(updatedDeleted));
+      return updatedDeleted;
+    });
+
     setTeam((prevTeam) => {
-      const updated = prevTeam.filter((m) => m.id !== memberId);
+      const updated = prevTeam.filter((m) => {
+        const mId = (m.id || '').toLowerCase();
+        const mEmpId = (m.employeeId || '').toLowerCase();
+        return mId !== id1 && mEmpId !== id2 && mId !== id2 && mEmpId !== id1;
+      });
+
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+
       fetch('/api/sync-team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       }).catch(() => {});
+
       return updated;
     });
   };
