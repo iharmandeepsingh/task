@@ -25,23 +25,26 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const parsedStages = new Set(parsed.map((t) => t.stage));
-        if (parsed.length < 5 || parsed.every((t) => t.stage === 'Assigned') || !parsedStages.has('Completed')) {
-          localStorage.setItem('ctu_tasks_data', JSON.stringify(INITIAL_TASKS));
-          return INITIAL_TASKS;
-        }
-        return parsed;
-      } catch (e) {
-        localStorage.setItem('ctu_tasks_data', JSON.stringify(INITIAL_TASKS));
-        return INITIAL_TASKS;
-      }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
     }
     return INITIAL_TASKS;
   });
 
   const [team, setTeam] = useState(() => {
     const saved = localStorage.getItem('ctu_team_data');
-    return saved ? JSON.parse(saved) : INITIAL_TEAM;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const teamMap = new Map();
+          INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+          parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+          return Array.from(teamMap.values());
+        }
+      } catch (e) {}
+    }
+    return INITIAL_TEAM;
   });
 
   const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'team'
@@ -84,9 +87,14 @@ export default function App() {
         .then((data) => {
           if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
-              if (JSON.stringify(prev) !== JSON.stringify(data.team)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(data.team));
-                return data.team;
+              const teamMap = new Map();
+              INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+              prev.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+              data.team.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+              const merged = Array.from(teamMap.values());
+              if (merged.length !== prev.length || JSON.stringify(prev) !== JSON.stringify(merged)) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(merged));
+                return merged;
               }
               return prev;
             });
