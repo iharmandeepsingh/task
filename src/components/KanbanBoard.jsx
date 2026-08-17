@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter } from 'lucide-react';
-import { STAGES } from '../data/initialData';
+import { STAGES, formatDueDateWithDayTime } from '../data/initialData';
 
 export default function KanbanBoard({
   tasks,
@@ -160,6 +160,12 @@ export default function KanbanBoard({
                           </h4>
 
                           <p className="card-desc">{task.description}</p>
+
+                          {/* Due Date with Day, Hours & Minutes */}
+                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #bfdbfe' }}>
+                            <Clock size={12} color="#2563eb" />
+                            <span>Due: {formatDueDateWithDayTime(task.dueDate, task.dueTime)}</span>
+                          </div>
 
                           {/* Explicit Interactive Stage Changer Dropdown */}
                           <div

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Calendar, Tag, CheckSquare, User, Layers, Search, CheckCircle2, Building2 } from 'lucide-react';
-import { STAGES, PRIORITIES } from '../data/initialData';
+import { X, Plus, Trash2, Calendar, Clock, Tag, CheckSquare, User, Layers, Search, CheckCircle2, Building2 } from 'lucide-react';
+import { STAGES, PRIORITIES, formatDueDateWithDayTime } from '../data/initialData';
 
 export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team }) {
   const [title, setTitle] = useState('');
@@ -11,6 +11,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
   const [facultySearch, setFacultySearch] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('17:00');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
 
@@ -22,7 +23,8 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setPriority(taskToEdit.priority || 'Medium');
       setAssigneeId(taskToEdit.assigneeId || team[0]?.id || '');
       setTagsInput(taskToEdit.tags ? taskToEdit.tags.join(', ') : '');
-      setDueDate(taskToEdit.dueDate || new Date().toISOString().split('T')[0]);
+      setDueDate(taskToEdit.dueDate ? taskToEdit.dueDate.split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDueTime(taskToEdit.dueTime || (taskToEdit.dueDate && taskToEdit.dueDate.includes('T') ? taskToEdit.dueDate.split('T')[1].substring(0, 5) : '17:00'));
       setSubtasks(taskToEdit.subtasks || []);
     } else {
       setTitle('');
@@ -32,6 +34,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setAssigneeId(team[0]?.id || '');
       setTagsInput('Academic, CSE');
       setDueDate(new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]);
+      setDueTime('17:00');
       setSubtasks([]);
     }
     setFacultySearch('');
@@ -70,7 +73,8 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       assigneeId: selectedMember?.id || assigneeId,
       assigneeName: selectedMember?.name || 'Faculty Member',
       tags: formattedTags.length > 0 ? formattedTags : ['Academic'],
-      dueDate,
+      dueDate: dueTime ? `${dueDate}T${dueTime}` : dueDate,
+      dueTime,
       subtasks,
       progressPercent: stage === 'Accepted' || stage === 'Completed' ? 100 : 0,
       deadlineHealth: 'Green',
@@ -326,16 +330,39 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
             </div>
           </div>
 
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '4px' }}>
-              Target Due Date
-            </label>
-            <input 
-              type="date" 
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-            />
+          {/* Target Due Date & Time Picker with Day & Hours/Minutes */}
+          <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '8px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                  <Calendar size={13} color="#2563eb" /> Target Due Date
+                </label>
+                <input 
+                  type="date" 
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', background: '#ffffff', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                  <Clock size={13} color="#2563eb" /> Submission Time (Hours : Mins)
+                </label>
+                <input 
+                  type="time" 
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', background: '#ffffff', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            {/* Real-time Formatted Deadline Preview Box */}
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', background: '#eff6ff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={13} color="#2563eb" />
+              <span>Formatted Deadline: <strong>{formatDueDateWithDayTime(dueDate, dueTime)}</strong></span>
+            </div>
           </div>
 
           <div>

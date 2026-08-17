@@ -158,3 +158,28 @@ export const INITIAL_TASKS = [
 
 export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Accepted', 'Completed', 'Rejected', 'Re-issued'];
 export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
+
+export function formatDueDateWithDayTime(dueDate, dueTime) {
+  if (!dueDate) return 'No Deadline';
+  try {
+    let combinedStr = dueDate;
+    if (dueDate.includes('T')) {
+      combinedStr = dueDate;
+    } else if (dueTime) {
+      combinedStr = `${dueDate}T${dueTime}`;
+    } else {
+      combinedStr = `${dueDate}T17:00`;
+    }
+
+    const d = new Date(combinedStr.includes('T') ? combinedStr : combinedStr.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return dueDate;
+
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const monthDayYear = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    return `${monthDayYear} (${dayName}) • ${timeStr}`;
+  } catch (e) {
+    return dueDate;
+  }
+}

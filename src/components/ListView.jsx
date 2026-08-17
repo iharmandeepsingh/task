@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Trash2, Edit2, ArrowUpDown, MessageSquare, Clock, Send, RefreshCw, User, Tag } from 'lucide-react';
-import { STAGES } from '../data/initialData';
+import { STAGES, formatDueDateWithDayTime } from '../data/initialData';
 
 export default function ListView({
   tasks,
@@ -136,9 +136,9 @@ export default function ListView({
                           <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '12px 16px', color: '#475569', fontSize: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Calendar size={13} color="#64748b" /> {task.dueDate}
+                      <td style={{ padding: '12px 16px', color: '#1e40af', fontSize: '11px', fontWeight: '700' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                          <Clock size={13} color="#2563eb" /> {formatDueDateWithDayTime(task.dueDate, task.dueTime)}
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
