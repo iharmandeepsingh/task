@@ -256,32 +256,33 @@ export default function App() {
 
   // Role-Based Task Scoping Filter (Strict RBAC Scoping)
   const roleScopedTasks = tasks.filter((t) => {
-    // 1. Super Admin: Permission to see ALL tasks assigned across the university
-    if (currentRole === 'superAdmin') {
+    const authEmpId = (authUser?.employeeId || '').toLowerCase();
+    const authId = (authUser?.id || '').toLowerCase();
+    const authName = (authUser?.name || '').toLowerCase().trim();
+
+    // 1. Super Admin (or ID 10001): Full executive permission to view ALL tasks across the university
+    if (currentRole === 'superAdmin' || authEmpId === '10001' || authId === 'usr-10001') {
       return true;
     }
-
-    const authId = (authUser?.id || '').toLowerCase();
-    const authEmpId = (authUser?.employeeId || '').toLowerCase();
-    const authName = (authUser?.name || '').toLowerCase().trim();
 
     const taskAssigneeId = (t.assigneeId || '').toLowerCase();
     const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
     const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
     const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
 
-    // 2. University Admin: Can ONLY view tasks assigned BY this specific person
+    // 2. University Admin / HOD: Can ONLY view tasks assigned TO them (Incoming from Super Admin/Admin) OR assigned BY them (Delegated to Faculty/Admin)
     if (currentRole === 'admin' || currentRole === 'adminHead' || currentRole === 'hod') {
       const isCreatorOfTask = 
         (authId && taskCreatorId === authId) ||
+        (authEmpId && taskCreatorId === authEmpId) ||
         (authName && taskCreatorName.includes(authName)) ||
-        (authName && authName.includes(taskCreatorName)) ||
-        (authEmpId && taskCreatorId === authEmpId);
+        (authName && authName.includes(taskCreatorName));
 
       const isAssignedToAdmin = 
         (authId && taskAssigneeId === authId) ||
         (authEmpId && taskAssigneeId === authEmpId) ||
-        (authName && taskAssigneeName.includes(authName));
+        (authName && taskAssigneeName.includes(authName)) ||
+        (authName && authName.includes(taskAssigneeName));
 
       return isCreatorOfTask || isAssignedToAdmin;
     }
