@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield, ClipboardList } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
+export default function HRImportModal({ isOpen, onClose, onImportSuccess, team = [] }) {
   const [importCategory, setImportCategory] = useState('faculty'); // 'faculty' or 'admin'
   const [selectedFileName, setSelectedFileName] = useState(null);
   const [isParsed, setIsParsed] = useState(false);
@@ -16,6 +16,34 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
+
+  // Load and Preview All Current Loaded Master Directory Staff Records
+  const handleLoadCurrentMasterData = () => {
+    if (!team || team.length === 0) {
+      alert('No staff or faculty records currently present in the master directory.');
+      return;
+    }
+
+    const currentCategoryTeam = team.filter((m) => {
+      if (importCategory === 'faculty') {
+        return m.category === 'Faculty' || (m.role && (m.role.toLowerCase().includes('faculty') || m.role.toLowerCase().includes('professor') || m.role.toLowerCase().includes('lecturer')));
+      } else {
+        return m.category === 'Admin' || (m.role && (m.role.toLowerCase().includes('admin') || m.role.toLowerCase().includes('hr') || m.role.toLowerCase().includes('super') || m.role.toLowerCase().includes('head')));
+      }
+    });
+
+    const targetList = currentCategoryTeam.length > 0 ? currentCategoryTeam : team;
+
+    const formatted = targetList.map((m, idx) => ({
+      'EMP CODE': m.employeeId || m.id || `260${10 + idx}`,
+      'Faculty Name': m.name,
+      'Email': m.email,
+      'Dept': m.dept || 'School of Engineering & Technology',
+      'Designation': m.role || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff')
+    }));
+
+    processRawRows(formatted, `Master_Directory_${importCategory.toUpperCase()}_Records.xlsx`, `All Active ${importCategory.toUpperCase()} Staff (${targetList.length})`, importCategory);
+  };
 
   // Process raw parsed JS objects into normalized staging rows
   const processRawRows = (rawRows, fileName, sheetTitle = 'Sheet1', category = importCategory) => {
@@ -437,28 +465,52 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess }) {
                 )}
 
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
-                  ── OR LOAD PRESET SPREADSHEET DEMO ──
+                  ── OR PREVIEW / LOAD CURRENT MASTER DIRECTORY DATA ──
                 </div>
 
-                <button
-                  onClick={() => handlePresetSelect(importCategory)}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    color: '#334155',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <FileText size={14} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} />
-                  <span>Load Preset {importCategory === 'faculty' ? 'Faculty' : 'Admin'} Spreadsheet</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleLoadCurrentMasterData}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: '#f8fafc',
+                      border: '1px solid #93c5fd',
+                      color: '#1d4ed8',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <RefreshCw size={14} color="#2563eb" />
+                    <span>📊 Load Current Directory Data ({team.length} Staff Members)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePresetSelect(importCategory)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      color: '#334155',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <FileText size={14} color={importCategory === 'faculty' ? '#2563eb' : '#059669'} />
+                    <span>Load Sample Spreadsheet</span>
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

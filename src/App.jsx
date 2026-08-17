@@ -553,6 +553,7 @@ export default function App() {
           isOpen={isHRImportOpen}
           onClose={() => setIsHRImportOpen(false)}
           onImportSuccess={handleImportEmployees}
+          team={team}
         />
       )}
 
