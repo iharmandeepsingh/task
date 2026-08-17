@@ -4983,6 +4983,25 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-336",
+      "title": "exam",
+      "description": "exam",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938392080-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T14:00",
+      "dueTime": "14:00",
+      "subtasks": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
       "id": "CTU-CSE-451",
       "title": "erp handle foe students",
       "description": "has to do all the erp work",

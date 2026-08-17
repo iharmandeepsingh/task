@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter } from 'lucide-react';
+import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter, Paperclip } from 'lucide-react';
 import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
 
 export default function KanbanBoard({
@@ -182,6 +182,37 @@ export default function KanbanBoard({
                           </h4>
 
                           <p className="card-desc">{task.description}</p>
+
+                          {/* Attached Documents Pills */}
+                          {task.attachments && task.attachments.length > 0 && (
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px', marginBottom: '4px' }}>
+                              {task.attachments.map((att) => (
+                                <a
+                                  key={att.name}
+                                  href={att.dataUrl || '#'}
+                                  download={att.name}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: '700',
+                                    color: '#1d4ed8',
+                                    background: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    padding: '2px 6px',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    textDecoration: 'none'
+                                  }}
+                                  title={`Download ${att.name}`}
+                                >
+                                  <Paperclip size={11} color="#2563eb" />
+                                  <span>{att.name}</span>
+                                </a>
+                              ))}
+                            </div>
+                          )}
 
                           {/* Due Date with Day, Hours & Minutes */}
                           <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #bfdbfe' }}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Calendar, Clock, Tag, CheckSquare, User, Layers, Search, CheckCircle2, Building2 } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, Clock, Tag, CheckSquare, User, Layers, Search, CheckCircle2, Building2, Paperclip, FileText } from 'lucide-react';
 import { STAGES, PRIORITIES, formatDueDateWithDayTime } from '../data/initialData';
 
 export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team }) {
@@ -14,6 +14,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
   const [dueTime, setDueTime] = useState('17:00');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
+  const [taskAttachments, setTaskAttachments] = useState([]);
 
   useEffect(() => {
     if (taskToEdit) {
@@ -26,6 +27,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setDueDate(taskToEdit.dueDate ? taskToEdit.dueDate.split('T')[0] : new Date().toISOString().split('T')[0]);
       setDueTime(taskToEdit.dueTime || (taskToEdit.dueDate && taskToEdit.dueDate.includes('T') ? taskToEdit.dueDate.split('T')[1].substring(0, 5) : '17:00'));
       setSubtasks(taskToEdit.subtasks || []);
+      setTaskAttachments(taskToEdit.attachments || []);
     } else {
       setTitle('');
       setDescription('');
@@ -36,6 +38,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setDueDate(new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]);
       setDueTime('17:00');
       setSubtasks([]);
+      setTaskAttachments([]);
     }
     setFacultySearch('');
   }, [taskToEdit, isOpen, team]);
@@ -76,6 +79,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       dueDate: dueTime ? `${dueDate}T${dueTime}` : dueDate,
       dueTime,
       subtasks,
+      attachments: taskAttachments,
       progressPercent: stage === 'Accepted' || stage === 'Completed' ? 100 : 0,
       deadlineHealth: 'Green',
       isIdle: false
@@ -409,6 +413,95 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
                 </button>
               </div>
             ))}
+          </div>
+
+          {/* Direct Document Attachment Upload Section */}
+          <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Paperclip size={16} color="#2563eb" />
+              <span>Direct Document Attachments (PDF / Word Manuscripts, Rubrics & Annexures)</span>
+            </label>
+
+            <input
+              type="file"
+              id="task-modal-file-input"
+              accept=".pdf, .doc, .docx, .xls, .xlsx, .csv, .png, .jpg, .jpeg"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                files.forEach((file) => {
+                  const fileExt = file.name.split('.').pop().toLowerCase();
+                  let fileType = 'PDF';
+                  if (['doc', 'docx'].includes(fileExt)) fileType = 'DOC';
+                  else if (['xls', 'xlsx', 'csv'].includes(fileExt)) fileType = 'EXCEL';
+                  else if (['png', 'jpg', 'jpeg'].includes(fileExt)) fileType = 'IMAGE';
+
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    setTaskAttachments(prev => [
+                      ...prev,
+                      {
+                        id: `att-${Date.now()}-${Math.random()}`,
+                        name: file.name,
+                        size: `${(file.size / 1024).toFixed(1)} KB`,
+                        type: fileType,
+                        dataUrl: evt.target.result
+                      }
+                    ]);
+                  };
+                  reader.readAsDataURL(file);
+                });
+                e.target.value = '';
+              }}
+            />
+
+            <label
+              htmlFor="task-modal-file-input"
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                background: '#eff6ff',
+                border: '1px solid #93c5fd',
+                color: '#1d4ed8',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginBottom: '8px'
+              }}
+            >
+              <Paperclip size={14} />
+              <span>➕ Upload Research Paper, Question Rubric or Annexure</span>
+            </label>
+
+            {/* List of Attached Documents */}
+            {taskAttachments.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                {taskAttachments.map((att) => (
+                  <div key={att.id || att.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
+                      <FileText size={14} color="#2563eb" />
+                      <span>{att.name}</span>
+                      <span style={{ fontSize: '10px', color: '#64748b' }}>({att.size})</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {att.dataUrl && (
+                        <a href={att.dataUrl} download={att.name} style={{ fontSize: '11px', color: '#2563eb', fontWeight: '700', textDecoration: 'none' }}>
+                          View
+                        </a>
+                      )}
+                      <button type="button" onClick={() => setTaskAttachments(taskAttachments.filter(a => a.name !== att.name))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
