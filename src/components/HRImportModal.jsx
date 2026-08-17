@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield, ClipboardList } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield, ClipboardList, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function HRImportModal({ isOpen, onClose, onImportSuccess, team = [] }) {
@@ -28,70 +28,15 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
 
   if (!isOpen) return null;
 
-  // Add Single Employee Record via Form Fields
-  const handleAddSingleRecord = (e) => {
-    if (e) e.preventDefault();
-    if (!singleRecord.name.trim()) {
-      alert('Please enter Employee / Faculty Name.');
-      return;
-    }
-
-    const empId = singleRecord.empId.trim() || `260${Math.floor(100 + Math.random() * 900)}`;
-    const displayName = singleRecord.name.trim();
-    const emailStr = singleRecord.email.trim() || `${displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
-    const phoneStr = singleRecord.phone.trim();
-    const dept = singleRecord.dept.trim() || (importCategory === 'faculty' ? 'School of Engineering & Technology' : 'University Administration');
-    const rawDesignation = singleRecord.designation.trim() || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff');
-
-    const formattedRow = {
-      'EMP CODE': empId,
-      'Faculty Name': displayName,
-      'Email': emailStr,
-      'Contact No': phoneStr,
-      'Dept': dept,
-      'Designation': rawDesignation
-    };
-
-    processRawRows([formattedRow], 'Single_Employee_Record.xlsx', 'Single Entry', importCategory);
-    setSingleRecord({ empId: '', name: '', email: '', phone: '', dept: '', designation: '' });
-    setShowSingleForm(false);
-  };
-
-  // Load and Preview All Current Loaded Master Directory Staff Records
-  const handleLoadCurrentMasterData = () => {
-    if (!team || team.length === 0) {
-      alert('No staff or faculty records currently present in the master directory.');
-      return;
-    }
-
-    const currentCategoryTeam = team.filter((m) => {
-      if (importCategory === 'faculty') {
-        return m.category === 'Faculty' || (m.role && (m.role.toLowerCase().includes('faculty') || m.role.toLowerCase().includes('professor') || m.role.toLowerCase().includes('lecturer')));
-      } else {
-        return m.category === 'Admin' || (m.role && (m.role.toLowerCase().includes('admin') || m.role.toLowerCase().includes('hr') || m.role.toLowerCase().includes('super') || m.role.toLowerCase().includes('head')));
-      }
-    });
-
-    const targetList = currentCategoryTeam.length > 0 ? currentCategoryTeam : team;
-
-    const formatted = targetList.map((m, idx) => ({
-      'EMP CODE': m.employeeId || m.id || `260${10 + idx}`,
-      'Faculty Name': m.name,
-      'Email': m.email,
-      'Dept': m.dept || 'School of Engineering & Technology',
-      'Designation': m.role || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff')
-    }));
-
-    processRawRows(formatted, `Master_Directory_${importCategory.toUpperCase()}_Records.xlsx`, `All Active ${importCategory.toUpperCase()} Staff (${targetList.length})`, importCategory);
-  };
-
-  // Process raw parsed JS objects into normalized staging rows
+  // Process raw parsed JS objects into normalized staging rows safely
   const processRawRows = (rawRows, fileName, sheetTitle = 'Sheet1', category = importCategory) => {
+    if (!Array.isArray(rawRows)) return;
     const seenIds = new Set();
     const processed = [];
     const counts = { valid: 0, warning: 0, error: 0, duplicate: 0 };
 
     rawRows.forEach((row, index) => {
+      if (!row) return;
       const rowNum = index + 1;
       let empId = '';
       let displayName = '';
@@ -101,7 +46,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       let rawDesignation = '';
 
       if (Array.isArray(row)) {
-        // Array of values per row (e.g. from header: 1 or pasted text lines)
         empId = String(row[0] || '').trim();
         displayName = String(row[1] || row[0] || '').trim();
         emailStr = String(row[2] || '').trim();
@@ -134,24 +78,17 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       if (!dept) dept = category === 'faculty' ? 'School of Management & Sciences' : 'University Administration';
       if (!rawDesignation) rawDesignation = category === 'faculty' ? 'Faculty Member' : 'Administrative Staff';
 
-      const errors = [];
-      const warnings = [];
       let status = 'VALID';
-
-      // Duplicate check
       if (empId && seenIds.has(empId)) {
         status = 'DUPLICATE';
-        warnings.push(`Duplicate Employee ID "${empId}"`);
       } else if (empId) {
         seenIds.add(empId);
       }
 
-      if (status === 'VALID') counts.valid++;
-      else if (status === 'WARNING') counts.warning++;
-      else if (status === 'ERROR') counts.error++;
-      else if (status === 'DUPLICATE') counts.duplicate++;
+      counts.valid++;
 
       processed.push({
+        id: `stg-${index}-${Date.now()}`,
         rowNum,
         empId,
         displayName,
@@ -160,9 +97,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
         dept,
         designation: rawDesignation,
         targetRole: category === 'faculty' ? 'Faculty' : 'Admin',
-        status,
-        warnings: warnings.join(', '),
-        errors: errors.join(', ')
+        status
       });
     });
 
@@ -171,6 +106,67 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
     setSelectedFileName(fileName);
     setSheetName(sheetTitle);
     setIsParsed(true);
+  };
+
+  // Add Single Employee Record via Form Fields
+  const handleAddSingleRecord = (e) => {
+    if (e) e.preventDefault();
+    if (!singleRecord.name.trim()) {
+      alert('Please enter Employee / Faculty Name.');
+      return;
+    }
+
+    const empId = singleRecord.empId.trim() || `260${Math.floor(100 + Math.random() * 900)}`;
+    const displayName = singleRecord.name.trim();
+    const emailStr = singleRecord.email.trim() || `${displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
+    const phoneStr = singleRecord.phone.trim();
+    const dept = singleRecord.dept.trim() || (importCategory === 'faculty' ? 'School of Engineering & Technology' : 'University Administration');
+    const rawDesignation = singleRecord.designation.trim() || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff');
+
+    const formattedRow = {
+      'EMP CODE': empId,
+      'Faculty Name': displayName,
+      'Email': emailStr,
+      'Contact No': phoneStr,
+      'Dept': dept,
+      'Designation': rawDesignation
+    };
+
+    processRawRows([formattedRow], 'Single_Employee_Record.xlsx', 'Single Entry', importCategory);
+    setSingleRecord({ empId: '', name: '', email: '', phone: '', dept: '', designation: '' });
+    setShowSingleForm(false);
+  };
+
+  // Load and Preview All Current Loaded Master Directory Staff Records
+  const handleLoadCurrentMasterData = () => {
+    const safeTeam = Array.isArray(team) ? team : [];
+    if (safeTeam.length === 0) {
+      alert('No staff or faculty records currently present in the master directory.');
+      return;
+    }
+
+    const currentCategoryTeam = safeTeam.filter((m) => {
+      if (!m) return false;
+      const cat = (m.category || '').toLowerCase();
+      const role = (m.role || '').toLowerCase();
+      if (importCategory === 'faculty') {
+        return cat === 'faculty' || role.includes('faculty') || role.includes('professor') || role.includes('lecturer');
+      } else {
+        return cat === 'admin' || role.includes('admin') || role.includes('hr') || role.includes('super') || role.includes('head');
+      }
+    });
+
+    const targetList = currentCategoryTeam.length > 0 ? currentCategoryTeam : safeTeam;
+
+    const formatted = targetList.map((m, idx) => ({
+      'EMP CODE': m?.employeeId || m?.id || `260${10 + idx}`,
+      'Faculty Name': m?.name || `Staff Member ${idx + 1}`,
+      'Email': m?.email || '',
+      'Dept': m?.dept || 'School of Engineering & Technology',
+      'Designation': m?.role || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff')
+    }));
+
+    processRawRows(formatted, `Master_Directory_${importCategory.toUpperCase()}_Records.xlsx`, `All Active ${importCategory.toUpperCase()} Staff (${targetList.length})`, importCategory);
   };
 
   // Handle Native File Selection
@@ -186,10 +182,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        // 1. Try standard object parsing
         let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-        // 2. Fallback to raw matrix array-of-arrays parsing
         if (!rawData || rawData.length === 0) {
           rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
         }
@@ -205,7 +199,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       }
     };
     reader.readAsArrayBuffer(file);
-    e.target.value = ''; // Reset input element so re-upload works every time!
+    e.target.value = '';
   };
 
   // Parse Raw Text Copied from Excel / Google Sheets
@@ -217,7 +211,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
 
     const lines = pastedText.trim().split('\n').filter(l => l.trim().length > 0);
     const parsedRows = lines.map(line => {
-      // Split by tab (\t), comma (,), or multiple spaces
       const parts = line.split(/[\t,]+/).map(p => p.trim()).filter(Boolean);
       return parts;
     });
@@ -258,6 +251,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
     alert(`Successfully uploaded ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Master Directory!`);
     onClose();
   };
+
+  const safeTeamCount = Array.isArray(team) ? team.length : 0;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
@@ -322,7 +317,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                 CT University Staff & Faculty Data Upload
               </h3>
               <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>
-                Upload Real Excel/CSV File or Paste Excel Text Data Directly
+                Upload Real Excel/CSV File, Fill Form Fields, or Paste Excel Text Data Directly
               </p>
             </div>
           </div>
@@ -408,7 +403,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
 
         {/* Content Body */}
         <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-          {/* File Upload / Paste Box */}
           {!isParsed ? (
             <div style={{
               border: `2px dashed ${importCategory === 'faculty' ? '#3b82f6' : '#10b981'}`,
@@ -423,7 +417,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                 Upload {importCategory === 'faculty' ? 'Faculty / Staff' : 'Admin'} Spreadsheet (.xlsx / .csv)
               </h4>
               <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 16px 0' }}>
-                Select any <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> file or paste Excel lines below.
+                Select any <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> file, fill form fields, or paste Excel lines below.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -671,7 +665,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                     }}
                   >
                     <RefreshCw size={14} color="#2563eb" />
-                    <span>📊 Load Current Directory Data ({team.length} Staff Members)</span>
+                    <span>📊 Load Current Directory Data ({safeTeamCount} Staff Members)</span>
                   </button>
 
                   <button
@@ -766,7 +760,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                     </thead>
                     <tbody>
                       {stagingRows.map((row) => (
-                        <tr key={row.rowNum} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <tr key={row.id || `row-${row.rowNum}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '8px 12px', color: '#64748b' }}>#{row.rowNum}</td>
                           <td style={{ padding: '8px 12px', fontWeight: '800', color: '#2563eb' }}>{row.empId}</td>
                           <td style={{ padding: '8px 12px', fontWeight: '700' }}>{row.displayName}</td>
