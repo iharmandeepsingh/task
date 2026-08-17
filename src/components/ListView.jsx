@@ -127,23 +127,36 @@ export default function ListView({
                         )}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <select 
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
-                            background: '#ffffff',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#0f172a',
-                            cursor: 'pointer',
-                            outline: 'none'
-                          }}
-                          value={task.stage}
-                          onChange={(e) => onMoveStage && onMoveStage(task.id, e.target.value)}
-                        >
-                          {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                        {(() => {
+                          const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
+                          const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+                          const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+                          let allowedStages = STAGES;
+                          if (isAssignee && !isCreator && !isSuperAdmin10001) {
+                            allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+                          }
+
+                          return (
+                            <select 
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                border: '1px solid #cbd5e1',
+                                background: '#ffffff',
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                color: '#0f172a',
+                                cursor: 'pointer',
+                                outline: 'none'
+                              }}
+                              value={task.stage}
+                              onChange={(e) => onMoveStage && onMoveStage(task.id, e.target.value)}
+                            >
+                              {allowedStages.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{

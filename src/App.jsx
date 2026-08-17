@@ -359,13 +359,26 @@ export default function App() {
 
   // Instant Stage Move Handler with functional state update and localStorage sync
   const handleMoveStage = (taskId, newStage) => {
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (targetTask) {
+      const isAssignee = authUser?.name === targetTask.assigneeName || authUser?.id === targetTask.assigneeId || authUser?.employeeId === targetTask.assigneeId;
+      const isCreator = authUser?.name === targetTask.creatorName || authUser?.id === targetTask.creatorId || authUser?.employeeId === targetTask.creatorId;
+      const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+      // Security Guard: Assignees cannot self-accept or self-review
+      if (isAssignee && !isCreator && !isSuperAdmin10001 && ['Under Review', 'Re-issued', 'Accepted'].includes(newStage)) {
+        alert(`🛑 Authorization Denied: As the Assignee of this task, you can move work to "In Progress" or "Submitted for Review". Only the Assigner (${targetTask.creatorName || 'Super Admin'}) can mark tasks as Under Review, Re-issued, or Accepted.`);
+        return;
+      }
+    }
+
     setTasks((prevTasks) => {
       const updated = prevTasks.map((t) => {
         if (t.id === taskId) {
           let progressPercent = t.progressPercent;
           let deadlineHealth = t.deadlineHealth;
 
-          if (newStage === 'Accepted' || newStage === 'Completed') {
+          if (newStage === 'Accepted') {
             progressPercent = 100;
             deadlineHealth = 'Green';
           } else if (newStage === 'Submitted for Review') {

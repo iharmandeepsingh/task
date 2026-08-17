@@ -80,7 +80,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       dueTime,
       subtasks,
       attachments: taskAttachments,
-      progressPercent: stage === 'Accepted' || stage === 'Completed' ? 100 : 0,
+      progressPercent: stage === 'Accepted' ? 100 : 0,
       deadlineHealth: 'Green',
       isIdle: false
     });

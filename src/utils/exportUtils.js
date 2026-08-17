@@ -59,9 +59,9 @@ export function exportTasksToPDF(tasks = [], reportTitle = 'NAAC & NBA Accredita
   }
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.stage === 'Accepted' || t.stage === 'Completed' || t.progressPercent === 100).length;
+  const completedTasks = tasks.filter(t => t.stage === 'Accepted' || t.progressPercent === 100).length;
   const inProgressTasks = tasks.filter(t => t.stage === 'In Progress' || t.stage === 'Assigned').length;
-  const reviewTasks = tasks.filter(t => t.stage === 'Submitted for Review' || t.stage === 'Under Review').length;
+  const reviewTasks = tasks.filter(t => t.stage.includes('Review') || t.stage === 'Re-issued').length;
   const completionRate = Math.round((completedTasks / (totalTasks || 1)) * 100);
 
   // Calculate Department Breakdown
@@ -70,7 +70,7 @@ export function exportTasksToPDF(tasks = [], reportTitle = 'NAAC & NBA Accredita
     const d = t.departmentName || t.dept || 'General Academic';
     if (!deptMap[d]) deptMap[d] = { total: 0, completed: 0, inProgress: 0 };
     deptMap[d].total += 1;
-    if (t.stage === 'Accepted' || t.stage === 'Completed' || t.progressPercent === 100) {
+    if (t.stage === 'Accepted' || t.progressPercent === 100) {
       deptMap[d].completed += 1;
     } else {
       deptMap[d].inProgress += 1;

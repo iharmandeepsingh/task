@@ -195,8 +195,8 @@ export default function TeamDirectory({ team = [], tasks = [], currentRole, auth
         ) : (
           filteredTeam.map((member) => {
             const memberTasks = tasks.filter(t => t.assigneeId === member.id);
-            const activeTasks = memberTasks.filter(t => t.stage !== 'Accepted' && t.stage !== 'Completed').length;
-            const completedTasks = memberTasks.filter(t => t.stage === 'Accepted' || t.stage === 'Completed').length;
+            const activeTasks = memberTasks.filter(t => t.stage !== 'Accepted').length;
+            const completedTasks = memberTasks.filter(t => t.stage === 'Accepted').length;
             const isFacultyRole = member.category === 'Faculty' || (member.role && member.role.toLowerCase().includes('faculty')) || (member.role && member.role.toLowerCase().includes('professor'));
             const memberPassword = member.password || member.name || '123';
 

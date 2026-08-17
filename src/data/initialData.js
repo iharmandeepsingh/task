@@ -156,7 +156,7 @@ export const INITIAL_TASKS = [
   }
 ];
 
-export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Accepted', 'Completed', 'Rejected', 'Re-issued'];
+export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Re-issued', 'Accepted'];
 export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
 export function formatDueDateWithDayTime(dueDate, dueTime) {
@@ -185,7 +185,7 @@ export function formatDueDateWithDayTime(dueDate, dueTime) {
 }
 
 export function getUrgentCountdownInfo(dueDate, dueTime, stage) {
-  if (!dueDate || stage === 'Accepted' || stage === 'Completed') return null;
+  if (!dueDate || stage === 'Accepted') return null;
 
   try {
     let combinedStr = dueDate;

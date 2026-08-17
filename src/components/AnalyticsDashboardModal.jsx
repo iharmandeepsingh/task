@@ -21,10 +21,9 @@ export default function AnalyticsDashboardModal({ isOpen, onClose, tasks = [], t
 
   // Calculate Metrics
   const totalCount = filteredTasks.length;
-  const completedCount = filteredTasks.filter(t => t.stage === 'Accepted' || t.stage === 'Completed' || t.progressPercent === 100).length;
+  const completedCount = filteredTasks.filter(t => t.stage === 'Accepted' || t.progressPercent === 100).length;
   const inProgressCount = filteredTasks.filter(t => t.stage === 'In Progress' || t.stage === 'Assigned').length;
-  const reviewCount = filteredTasks.filter(t => t.stage === 'Submitted for Review' || t.stage === 'Under Review').length;
-  const urgentCount = filteredTasks.filter(t => t.priority === 'Urgent' || t.priority === 'High').length;
+  const reviewCount = filteredTasks.filter(t => t.stage === 'Submitted for Review' || t.stage === 'Under Review' || t.stage === 'Re-issued').length;
   const completionRate = Math.round((completedCount / (totalCount || 1)) * 100);
 
   // Calculate Velocity Stats per Department
@@ -35,7 +34,7 @@ export default function AnalyticsDashboardModal({ isOpen, onClose, tasks = [], t
       deptVelocityMap[dept] = { total: 0, completed: 0, inProgress: 0, review: 0 };
     }
     deptVelocityMap[dept].total += 1;
-    if (t.stage === 'Accepted' || t.stage === 'Completed' || t.progressPercent === 100) {
+    if (t.stage === 'Accepted' || t.progressPercent === 100) {
       deptVelocityMap[dept].completed += 1;
     } else if (t.stage.includes('Review')) {
       deptVelocityMap[dept].review += 1;

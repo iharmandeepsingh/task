@@ -4984,6 +4984,26 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-185",
+      "title": "hjbnhjh nihfihr",
+      "description": "kjhdfiu",
+      "stage": "Submitted for Review",
+      "priority": "Medium",
+      "assigneeId": "usr-24051",
+      "assigneeName": "Dr. Nitin Tandon",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [],
+      "attachments": [],
+      "progressPercent": 90,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
       "id": "CTU-CSE-194",
       "title": "title",
       "description": "title",
@@ -5076,9 +5096,9 @@
       "assigneeName": "Super Admin",
       "departmentName": "School of Engineering & Technology",
       "priority": "High",
-      "stage": "In Progress",
+      "stage": "Under Review",
       "deadlineHealth": "Green",
-      "progressPercent": 50,
+      "progressPercent": 90,
       "dueDate": "2026-08-25",
       "isIdle": false,
       "subtasks": [
@@ -5090,7 +5110,7 @@
         {
           "id": "st-av-2",
           "text": "Draft IEEE two-column paper template",
-          "done": false
+          "done": true
         }
       ],
       "extensions": [],
@@ -5113,7 +5133,7 @@
       "assigneeName": "Dr. Nitin Tandon",
       "departmentName": "School of Management & Sciences",
       "priority": "Urgent",
-      "stage": "In Progress",
+      "stage": "Under Review",
       "deadlineHealth": "Green",
       "progressPercent": 75,
       "dueDate": "2026-08-22",
@@ -5178,9 +5198,9 @@
       "assigneeName": "Dr. Manjit Singh",
       "departmentName": "Central Academic Affairs",
       "priority": "Urgent",
-      "stage": "Under Review",
+      "stage": "Accepted",
       "deadlineHealth": "Green",
-      "progressPercent": 80,
+      "progressPercent": 100,
       "dueDate": "2026-08-24",
       "isIdle": false,
       "subtasks": [
@@ -5238,11 +5258,11 @@
       "assigneeName": "Dr. Nitin Tandon",
       "departmentName": "School of Pharmaceutical Sciences",
       "priority": "Low",
-      "stage": "Re-issued",
-      "deadlineHealth": "Orange",
-      "progressPercent": 40,
+      "stage": "Under Review",
+      "deadlineHealth": "Green",
+      "progressPercent": 100,
       "dueDate": "2026-08-28",
-      "isIdle": true,
+      "isIdle": false,
       "subtasks": [
         {
           "id": "st-ph-1",

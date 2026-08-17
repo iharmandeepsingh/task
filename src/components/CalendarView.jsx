@@ -174,7 +174,7 @@ export default function CalendarView({ tasks = [], onEditTask, onOpenChat, onMov
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1 }}>
                 {dayTasks.map((t) => {
                   const urgent = getUrgentCountdownInfo(t.dueDate, t.dueTime, t.stage);
-                  const isCompleted = t.stage === 'Accepted' || t.stage === 'Completed';
+                  const isCompleted = t.stage === 'Accepted';
 
                   return (
                     <div

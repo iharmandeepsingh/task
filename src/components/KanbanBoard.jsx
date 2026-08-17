@@ -257,34 +257,48 @@ export default function KanbanBoard({
                             <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
                               Move Task Stage:
                             </label>
-                            <select
-                              value={task.stage}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                onMoveStage(task.id, e.target.value);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                borderRadius: '8px',
-                                border: '1px solid #cbd5e1',
-                                background: '#f8fafc',
-                                color: '#0f172a',
-                                fontSize: '12px',
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                outline: 'none',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                              }}
-                            >
-                              {STAGES.map((s) => (
-                                <option key={s} value={s}>
-                                  Stage: {s}
-                                </option>
-                              ))}
-                            </select>
+                            {(() => {
+                              const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
+                              const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+                              const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+                              // Assignee Stage Restriction Guard: Assignee cannot self-accept or self-review
+                              let allowedStages = STAGES;
+                              if (isAssignee && !isCreator && !isSuperAdmin10001) {
+                                allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+                              }
+
+                              return (
+                                <select
+                                  value={task.stage}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    onMoveStage(task.id, e.target.value);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 10px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#f8fafc',
+                                    color: '#0f172a',
+                                    fontSize: '12px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                  }}
+                                >
+                                  {allowedStages.map((s) => (
+                                    <option key={s} value={s}>
+                                      Stage: {s}
+                                    </option>
+                                  ))}
+                                </select>
+                              );
+                            })()}
                           </div>
 
                           {/* Subtask Progress Checklist */}
