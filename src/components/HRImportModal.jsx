@@ -11,11 +11,51 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
   const [pastedText, setPastedText] = useState('');
   const [showPasteBox, setShowPasteBox] = useState(false);
   
+  // Single Record Form State
+  const [showSingleForm, setShowSingleForm] = useState(false);
+  const [singleRecord, setSingleRecord] = useState({
+    empId: '',
+    name: '',
+    email: '',
+    phone: '',
+    dept: '',
+    designation: ''
+  });
+
   // Staging metrics
   const [metrics, setMetrics] = useState({ valid: 0, warning: 0, error: 0, duplicate: 0 });
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
+
+  // Add Single Employee Record via Form Fields
+  const handleAddSingleRecord = (e) => {
+    if (e) e.preventDefault();
+    if (!singleRecord.name.trim()) {
+      alert('Please enter Employee / Faculty Name.');
+      return;
+    }
+
+    const empId = singleRecord.empId.trim() || `260${Math.floor(100 + Math.random() * 900)}`;
+    const displayName = singleRecord.name.trim();
+    const emailStr = singleRecord.email.trim() || `${displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
+    const phoneStr = singleRecord.phone.trim();
+    const dept = singleRecord.dept.trim() || (importCategory === 'faculty' ? 'School of Engineering & Technology' : 'University Administration');
+    const rawDesignation = singleRecord.designation.trim() || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff');
+
+    const formattedRow = {
+      'EMP CODE': empId,
+      'Faculty Name': displayName,
+      'Email': emailStr,
+      'Contact No': phoneStr,
+      'Dept': dept,
+      'Designation': rawDesignation
+    };
+
+    processRawRows([formattedRow], 'Single_Employee_Record.xlsx', 'Single Entry', importCategory);
+    setSingleRecord({ empId: '', name: '', email: '', phone: '', dept: '', designation: '' });
+    setShowSingleForm(false);
+  };
 
   // Load and Preview All Current Loaded Master Directory Staff Records
   const handleLoadCurrentMasterData = () => {
@@ -407,25 +447,167 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                   <span>Choose File from Computer / Phone</span>
                 </button>
 
-                <button
-                  onClick={() => setShowPasteBox(!showPasteBox)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    background: '#f1f5f9',
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => { setShowPasteBox(!showPasteBox); setShowSingleForm(false); }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      background: showPasteBox ? '#eff6ff' : '#f1f5f9',
+                      border: showPasteBox ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                      color: '#1e293b',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <ClipboardList size={15} color="#2563eb" />
+                    <span>{showPasteBox ? 'Hide Paste Box' : '📋 Paste Copied Excel Rows'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { setShowSingleForm(!showSingleForm); setShowPasteBox(false); }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      background: showSingleForm ? '#ecfdf5' : '#f1f5f9',
+                      border: showSingleForm ? '1px solid #6ee7b7' : '1px solid #cbd5e1',
+                      color: '#065f46',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Plus size={15} color="#059669" />
+                    <span>{showSingleForm ? 'Hide Form' : '✍️ Add Single Record (Form Fields)'}</span>
+                  </button>
+                </div>
+
+                {/* Form Fields for Single Employee Record */}
+                {showSingleForm && (
+                  <div style={{
+                    width: '100%',
+                    marginTop: '12px',
+                    padding: '16px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
                     border: '1px solid #cbd5e1',
-                    color: '#1e293b',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <ClipboardList size={15} color="#2563eb" />
-                  <span>{showPasteBox ? 'Hide Paste Box' : '📋 Or Paste Copied Excel Rows Directly'}</span>
-                </button>
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    textAlign: 'left'
+                  }}>
+                    <h5 style={{ fontSize: '13px', fontWeight: '800', margin: '0 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <UserCheck size={16} color="#059669" />
+                      <span>Single Record Form Fields (Add {importCategory === 'faculty' ? 'Faculty Member' : 'Admin Staff'})</span>
+                    </h5>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          🪪 Staff ID / Emp Code
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 26015"
+                          value={singleRecord.empId}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, empId: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          👤 Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Dr. Rajesh Sharma"
+                          value={singleRecord.name}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, name: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          📧 Official Email
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="e.g. rajesh@ctu.edu.in"
+                          value={singleRecord.email}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, email: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          📱 Mobile / Phone
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 9876543210"
+                          value={singleRecord.phone}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, phone: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          🏫 Department / School
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Computer Science & Eng"
+                          value={singleRecord.dept}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, dept: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '3px' }}>
+                          💼 Designation / Role
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Assistant Professor"
+                          value={singleRecord.designation}
+                          onChange={(e) => setSingleRecord({ ...singleRecord, designation: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleAddSingleRecord}
+                      style={{
+                        padding: '9px 18px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
+                      }}
+                    >
+                      <Plus size={16} />
+                      <span>Stage & Preview Single Record</span>
+                    </button>
+                  </div>
+                )}
 
                 {showPasteBox && (
                   <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
