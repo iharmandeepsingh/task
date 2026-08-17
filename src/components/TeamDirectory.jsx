@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Mail, ShieldCheck, CheckCircle, UserPlus, Building2, Smartphone, Users, UserCheck, Shield, Search, X, Trash2 } from 'lucide-react';
+import { Mail, ShieldCheck, CheckCircle, UserPlus, Building2, Smartphone, Users, UserCheck, Shield, Search, X, Trash2, KeyRound, Lock, Eye, EyeOff } from 'lucide-react';
 
-export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport, onDeleteEmployee }) {
+export default function TeamDirectory({ team = [], tasks = [], currentRole, authUser, onOpenHRImport, onDeleteEmployee }) {
   const [selectedFilter, setSelectedFilter] = useState('ALL'); // 'ALL', 'FACULTY', 'ADMIN'
   const [searchQuery, setSearchQuery] = useState('');
+  const [showVaultModal, setShowVaultModal] = useState(false);
+
+  // Check if current logged-in user is Super Admin ID 10001
+  const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
 
   const filteredTeam = team.filter((member) => {
-    // Category Filter
     let matchesCategory = true;
     if (selectedFilter === 'FACULTY') {
       matchesCategory = member.category === 'Faculty' || (member.role && member.role.toLowerCase().includes('faculty')) || (member.role && member.role.toLowerCase().includes('professor'));
@@ -14,7 +17,6 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
       matchesCategory = member.category === 'Admin' || (member.role && (member.role.toLowerCase().includes('admin') || member.role.toLowerCase().includes('hr') || member.role.toLowerCase().includes('head')));
     }
 
-    // Name & ID Search Filter
     const q = searchQuery.trim().toLowerCase();
     const matchesSearch = !q || 
       (member.name && member.name.toLowerCase().includes(q)) ||
@@ -26,27 +28,56 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
     return matchesCategory && matchesSearch;
   });
 
-  const canDelete = true;
-
   return (
     <div>
       {/* Header & Main Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.3rem', color: 'var(--text-primary)', fontWeight: '800' }}>
-            CT University Employee Directory & HR
+          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.3rem', color: 'var(--text-primary)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>CT University Employee Directory & HR</span>
+            {isSuperAdmin10001 && (
+              <span style={{ fontSize: '11px', background: '#8b5cf6', color: '#ffffff', padding: '2px 8px', borderRadius: '10px', fontWeight: '800' }}>
+                SUPER ADMIN 10001 VAULT ACCESS
+              </span>
+            )}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Search, Manage, and Delete Faculty & Administrative Staff Records.
+            Search, Manage, and View Decrypted Faculty & Administrative Staff Passwords.
           </p>
         </div>
 
-        {currentRole !== 'faculty' && (
-          <button className="btn-primary" onClick={onOpenHRImport} style={{ padding: '8px 14px', borderRadius: '10px' }}>
-            <UserPlus size={16} />
-            <span>Bulk CSV/XLSX Employee Import</span>
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {/* 🔑 Decrypted Staff Passwords Vault Button (For Super Admin 10001) */}
+          {isSuperAdmin10001 && (
+            <button
+              onClick={() => setShowVaultModal(true)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 10px rgba(139, 92, 246, 0.3)'
+              }}
+            >
+              <KeyRound size={16} />
+              <span>🔑 Decrypted Staff Passwords Vault (10001)</span>
+            </button>
+          )}
+
+          {currentRole !== 'faculty' && (
+            <button className="btn-primary" onClick={onOpenHRImport} style={{ padding: '8px 14px', borderRadius: '10px' }}>
+              <UserPlus size={16} />
+              <span>Bulk CSV/XLSX Employee Import</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search Bar & Category Filter Pills */}
@@ -70,7 +101,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search faculty by Name (e.g. Shilpa, Harmanpreet, Arvin) or Staff ID (e.g. 26001, 26010, 309)..."
+            placeholder="Search faculty by Name (e.g. Shilpa, Harmanpreet) or Staff ID (e.g. 26001, 26010, 309)..."
             style={{
               width: '100%',
               padding: '10px 36px 10px 38px',
@@ -103,37 +134,35 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
           )}
         </div>
 
-        {/* Category Filter Pills */}
-        <div style={{ display: 'flex', background: '#e2e8f0', padding: '4px', borderRadius: '10px', gap: '4px' }}>
+        {/* Filter Pills */}
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setSelectedFilter('ALL')}
             style={{
-              padding: '6px 12px',
+              padding: '8px 14px',
               borderRadius: '8px',
-              background: selectedFilter === 'ALL' ? '#ffffff' : 'transparent',
-              color: selectedFilter === 'ALL' ? '#0f172a' : '#64748b',
+              background: selectedFilter === 'ALL' ? '#3b82f6' : '#f1f5f9',
+              color: selectedFilter === 'ALL' ? '#ffffff' : '#475569',
               border: 'none',
               fontSize: '12px',
               fontWeight: '700',
-              cursor: 'pointer',
-              boxShadow: selectedFilter === 'ALL' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              cursor: 'pointer'
             }}
           >
-            All Staff ({team.length})
+            👥 All Staff ({team.length})
           </button>
 
           <button
             onClick={() => setSelectedFilter('FACULTY')}
             style={{
-              padding: '6px 12px',
+              padding: '8px 14px',
               borderRadius: '8px',
-              background: selectedFilter === 'FACULTY' ? '#3b82f6' : 'transparent',
-              color: selectedFilter === 'FACULTY' ? '#ffffff' : '#64748b',
+              background: selectedFilter === 'FACULTY' ? '#2563eb' : '#f1f5f9',
+              color: selectedFilter === 'FACULTY' ? '#ffffff' : '#475569',
               border: 'none',
               fontSize: '12px',
               fontWeight: '700',
-              cursor: 'pointer',
-              boxShadow: selectedFilter === 'FACULTY' ? '0 2px 6px rgba(59, 130, 246, 0.3)' : 'none'
+              cursor: 'pointer'
             }}
           >
             🎓 Faculty Directory
@@ -142,15 +171,14 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
           <button
             onClick={() => setSelectedFilter('ADMIN')}
             style={{
-              padding: '6px 12px',
+              padding: '8px 14px',
               borderRadius: '8px',
-              background: selectedFilter === 'ADMIN' ? '#10b981' : 'transparent',
-              color: selectedFilter === 'ADMIN' ? '#ffffff' : '#64748b',
+              background: selectedFilter === 'ADMIN' ? '#10b981' : '#f1f5f9',
+              color: selectedFilter === 'ADMIN' ? '#ffffff' : '#475569',
               border: 'none',
               fontSize: '12px',
               fontWeight: '700',
-              cursor: 'pointer',
-              boxShadow: selectedFilter === 'ADMIN' ? '0 2px 6px rgba(16, 185, 129, 0.3)' : 'none'
+              cursor: 'pointer'
             }}
           >
             🏛️ Admin Directory
@@ -159,7 +187,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
       </div>
 
       {/* Directory Grid */}
-      <div className="team-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+      <div className="team-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
         {filteredTeam.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', padding: '40px 20px', background: '#ffffff', borderRadius: '12px', textAlign: 'center', color: '#94a3b8', border: '1px dashed #cbd5e1' }}>
             No faculty or staff records found matching "<strong>{searchQuery}</strong>".
@@ -170,6 +198,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
             const activeTasks = memberTasks.filter(t => t.stage !== 'Accepted' && t.stage !== 'Completed').length;
             const completedTasks = memberTasks.filter(t => t.stage === 'Accepted' || t.stage === 'Completed').length;
             const isFacultyRole = member.category === 'Faculty' || (member.role && member.role.toLowerCase().includes('faculty')) || (member.role && member.role.toLowerCase().includes('professor'));
+            const memberPassword = member.password || member.name || '123';
 
             return (
               <div key={member.id} className="team-card" style={{ background: '#ffffff', padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>
@@ -196,35 +225,33 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
                           {isFacultyRole ? '🎓 Faculty' : '🏛️ Admin'}
                         </span>
 
-                        {/* 🗑️ Delete Faculty / Admin Button */}
-                        {canDelete && (
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`Are you sure you want to delete "${member.name}" (Staff ID: ${member.employeeId || member.id}) from the Master Directory?`)) {
-                                if (onDeleteEmployee) {
-                                  onDeleteEmployee(member.id);
-                                }
+                        {/* 🗑️ Delete Button */}
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete "${member.name}" (Staff ID: ${member.employeeId || member.id}) from the Master Directory?`)) {
+                              if (onDeleteEmployee) {
+                                onDeleteEmployee(member.id);
                               }
-                            }}
-                            style={{
-                              background: '#fee2e2',
-                              color: '#dc2626',
-                              border: '1px solid #fca5a5',
-                              padding: '3px 7px',
-                              borderRadius: '6px',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              fontWeight: '700',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            title={`Delete ${member.name} from directory`}
-                          >
-                            <Trash2 size={13} />
-                            <span>Delete</span>
-                          </button>
-                        )}
+                            }
+                          }}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            padding: '3px 7px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title={`Delete ${member.name} from directory`}
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
 
@@ -240,11 +267,26 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
                       <Mail size={12} /> {member.email} • <strong>Staff ID: {member.employeeId || '26010'}</strong>
                     </p>
 
+                    {/* 🔑 Password Badge: Plain ONLY for Super Admin 10001 */}
+                    <div style={{ marginTop: '8px', padding: '6px 10px', borderRadius: '8px', background: isSuperAdmin10001 ? '#ecfdf5' : '#f8fafc', border: `1px solid ${isSuperAdmin10001 ? '#a7f3d0' : '#e2e8f0'}`, fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      {isSuperAdmin10001 ? (
+                        <div style={{ color: '#065f46', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <KeyRound size={13} color="#059669" />
+                          <span>🔑 Password: <code style={{ fontSize: '12px', color: '#047857', fontWeight: '900' }}>{memberPassword}</code></span>
+                        </div>
+                      ) : (
+                        <div style={{ color: '#64748b', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Lock size={13} color="#94a3b8" />
+                          <span>🔒 Password: <code style={{ color: '#94a3b8' }}>••••••••</code> <span style={{ fontSize: '10px', color: '#94a3b8' }}>(10001 Protected)</span></span>
+                        </div>
+                      )}
+                    </div>
+
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginTop: '12px', 
+                      marginTop: '10px', 
                       paddingTop: '8px',
                       borderTop: '1px solid #f1f5f9',
                       fontSize: '12px'
@@ -263,6 +305,78 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
           })
         )}
       </div>
+
+      {/* 🔑 Super Admin 10001 Decrypted Passwords Vault Modal */}
+      {showVaultModal && (
+        <div className="modal-backdrop" onClick={() => setShowVaultModal(false)} style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1100, padding: '16px'
+        }}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{
+            width: '100%', maxWidth: '820px', background: '#ffffff', borderRadius: '18px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)',
+              color: '#ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <KeyRound size={22} color="#c4b5fd" />
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+                    Super Admin 10001 Decrypted Staff Passwords Vault
+                  </h3>
+                  <p style={{ fontSize: '11px', color: '#ddd6fe', margin: 0 }}>
+                    Master Security Decryption Roster ({team.length} Faculty & Admin Accounts)
+                  </p>
+                </div>
+              </div>
+
+              <button onClick={() => setShowVaultModal(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', color: '#ffffff', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Table Body */}
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                    <th style={{ padding: '10px 12px' }}>Staff ID</th>
+                    <th style={{ padding: '10px 12px' }}>Staff Name</th>
+                    <th style={{ padding: '10px 12px' }}>Official Email</th>
+                    <th style={{ padding: '10px 12px' }}>Department</th>
+                    <th style={{ padding: '10px 12px' }}>🔑 Decrypted Password</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {team.map((m) => (
+                    <tr key={m.id || m.employeeId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px 12px', fontWeight: '800', color: '#2563eb' }}>{m.employeeId || m.id}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: '700' }}>{m.name}</td>
+                      <td style={{ padding: '10px 12px', color: '#64748b' }}>{m.email}</td>
+                      <td style={{ padding: '10px 12px' }}>{m.dept || 'Engineering'}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{ padding: '4px 8px', borderRadius: '6px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', fontWeight: '900', fontSize: '12px' }}>
+                          🔑 {m.password || m.name || '123'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

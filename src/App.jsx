@@ -572,6 +572,7 @@ export default function App() {
               team={team} 
               tasks={tasks}
               currentRole={currentRole}
+              authUser={authUser}
               onOpenHRImport={() => setIsHRImportOpen(true)}
               onDeleteEmployee={handleDeleteEmployee}
             />
