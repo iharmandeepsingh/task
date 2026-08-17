@@ -4984,6 +4984,36 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-626",
+      "title": "jnvfjv",
+      "description": "nj fvjh",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938392080-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [
+        {
+          "id": "s-1786989939132",
+          "text": "jdbv",
+          "done": false
+        }
+      ],
+      "attachments": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false,
+      "creatorName": "Dr. Abhilash Thakur",
+      "creatorId": "usr-imp-1786938431093-3",
+      "creatorRole": "Administrative Staff",
+      "departmentName": "Vc office"
+    },
+    {
       "id": "CTU-CSE-495",
       "title": "jvfehdv",
       "description": "dkvhirue",

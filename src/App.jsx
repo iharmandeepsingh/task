@@ -419,10 +419,17 @@ export default function App() {
   };
 
   const handleDeleteTask = (taskId) => {
-    if (currentRole === 'faculty') {
-      alert('Scope Rule: Faculty members cannot delete assigned task records.');
-      return;
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (targetTask) {
+      const isCreator = authUser?.name === targetTask.creatorName || authUser?.id === targetTask.creatorId || authUser?.employeeId === targetTask.creatorId;
+      const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+      if (!isCreator && !isSuperAdmin10001) {
+        alert(`🛑 Authorization Denied: You cannot delete tasks assigned to you. Only the Assigner (${targetTask.creatorName || 'Super Admin'}) who created this task can delete it.`);
+        return;
+      }
     }
+
     if (window.confirm('Are you sure you want to delete this task record?')) {
       setTasks((prevTasks) => {
         const updated = prevTasks.filter(t => t.id !== taskId);

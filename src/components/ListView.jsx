@@ -231,15 +231,23 @@ export default function ListView({
                             </button>
                           )}
 
-                          {isLeader && (
-                            <button
-                              onClick={() => onDeleteTask && onDeleteTask(task.id)}
-                              title="Delete Task"
-                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
+                          {(() => {
+                            const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+                            const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+                            if (isCreator || isSuperAdmin10001) {
+                              return (
+                                <button
+                                  onClick={() => onDeleteTask && onDeleteTask(task.id)}
+                                  title="Delete Task (Assigner Only)"
+                                  style={{ padding: '6px 10px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </td>
                     </tr>

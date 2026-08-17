@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter, Paperclip } from 'lucide-react';
+import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter, Paperclip, Trash2 } from 'lucide-react';
 import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
 
 export default function KanbanBoard({
@@ -195,7 +195,7 @@ export default function KanbanBoard({
                             </div>
                           )}
 
-                          <div className="card-top">
+                          <div className="card-top" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span className="task-code">{task.id}</span>
                             <span className={`priority-badge ${task.priority ? task.priority.toLowerCase() : 'medium'}`}>
                               {task.priority || 'Medium'}
@@ -203,6 +203,38 @@ export default function KanbanBoard({
                             <span className={`health-pill ${task.deadlineHealth ? task.deadlineHealth.toLowerCase() : 'green'}`}>
                               {task.deadlineHealth || 'Green'}
                             </span>
+
+                            {/* Assigner Deletion Authorization Button */}
+                            {(() => {
+                              const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+                              const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
+
+                              if (isCreator || isSuperAdmin10001) {
+                                return (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDeleteTask(task.id);
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#ef4444',
+                                      cursor: 'pointer',
+                                      padding: '2px 4px',
+                                      marginLeft: 'auto',
+                                      borderRadius: '4px',
+                                      display: 'flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title="Delete task assignment (Assigner Only)"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
 
                           <h4 className="card-title" onClick={() => onEditTask(task)}>
