@@ -274,8 +274,9 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       zIndex: 1000,
       padding: '12px'
     }}>
-      {/* Hidden Native File Input */}
+      {/* Native File Input */}
       <input
+        id="hr-file-upload-input"
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
@@ -426,7 +427,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <button
+                <label
+                  htmlFor="hr-file-upload-input"
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     padding: '12px 24px',
@@ -437,7 +439,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                     fontWeight: '700',
                     border: 'none',
                     cursor: 'pointer',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
                     boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
@@ -445,7 +447,7 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                 >
                   <FolderPlus size={18} />
                   <span>Choose File from Computer / Phone</span>
-                </button>
+                </label>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                   <button

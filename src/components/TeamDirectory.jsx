@@ -41,7 +41,7 @@ export default function TeamDirectory({ team, tasks, currentRole, onOpenHRImport
           </p>
         </div>
 
-        {(currentRole === 'hr' || currentRole === 'superAdmin' || currentRole === 'admin') && (
+        {currentRole !== 'faculty' && (
           <button className="btn-primary" onClick={onOpenHRImport} style={{ padding: '8px 14px', borderRadius: '10px' }}>
             <UserPlus size={16} />
             <span>Bulk CSV/XLSX Employee Import</span>
