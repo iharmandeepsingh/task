@@ -254,7 +254,7 @@ export default function App() {
 
   const currentRole = authUser.role; // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
 
-  // Role-Based Task Scoping Filter (Phased Rollout)
+  // Role-Based Task Scoping Filter (Complete Phased Implementation)
   const roleScopedTasks = tasks.filter((t) => {
     const authEmpId = (authUser?.employeeId || '').toLowerCase();
     const authId = (authUser?.id || '').toLowerCase();
@@ -263,8 +263,8 @@ export default function App() {
     const taskAssigneeId = (t.assigneeId || '').toLowerCase();
     const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
 
-    // 🎓 PHASE 1: Faculty Member Task Scoping Isolation
-    // Faculty members can ONLY view tasks assigned TO them. They cannot view all tasks assigned across the university.
+    // 🎓 PHASE 1 (COMPLETED): Faculty Member Task Scoping Isolation
+    // Faculty members can ONLY view tasks assigned TO them.
     if (currentRole === 'faculty') {
       const isAssignedToFaculty = 
         (authId && taskAssigneeId === authId) ||
@@ -275,7 +275,8 @@ export default function App() {
       return isAssignedToFaculty;
     }
 
-    // 👑 PHASE 2/3: Executive Super Admin Scoping
+    // 👑 PHASE 2 & 3 (COMPLETED): Executive Super Admin Global Oversight
+    // Super Admins (Dr. Nitin Tandon, Dr. Simranjeet Kaur Gill, ID 10001, Dr. Manjit Singh) can view ALL tasks assigned across CT University.
     const isSuperAdminAccount = 
       currentRole === 'superAdmin' || 
       authEmpId === '10001' || 
@@ -287,7 +288,10 @@ export default function App() {
       return true;
     }
 
-    // 🏛️ PHASE 2/3: University Administrator / HOD Direct Assignment Chain Scoping
+    // 🏛️ PHASE 2 (COMPLETED): University Administrator / HOD Direct Assignment Chain Scoping
+    // Admins can ONLY view:
+    // 1. Tasks assigned TO them (Incoming from Super Admin or another Admin)
+    // 2. Tasks assigned BY them (Delegated to Faculty or another Admin)
     const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
     const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
 
