@@ -10,6 +10,20 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
   });
 
   const dropdownRef = useRef(null);
+  const bellButtonRef = useRef(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 60, right: 16 });
+
+  // Compute exact viewport coordinates for fixed position popover
+  useEffect(() => {
+    if (isOpen && bellButtonRef.current) {
+      const rect = bellButtonRef.current.getBoundingClientRect();
+      const rightMargin = Math.max(12, window.innerWidth - rect.right);
+      setDropdownPos({
+        top: rect.bottom + 8,
+        right: rightMargin
+      });
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -144,9 +158,10 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
   };
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative' }}>
+    <div ref={dropdownRef} style={{ display: 'inline-block' }}>
       {/* Bell Button */}
       <button
+        ref={bellButtonRef}
         onClick={() => setIsOpen(!isOpen)}
         style={{
           position: 'relative',
@@ -184,19 +199,19 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
         )}
       </button>
 
-      {/* Notification Dropdown Window */}
+      {/* Notification Fixed Popover Window - Immune to parent overflow clipping */}
       {isOpen && (
         <div style={{
-          position: 'absolute',
-          top: '46px',
-          right: 0,
+          position: 'fixed',
+          top: `${dropdownPos.top}px`,
+          right: `${dropdownPos.right}px`,
           width: '340px',
           maxWidth: 'calc(100vw - 24px)',
           background: '#ffffff',
-          borderRadius: '14px',
-          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
-          border: '1px solid #e2e8f0',
-          zIndex: 9999,
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          border: '1px solid #cbd5e1',
+          zIndex: 99999,
           overflow: 'hidden',
           animation: 'fadeIn 0.2s ease',
           boxSizing: 'border-box'
