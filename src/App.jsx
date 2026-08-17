@@ -328,11 +328,27 @@ export default function App() {
       alert('Scope Rule: As a Faculty member, new task assignments are created by your Head of Department.');
       return;
     }
-    if (taskToEdit) {
-      setTasks(tasks.map(t => t.id === taskData.id ? taskData : t));
-    } else {
-      setTasks([taskData, ...tasks]);
-    }
+
+    setTasks((prevTasks) => {
+      let updated;
+      if (taskToEdit) {
+        updated = prevTasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t);
+      } else {
+        const newTask = {
+          ...taskData,
+          creatorName: authUser?.name || 'University Admin',
+          creatorId: authUser?.id || authUser?.employeeId || 'admin',
+          creatorRole: authUser?.roleTitle || 'University Administrator',
+          departmentName: authUser?.dept || taskData.departmentName || 'School of Engineering'
+        };
+        updated = [newTask, ...prevTasks];
+      }
+      localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+      return updated;
+    });
+
+    setIsTaskModalOpen(false);
+    setTaskToEdit(null);
   };
 
   const handleToggleSubtask = (taskId, subtaskId) => {
@@ -408,7 +424,11 @@ export default function App() {
       return;
     }
     if (window.confirm('Are you sure you want to delete this task record?')) {
-      setTasks(tasks.filter(t => t.id !== taskId));
+      setTasks((prevTasks) => {
+        const updated = prevTasks.filter(t => t.id !== taskId);
+        localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+        return updated;
+      });
     }
   };
 

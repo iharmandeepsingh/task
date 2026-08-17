@@ -4984,10 +4984,76 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-495",
+      "title": "jvfehdv",
+      "description": "dkvhirue",
+      "stage": "In Progress",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938431093-3",
+      "assigneeName": "Dr. Abhilash Thakur",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [],
+      "attachments": [],
+      "progressPercent": 30,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
+      "id": "CTU-CSE-198",
+      "title": "kldfnveriumkldv",
+      "description": "jkdbhce",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938392080-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [
+        {
+          "id": "s-1786989555892",
+          "text": "kjbdv",
+          "done": false
+        }
+      ],
+      "attachments": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
+      "id": "CTU-CSE-925",
+      "title": "ejvoidf",
+      "description": "kjbefvkuer",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938392080-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [],
+      "attachments": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
       "id": "CTU-CSE-185",
       "title": "hjbnhjh nihfihr",
       "description": "kjhdfiu",
-      "stage": "Submitted for Review",
+      "stage": "Accepted",
       "priority": "Medium",
       "assigneeId": "usr-24051",
       "assigneeName": "Dr. Nitin Tandon",
@@ -4999,7 +5065,7 @@
       "dueTime": "17:00",
       "subtasks": [],
       "attachments": [],
-      "progressPercent": 90,
+      "progressPercent": 100,
       "deadlineHealth": "Green",
       "isIdle": false
     },
@@ -5007,7 +5073,7 @@
       "id": "CTU-CSE-194",
       "title": "title",
       "description": "title",
-      "stage": "Assigned",
+      "stage": "In Progress",
       "priority": "Medium",
       "assigneeId": "usr-imp-1786938431093-3",
       "assigneeName": "Dr. Abhilash Thakur",
@@ -5025,7 +5091,7 @@
         }
       ],
       "attachments": [],
-      "progressPercent": 0,
+      "progressPercent": 90,
       "deadlineHealth": "Green",
       "isIdle": false
     },
@@ -5096,9 +5162,9 @@
       "assigneeName": "Super Admin",
       "departmentName": "School of Engineering & Technology",
       "priority": "High",
-      "stage": "Under Review",
+      "stage": "Accepted",
       "deadlineHealth": "Green",
-      "progressPercent": 90,
+      "progressPercent": 100,
       "dueDate": "2026-08-25",
       "isIdle": false,
       "subtasks": [
