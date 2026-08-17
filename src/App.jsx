@@ -254,12 +254,28 @@ export default function App() {
 
   const currentRole = authUser.role; // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
 
-  // Role-Based Task Scoping Filter (Strict RBAC Scoping)
+  // Role-Based Task Scoping Filter (Phased Rollout)
   const roleScopedTasks = tasks.filter((t) => {
     const authEmpId = (authUser?.employeeId || '').toLowerCase();
     const authId = (authUser?.id || '').toLowerCase();
     const authName = (authUser?.name || '').toLowerCase().trim();
 
+    const taskAssigneeId = (t.assigneeId || '').toLowerCase();
+    const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+
+    // 🎓 PHASE 1: Faculty Member Task Scoping Isolation
+    // Faculty members can ONLY view tasks assigned TO them. They cannot view all tasks assigned across the university.
+    if (currentRole === 'faculty') {
+      const isAssignedToFaculty = 
+        (authId && taskAssigneeId === authId) ||
+        (authEmpId && taskAssigneeId === authEmpId) ||
+        (authName && taskAssigneeName.includes(authName)) ||
+        (authName && authName.includes(taskAssigneeName));
+
+      return isAssignedToFaculty;
+    }
+
+    // 👑 PHASE 2/3: Executive Super Admin Scoping
     const isSuperAdminAccount = 
       currentRole === 'superAdmin' || 
       authEmpId === '10001' || 
@@ -267,32 +283,27 @@ export default function App() {
       ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authEmpId) ||
       ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authId);
 
-    // 1. Super Admin Executive Leadership: Full permission to view ALL tasks across CT University
     if (isSuperAdminAccount) {
       return true;
     }
 
-    const taskAssigneeId = (t.assigneeId || '').toLowerCase();
-    const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+    // 🏛️ PHASE 2/3: University Administrator / HOD Direct Assignment Chain Scoping
     const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
     const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
 
-    // 2. Administrators, HODs, Deans & Faculty (Non-SuperAdmin):
-    // Can ONLY view tasks assigned TO them (Incoming) OR assigned BY them (Delegated)
     const isCreatorOfTask = 
       (authId && taskCreatorId === authId) ||
       (authEmpId && taskCreatorId === authEmpId) ||
       (authName && taskCreatorName.includes(authName)) ||
       (authName && authName.includes(taskCreatorName));
 
-    const isAssignedToUser = 
+    const isAssignedToAdmin = 
       (authId && taskAssigneeId === authId) ||
       (authEmpId && taskAssigneeId === authEmpId) ||
       (authName && taskAssigneeName.includes(authName)) ||
       (authName && authName.includes(taskAssigneeName));
 
-    // STRICT ISOLATION: Hide any task that is neither assigned TO nor created BY this user
-    return isCreatorOfTask || isAssignedToUser;
+    return isCreatorOfTask || isAssignedToAdmin;
   });
 
   // Filter Tasks by Search, Priority & Tag
