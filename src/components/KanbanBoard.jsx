@@ -5,6 +5,7 @@ import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../dat
 export default function KanbanBoard({
   tasks,
   team,
+  authUser,
   onEditTask,
   onMoveStage,
   onDeleteTask,
@@ -137,6 +138,33 @@ export default function KanbanBoard({
                               <span>Idle Flag: No update for 3-5 days</span>
                             </div>
                           )}
+
+                          {/* Directional Assignment Badge (Incoming vs Delegated) */}
+                          {(() => {
+                            const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
+                            const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+
+                            if (isAssignee && !isCreator) {
+                              return (
+                                <div style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', color: '#3730a3', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>📥 INCOMING TASK: Assigned to You by {task.creatorName || 'Super Admin'}</span>
+                                </div>
+                              );
+                            } else if (isCreator && !isAssignee) {
+                              return (
+                                <div style={{ background: '#d1fae5', border: '1px solid #a7f3d0', color: '#065f46', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>📤 DELEGATED TASK: Assigned by You to {task.assigneeName || 'Faculty'}</span>
+                                </div>
+                              );
+                            } else if (task.creatorName && task.creatorName.toLowerCase().includes('super')) {
+                              return (
+                                <div style={{ background: '#f3e8ff', border: '1px solid #e9d5ff', color: '#6b21a8', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>🏛️ SUPER ADMIN DIRECTIVE: {task.creatorName} ➔ {task.assigneeName}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
 
                           {/* Pending Extension Request Alert Banner */}
                           {hasPendingExt && (

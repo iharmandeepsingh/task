@@ -5,6 +5,7 @@ import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../dat
 export default function ListView({
   tasks,
   team,
+  authUser,
   onEditTask,
   onMoveStage,
   onDeleteTask,
@@ -91,6 +92,34 @@ export default function ListView({
                         <div style={{ fontSize: '11px', color: '#64748b' }}>
                           {task.description}
                         </div>
+                        
+                        {/* Directional Assignment Badge */}
+                        {(() => {
+                          const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
+                          const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+
+                          if (isAssignee && !isCreator) {
+                            return (
+                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#3730a3', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                📥 Assigned to You by {task.creatorName || 'Super Admin'}
+                              </div>
+                            );
+                          } else if (isCreator && !isAssignee) {
+                            return (
+                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                📤 Assigned by You to {task.assigneeName || 'Faculty'}
+                              </div>
+                            );
+                          } else if (task.creatorName && task.creatorName.toLowerCase().includes('super')) {
+                            return (
+                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                🏛️ Directive: {task.creatorName} ➔ {task.assigneeName}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+
                         {hasPendingExt && (
                           <div style={{ fontSize: '10px', fontWeight: '700', color: '#b45309', background: '#fffbeb', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '4px' }}>
                             <Clock size={11} /> Extension Requested

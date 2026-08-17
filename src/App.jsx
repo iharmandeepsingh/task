@@ -55,6 +55,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
   const [selectedTag, setSelectedTag] = useState('ALL');
+  const [filterDirection, setFilterDirection] = useState('ALL'); // 'ALL', 'INCOMING', 'OUTGOING'
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('ctu_theme') || 'light';
   });
@@ -310,7 +311,15 @@ export default function App() {
 
     const matchesTag = selectedTag === 'ALL' || (Array.isArray(t.tags) && t.tags.includes(selectedTag));
 
-    return matchesSearch && matchesPriority && matchesTag;
+    // Directional Task Filtering (Incoming vs Delegated)
+    let matchesDirection = true;
+    if (filterDirection === 'INCOMING') {
+      matchesDirection = authUser?.name === t.assigneeName || authUser?.id === t.assigneeId || authUser?.employeeId === t.assigneeId;
+    } else if (filterDirection === 'OUTGOING') {
+      matchesDirection = authUser?.name === t.creatorName || authUser?.id === t.creatorId || authUser?.employeeId === t.creatorId;
+    }
+
+    return matchesSearch && matchesPriority && matchesTag && matchesDirection;
   });
 
   // Handlers
@@ -556,17 +565,22 @@ export default function App() {
 
         <StatsOverview tasks={filteredTasks} currentRole={currentRole} />
 
-        {/* 🏷️ Quick Tag & Category Filter Pills */}
+        {/* 🏷️ Quick Tag & Directional Assignment Filter Pills */}
         <TagFilterBar
           tasks={roleScopedTasks}
           selectedTag={selectedTag}
           onSelectTag={setSelectedTag}
+          filterDirection={filterDirection}
+          onSelectDirection={setFilterDirection}
+          authUser={authUser}
+          currentRole={currentRole}
         />
 
         {activeView === 'kanban' && (
           <KanbanBoard 
             tasks={filteredTasks}
             team={team}
+            authUser={authUser}
             onToggleSubtask={handleToggleSubtask}
             onMoveStage={handleMoveStage}
             onEditTask={handleOpenEditTask}
@@ -582,6 +596,7 @@ export default function App() {
           <ListView 
             tasks={filteredTasks}
             team={team}
+            authUser={authUser}
             onToggleSubtask={handleToggleSubtask}
             onEditTask={handleOpenEditTask}
             onDeleteTask={handleDeleteTask}
