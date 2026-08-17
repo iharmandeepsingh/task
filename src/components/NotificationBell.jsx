@@ -11,17 +11,30 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
 
   const dropdownRef = useRef(null);
   const bellButtonRef = useRef(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 60, right: 16 });
+  const [dropdownPos, setDropdownPos] = useState({ top: 60, left: 'auto', right: '16px' });
 
   // Compute exact viewport coordinates for fixed position popover
   useEffect(() => {
     if (isOpen && bellButtonRef.current) {
       const rect = bellButtonRef.current.getBoundingClientRect();
-      const rightMargin = Math.max(12, window.innerWidth - rect.right);
-      setDropdownPos({
-        top: rect.bottom + 8,
-        right: rightMargin
-      });
+      const vw = window.innerWidth;
+      
+      // Smart Auto-Alignment: Align Left or Right based on button position on screen
+      if (rect.left < vw / 2) {
+        const safeLeft = Math.max(12, Math.min(rect.left, vw - 352));
+        setDropdownPos({
+          top: rect.bottom + 8,
+          left: `${safeLeft}px`,
+          right: 'auto'
+        });
+      } else {
+        const safeRight = Math.max(12, vw - rect.right);
+        setDropdownPos({
+          top: rect.bottom + 8,
+          left: 'auto',
+          right: `${safeRight}px`
+        });
+      }
     }
   }, [isOpen]);
 
@@ -204,7 +217,8 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
         <div style={{
           position: 'fixed',
           top: `${dropdownPos.top}px`,
-          right: `${dropdownPos.right}px`,
+          left: dropdownPos.left,
+          right: dropdownPos.right,
           width: '340px',
           maxWidth: 'calc(100vw - 24px)',
           background: '#ffffff',

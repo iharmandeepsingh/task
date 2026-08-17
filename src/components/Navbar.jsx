@@ -147,6 +147,21 @@ export default function Navbar({
         </div>
 
         <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {(currentRole === 'adminHead' || currentRole === 'hod' || currentRole === 'admin' || currentRole === 'superAdmin') && (
+            <button className="btn-primary" onClick={onNewTask}>
+              <PlusCircle size={16} />
+              <span>Assign New Task</span>
+            </button>
+          )}
+
+          <NotificationBell
+            tasks={tasks}
+            authUser={authUser}
+            onOpenChat={onOpenChat}
+            onOpenExtensionModal={onOpenExtensionModal}
+            onOpenReviewModal={onOpenReviewModal}
+          />
+
           {/* 🌙 Dark Mode / ☀️ Light Mode Toggle */}
           <button
             onClick={onToggleTheme}
@@ -166,23 +181,8 @@ export default function Navbar({
             title="Toggle Light / Dark Mode"
           >
             {theme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="#6366f1" />}
-            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
-
-          <NotificationBell
-            tasks={tasks}
-            authUser={authUser}
-            onOpenChat={onOpenChat}
-            onOpenExtensionModal={onOpenExtensionModal}
-            onOpenReviewModal={onOpenReviewModal}
-          />
-
-          {(currentRole === 'adminHead' || currentRole === 'hod' || currentRole === 'admin' || currentRole === 'superAdmin') && (
-            <button className="btn-primary" onClick={onNewTask}>
-              <PlusCircle size={16} />
-              <span>Assign New Task</span>
-            </button>
-          )}
 
           {!isFaculty && (
             <button 
