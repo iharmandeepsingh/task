@@ -109,16 +109,34 @@ export default function LoginPage({ onLogin }) {
     }
 
     // Step 3: Role-Scoped Authorization Guard
-    const isFacultyAccount = matchedUser.category === 'Faculty' || 
-      (matchedUser.role && (matchedUser.role.toLowerCase().includes('faculty') || matchedUser.role.toLowerCase().includes('professor') || matchedUser.role.toLowerCase().includes('lecturer')));
+    const userRoleStr = (matchedUser.role || '').toLowerCase();
+    const userEmpId = (matchedUser.employeeId || matchedUser.id || '').toLowerCase();
 
-    if (isFacultyAccount && selectedRole !== 'faculty') {
-      setErrorMessage(`RBAC Scope Guard: "${matchedUser.name}" (${matchedUser.employeeId}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
+    const isSuperAdminAccount = 
+      userRoleStr === 'super admin' || 
+      userRoleStr.includes('superadmin') ||
+      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(userEmpId);
+
+    const isFacultyAccount = matchedUser.category === 'Faculty' || 
+      userRoleStr.includes('faculty') || 
+      userRoleStr.includes('professor') || 
+      userRoleStr.includes('lecturer');
+
+    // Rule 1: Only registered Super Admins can log in under Super Administrator portal
+    if (selectedRole === 'superAdmin' && !isSuperAdminAccount) {
+      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is registered as a University Administrator / Department Head and does NOT have Super Admin privileges. Please select the University Administrator portal.`);
       return;
     }
 
+    // Rule 2: Faculty accounts CANNOT log in under Super Admin or University Admin portals
+    if (isFacultyAccount && selectedRole !== 'faculty') {
+      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
+      return;
+    }
+
+    // Rule 3: Administrative accounts CANNOT log in under Faculty portal
     if (!isFacultyAccount && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
-      setErrorMessage(`RBAC Scope Guard: "${matchedUser.name}" (${matchedUser.employeeId}) is an Administrative account and must select University Administrator portal.`);
+      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is an Administrative account and must select the University Administrator portal.`);
       return;
     }
 
