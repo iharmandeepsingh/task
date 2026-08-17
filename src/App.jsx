@@ -260,8 +260,15 @@ export default function App() {
     const authId = (authUser?.id || '').toLowerCase();
     const authName = (authUser?.name || '').toLowerCase().trim();
 
-    // 1. Super Admin (or ID 10001): Full executive permission to view ALL tasks across the university
-    if (currentRole === 'superAdmin' || authEmpId === '10001' || authId === 'usr-10001') {
+    const isSuperAdminAccount = 
+      currentRole === 'superAdmin' || 
+      authEmpId === '10001' || 
+      authId === 'usr-10001' ||
+      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authEmpId) ||
+      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authId);
+
+    // 1. Super Admin Executive Leadership: Full permission to view ALL tasks across CT University
+    if (isSuperAdminAccount) {
       return true;
     }
 
@@ -270,35 +277,22 @@ export default function App() {
     const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
     const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
 
-    // 2. University Admin / HOD: Can ONLY view tasks assigned TO them (Incoming from Super Admin/Admin) OR assigned BY them (Delegated to Faculty/Admin)
-    if (currentRole === 'admin' || currentRole === 'adminHead' || currentRole === 'hod') {
-      const isCreatorOfTask = 
-        (authId && taskCreatorId === authId) ||
-        (authEmpId && taskCreatorId === authEmpId) ||
-        (authName && taskCreatorName.includes(authName)) ||
-        (authName && authName.includes(taskCreatorName));
+    // 2. Administrators, HODs, Deans & Faculty (Non-SuperAdmin):
+    // Can ONLY view tasks assigned TO them (Incoming) OR assigned BY them (Delegated)
+    const isCreatorOfTask = 
+      (authId && taskCreatorId === authId) ||
+      (authEmpId && taskCreatorId === authEmpId) ||
+      (authName && taskCreatorName.includes(authName)) ||
+      (authName && authName.includes(taskCreatorName));
 
-      const isAssignedToAdmin = 
-        (authId && taskAssigneeId === authId) ||
-        (authEmpId && taskAssigneeId === authEmpId) ||
-        (authName && taskAssigneeName.includes(authName)) ||
-        (authName && authName.includes(taskAssigneeName));
+    const isAssignedToUser = 
+      (authId && taskAssigneeId === authId) ||
+      (authEmpId && taskAssigneeId === authEmpId) ||
+      (authName && taskAssigneeName.includes(authName)) ||
+      (authName && authName.includes(taskAssigneeName));
 
-      return isCreatorOfTask || isAssignedToAdmin;
-    }
-
-    // 3. Faculty Member: Can ONLY view self-assigned tasks
-    if (currentRole === 'faculty') {
-      const isAssignedToUser = 
-        (authId && taskAssigneeId === authId) ||
-        (authEmpId && taskAssigneeId === authEmpId) ||
-        (authName && taskAssigneeName.includes(authName)) ||
-        (authName && authName.includes(taskAssigneeName));
-
-      return isAssignedToUser;
-    }
-
-    return true;
+    // STRICT ISOLATION: Hide any task that is neither assigned TO nor created BY this user
+    return isCreatorOfTask || isAssignedToUser;
   });
 
   // Filter Tasks by Search, Priority & Tag
