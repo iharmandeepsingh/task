@@ -34,7 +34,9 @@ export const INITIAL_TASKS = [
       { id: 'st-av-2', text: 'Draft IEEE two-column paper template', done: false }
     ],
     extensions: [],
-    chatMessages: []
+    chatMessages: [
+      { id: 'm-1', sender: 'Dr. Nitin Tandon', text: 'Please ensure IEEE conference citation format is verified.', time: '10:15 AM' }
+    ]
   },
   {
     id: 'CTU-MGT-401',
@@ -80,6 +82,77 @@ export const INITIAL_TASKS = [
     ],
     extensions: [],
     chatMessages: []
+  },
+  {
+    id: 'CTU-EXAM-202',
+    title: 'Mid-Semester Exam Outcome-Based Question Paper Setup',
+    description: 'Prepare bloom taxonomy mapped question paper for End-Term University Examinations.',
+    creatorName: 'Dr. Nitin Tandon (Super Admin)',
+    creatorId: 'usr-24051',
+    assigneeId: 'usr-0',
+    assigneeName: 'Dr. Manjit Singh',
+    departmentName: 'Central Academic Affairs',
+    priority: 'Urgent',
+    stage: 'Under Review',
+    deadlineHealth: 'Green',
+    progressPercent: 80,
+    dueDate: '2026-08-24',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-ex-1', text: 'Map Level 4 Bloom questions', done: true },
+      { id: 'st-ex-2', text: 'Draft answer keys & rubrics', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
+    id: 'CTU-LAW-104',
+    title: 'National Moot Court Competition Organization',
+    description: 'Finalize moot court student briefs and invite Punjab High Court judges.',
+    creatorName: 'Dr. Simranjeet Kaur Gill (Super Admin)',
+    creatorId: 'usr-17572',
+    assigneeId: 'usr-10001',
+    assigneeName: 'Super Admin',
+    departmentName: 'School of Law',
+    priority: 'Medium',
+    stage: 'Accepted',
+    deadlineHealth: 'Green',
+    progressPercent: 100,
+    dueDate: '2026-08-15',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-lw-1', text: 'Issue official invitation letters', done: true },
+      { id: 'st-lw-2', text: 'Publish competition rulebook', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
+    id: 'CTU-PHARM-501',
+    title: 'Pharmaceutical Chemistry Lab Equipment Audit',
+    description: 'Inspect HPLC and Spectrophotometer calibration certificates.',
+    creatorName: 'Dr. Nitin Tandon (Super Admin)',
+    creatorId: 'usr-24051',
+    assigneeId: 'usr-24051',
+    assigneeName: 'Dr. Nitin Tandon',
+    departmentName: 'School of Pharmaceutical Sciences',
+    priority: 'Low',
+    stage: 'Re-issued',
+    deadlineHealth: 'Orange',
+    progressPercent: 40,
+    dueDate: '2026-08-28',
+    isIdle: true,
+    subtasks: [
+      { id: 'st-ph-1', text: 'Log calibration logbook', done: true },
+      { id: 'st-ph-2', text: 'Attach AMC vendor receipt', done: false }
+    ],
+    extensions: [],
+    chatMessages: [],
+    review: {
+      isApproved: false,
+      feedback: 'Please attach verified vendor AMC receipt before final signoff.',
+      newRestartDeadline: '2026-08-28'
+    }
   }
 ];
 
