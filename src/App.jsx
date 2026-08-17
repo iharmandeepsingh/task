@@ -21,31 +21,15 @@ export default function App() {
   });
 
   const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem('ctu_tasks_data');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
+    localStorage.removeItem('ctu_tasks_data');
     return INITIAL_TASKS;
   });
 
-  const [deletedEmployeeIds, setDeletedEmployeeIds] = useState(() => {
-    const saved = localStorage.getItem('ctu_deleted_employee_ids');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [deletedEmployeeIds, setDeletedEmployeeIds] = useState([]);
 
   const [team, setTeam] = useState(() => {
-    const saved = localStorage.getItem('ctu_team_data');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {}
-    }
+    localStorage.removeItem('ctu_team_data');
+    localStorage.removeItem('ctu_deleted_employee_ids');
     return INITIAL_TEAM;
   });
 
