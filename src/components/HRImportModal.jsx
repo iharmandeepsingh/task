@@ -606,12 +606,87 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                 )}
 
                 {showPasteBox && (
-                  <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
+                  <div style={{
+                    width: '100%',
+                    marginTop: '12px',
+                    padding: '16px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #bfdbfe',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    textAlign: 'left'
+                  }}>
+                    {/* Section Header */}
+                    <h5 style={{ fontSize: '13px', fontWeight: '800', margin: '0 0 8px 0', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ClipboardList size={16} color="#2563eb" />
+                      <span>Excel Paste Column Identification & Format Guide</span>
+                    </h5>
+
+                    {/* Format Instructions & Column Order Table */}
+                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '10px', fontSize: '11px' }}>
+                      <div style={{ fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                        📌 What to Upload & Column Order Identification (From Left to Right):
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px', marginTop: '6px' }}>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 1:</strong> Staff ID / Emp Code<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. 26010</span>
+                        </div>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 2:</strong> Full Name<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. Dr. Rajesh Sharma</span>
+                        </div>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 3:</strong> Official Email<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. rajesh@ctu.edu.in</span>
+                        </div>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 4:</strong> Mobile / Phone<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. 9876543210</span>
+                        </div>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 5:</strong> Department<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. School of Engineering</span>
+                        </div>
+                        <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ color: '#2563eb' }}>Col 6:</strong> Designation / Role<br/>
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>e.g. Assistant Professor</span>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '8px', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                        <span>💡 <strong>How to Upload:</strong> Copy rows directly from Excel or Google Sheets (Ctrl+C) and paste (Ctrl+V) into the text box below. Header row is optional!</span>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sampleText = importCategory === 'faculty'
+                              ? "26010\tDr. Rajesh Sharma\trajesh.sharma@ctu.edu.in\t9876543210\tSchool of Engineering & Technology\tAssistant Professor\n26011\tDr. Preeti Verma\tpreeti.verma@ctu.edu.in\t9876543211\tSchool of Management & Sciences\tAssociate Professor"
+                              : "10005\tMs. Pooja Rani\tpooja.hr@ctu.edu.in\t9812345678\tHuman Resources\tHR Lead\n10006\tMr. Suresh Grover\tsuresh.accounts@ctu.edu.in\t9812345679\tAccounts & Finance\tFinance Officer";
+                            setPastedText(sampleText);
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: '#eff6ff',
+                            border: '1px solid #93c5fd',
+                            color: '#1d4ed8',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📋 Auto-Fill Sample Excel Text Format
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Textarea for Pasting */}
                     <textarea
                       rows={4}
                       value={pastedText}
                       onChange={(e) => setPastedText(e.target.value)}
-                      placeholder="Paste copied rows from Excel here (e.g., 26010    Shilpa Debnath    shilpa.debnath@ctu.edu.in)..."
+                      placeholder="Paste copied rows from Excel here (e.g. 26010    Dr. Rajesh Sharma    rajesh@ctu.edu.in    9876543210)..."
                       style={{
                         width: '100%',
                         padding: '10px',
@@ -623,21 +698,27 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                         boxSizing: 'border-box'
                       }}
                     />
+
                     <button
                       onClick={handleParsePastedText}
                       style={{
                         marginTop: '8px',
-                        padding: '8px 16px',
+                        padding: '9px 18px',
                         borderRadius: '8px',
-                        background: '#2563eb',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                         color: '#ffffff',
                         border: 'none',
                         fontSize: '12px',
                         fontWeight: '700',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 10px rgba(37, 99, 235, 0.3)'
                       }}
                     >
-                      Parse & Stage Pasted Data
+                      <CheckCircle size={16} />
+                      <span>Parse & Stage Pasted Data</span>
                     </button>
                   </div>
                 )}
