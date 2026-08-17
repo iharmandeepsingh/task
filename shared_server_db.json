@@ -272,7 +272,8 @@
       "avatar": "AV",
       "status": "Active",
       "source": "EXCEL_IMPORT",
-      "hasAccount": true
+      "hasAccount": true,
+      "password": "123"
     },
     {
       "id": "usr-imp-1786938392080-18",

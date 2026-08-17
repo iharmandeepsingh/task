@@ -13,6 +13,8 @@ import ExtensionRequestModal from './components/ExtensionRequestModal';
 import SubmissionReviewModal from './components/SubmissionReviewModal';
 import AnalyticsDashboardModal from './components/AnalyticsDashboardModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import CalendarView from './components/CalendarView';
+import TagFilterBar from './components/TagFilterBar';
 import { INITIAL_TASKS, INITIAL_TEAM } from './data/initialData';
 import { ShieldAlert, Lock } from 'lucide-react';
 
@@ -49,10 +51,23 @@ export default function App() {
     return INITIAL_TEAM;
   });
 
-  const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'team'
+  const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'calendar', 'team'
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
-  
+  const [selectedTag, setSelectedTag] = useState('ALL');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('ctu_theme') || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('ctu_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [activeChatTask, setActiveChatTask] = useState(null);
@@ -284,7 +299,7 @@ export default function App() {
     return true;
   });
 
-  // Filter Tasks by Search & Priority
+  // Filter Tasks by Search, Priority & Tag
   const filteredTasks = roleScopedTasks.filter((t) => {
     const matchesSearch = 
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -293,7 +308,9 @@ export default function App() {
 
     const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
 
-    return matchesSearch && matchesPriority;
+    const matchesTag = selectedTag === 'ALL' || (Array.isArray(t.tags) && t.tags.includes(selectedTag));
+
+    return matchesSearch && matchesPriority && matchesTag;
   });
 
   // Handlers
@@ -491,6 +508,8 @@ export default function App() {
         setFilterPriority={setFilterPriority}
         authUser={authUser}
         tasks={tasks}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         onLogout={handleLogout}
         onOpenHRImport={() => setIsHRImportOpen(true)}
         onOpenReportCard={() => setIsReportCardOpen(true)}
@@ -537,6 +556,13 @@ export default function App() {
 
         <StatsOverview tasks={filteredTasks} currentRole={currentRole} />
 
+        {/* 🏷️ Quick Tag & Category Filter Pills */}
+        <TagFilterBar
+          tasks={roleScopedTasks}
+          selectedTag={selectedTag}
+          onSelectTag={setSelectedTag}
+        />
+
         {activeView === 'kanban' && (
           <KanbanBoard 
             tasks={filteredTasks}
@@ -563,6 +589,15 @@ export default function App() {
             onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
             onOpenReviewModal={(task) => setActiveReviewTask(task)}
             currentRole={currentRole}
+          />
+        )}
+
+        {activeView === 'calendar' && (
+          <CalendarView 
+            tasks={filteredTasks}
+            onEditTask={handleOpenEditTask}
+            onOpenChat={(task) => setActiveChatTask(task)}
+            onMoveStage={handleMoveStage}
           />
         )}
 

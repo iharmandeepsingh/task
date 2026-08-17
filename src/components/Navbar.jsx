@@ -1,5 +1,5 @@
 import React from 'react';
-import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3, KeyRound } from 'lucide-react';
+import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3, KeyRound, Sun, Moon, Calendar } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar({
@@ -12,6 +12,8 @@ export default function Navbar({
   setFilterPriority,
   authUser,
   tasks = [],
+  theme = 'light',
+  onToggleTheme,
   onLogout,
   onOpenHRImport,
   onOpenReportCard,
@@ -145,6 +147,28 @@ export default function Navbar({
         </div>
 
         <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* 🌙 Dark Mode / ☀️ Light Mode Toggle */}
+          <button
+            onClick={onToggleTheme}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '10px',
+              background: theme === 'dark' ? '#334155' : '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              color: theme === 'dark' ? '#f8fafc' : '#334155',
+              fontWeight: '700',
+              fontSize: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Toggle Light / Dark Mode"
+          >
+            {theme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="#6366f1" />}
+            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
           <NotificationBell
             tasks={tasks}
             authUser={authUser}
@@ -193,6 +217,12 @@ export default function Navbar({
             onClick={() => setActiveView('list')}
           >
             Task List & Filters
+          </button>
+          <button 
+            className={`nav-tab ${activeView === 'calendar' ? 'active' : ''}`}
+            onClick={() => setActiveView('calendar')}
+          >
+            📅 Academic Calendar
           </button>
           
           {/* Strictly Hidden for Faculty Members per Security Rules */}
