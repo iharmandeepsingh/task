@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter } from 'lucide-react';
-import { STAGES, formatDueDateWithDayTime } from '../data/initialData';
+import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
 
 export default function KanbanBoard({
   tasks,
@@ -126,6 +126,7 @@ export default function KanbanBoard({
                       const assignee = team ? team.find((u) => u.id === task.assigneeId) : null;
                       const isIdle = task.isIdle;
                       const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
+                      const urgentInfo = getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage);
 
                       return (
                         <div key={task.id} className={`kanban-card ${isIdle ? 'idle-border' : ''}`}>
@@ -142,6 +143,27 @@ export default function KanbanBoard({
                             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '6px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <Clock size={12} />
                               <span>Extension Requested (Pending HOD Review)</span>
+                            </div>
+                          )}
+
+                          {/* Urgent 24-Hour Countdown Timer Pulsing Badge */}
+                          {urgentInfo && (
+                            <div style={{
+                              background: urgentInfo.bgColor,
+                              border: `1px solid ${urgentInfo.borderColor}`,
+                              color: urgentInfo.textColor,
+                              padding: '5px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              marginBottom: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)'
+                            }}>
+                              <Clock size={13} color={urgentInfo.textColor} />
+                              <span>{urgentInfo.text}</span>
                             </div>
                           )}
 

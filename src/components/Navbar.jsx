@@ -1,5 +1,6 @@
 import React from 'react';
 import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3 } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar({
   activeView,
@@ -10,10 +11,14 @@ export default function Navbar({
   filterPriority,
   setFilterPriority,
   authUser,
+  tasks = [],
   onLogout,
   onOpenHRImport,
   onOpenReportCard,
   onOpenAnalytics,
+  onOpenChat,
+  onOpenExtensionModal,
+  onOpenReviewModal,
 }) {
   const roleTitleMap = {
     superAdmin: 'Super Admin (Global Scope)',
@@ -116,7 +121,15 @@ export default function Navbar({
           </button>
         </div>
 
-        <div className="navbar-actions" style={{ display: 'flex', gap: '8px' }}>
+        <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <NotificationBell
+            tasks={tasks}
+            authUser={authUser}
+            onOpenChat={onOpenChat}
+            onOpenExtensionModal={onOpenExtensionModal}
+            onOpenReviewModal={onOpenReviewModal}
+          />
+
           {(currentRole === 'adminHead' || currentRole === 'hod' || currentRole === 'admin' || currentRole === 'superAdmin') && (
             <button className="btn-primary" onClick={onNewTask}>
               <PlusCircle size={16} />

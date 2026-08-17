@@ -183,3 +183,54 @@ export function formatDueDateWithDayTime(dueDate, dueTime) {
     return dueDate;
   }
 }
+
+export function getUrgentCountdownInfo(dueDate, dueTime, stage) {
+  if (!dueDate || stage === 'Accepted' || stage === 'Completed') return null;
+
+  try {
+    let combinedStr = dueDate;
+    if (dueDate.includes('T')) {
+      combinedStr = dueDate;
+    } else if (dueTime) {
+      combinedStr = `${dueDate}T${dueTime}`;
+    } else {
+      combinedStr = `${dueDate}T17:00`;
+    }
+
+    const targetDate = new Date(combinedStr.includes('T') ? combinedStr : combinedStr.replace(' ', 'T'));
+    if (isNaN(targetDate.getTime())) return null;
+
+    const now = new Date();
+    const diffMs = targetDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffMs < 0) {
+      const overdueHours = Math.abs(Math.floor(diffHours));
+      return {
+        isOverdue: true,
+        isUrgent24h: true,
+        text: overdueHours < 24 ? `🚨 OVERDUE BY ${overdueHours}h` : `🚨 OVERDUE BY ${Math.floor(overdueHours / 24)}d`,
+        bgColor: '#fee2e2',
+        textColor: '#b91c1c',
+        borderColor: '#fca5a5'
+      };
+    }
+
+    if (diffHours <= 24) {
+      const hours = Math.floor(diffHours);
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return {
+        isOverdue: false,
+        isUrgent24h: true,
+        text: `🔥 DUE IN ${hours}h ${minutes}m`,
+        bgColor: '#fff7ed',
+        textColor: '#c2410c',
+        borderColor: '#fdba74'
+      };
+    }
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}

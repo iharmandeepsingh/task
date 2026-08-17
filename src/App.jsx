@@ -467,10 +467,14 @@ export default function App() {
         filterPriority={filterPriority}
         setFilterPriority={setFilterPriority}
         authUser={authUser}
+        tasks={tasks}
         onLogout={handleLogout}
         onOpenHRImport={() => setIsHRImportOpen(true)}
         onOpenReportCard={() => setIsReportCardOpen(true)}
         onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+        onOpenChat={(task) => setActiveChatTask(task)}
+        onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
+        onOpenReviewModal={(task) => setActiveReviewTask(task)}
       />
 
       <main className="main-content">

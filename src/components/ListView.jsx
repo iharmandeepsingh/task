@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Trash2, Edit2, ArrowUpDown, MessageSquare, Clock, Send, RefreshCw, User, Tag } from 'lucide-react';
-import { STAGES, formatDueDateWithDayTime } from '../data/initialData';
+import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
 
 export default function ListView({
   tasks,
@@ -136,9 +136,24 @@ export default function ListView({
                           <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '12px 16px', color: '#1e40af', fontSize: '11px', fontWeight: '700' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
-                          <Clock size={13} color="#2563eb" /> {formatDueDateWithDayTime(task.dueDate, task.dueTime)}
+                      <td style={{ padding: '12px 16px', fontWeight: '700', fontSize: '11px', color: '#1e40af' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                            <Clock size={13} color="#2563eb" /> {formatDueDateWithDayTime(task.dueDate, task.dueTime)}
+                          </div>
+                          {getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage) && (
+                            <div style={{
+                              background: getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage).bgColor,
+                              color: getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage).textColor,
+                              border: `1px solid ${getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage).borderColor}`,
+                              padding: '3px 6px',
+                              borderRadius: '6px',
+                              fontWeight: '800',
+                              fontSize: '10px'
+                            }}>
+                              {getUrgentCountdownInfo(task.dueDate, task.dueTime, task.stage).text}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
