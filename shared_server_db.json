@@ -4984,6 +4984,26 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-703",
+      "title": "dndfkjgven",
+      "description": "kjdhfvke",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938392080-17",
+      "assigneeName": "Arvin Vinayek",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [],
+      "attachments": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
       "id": "CTU-CSE-626",
       "title": "jnvfjv",
       "description": "nj fvjh",

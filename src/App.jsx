@@ -254,60 +254,48 @@ export default function App() {
 
   const currentRole = authUser.role; // 'superAdmin', 'admin', 'hod', 'faculty', 'hr'
 
-  // Role-Based Task Scoping Filter (Complete Phased Implementation)
+  // Role-Based Task Scoping Filter (Strict ID-First, Exact-Name Fallback)
   const roleScopedTasks = tasks.filter((t) => {
-    const authEmpId = (authUser?.employeeId || '').toLowerCase();
-    const authId = (authUser?.id || '').toLowerCase();
-    const authName = (authUser?.name || '').toLowerCase().trim();
+    const authEmpId = (authUser?.employeeId || '').trim();
+    const authId = (authUser?.id || '').trim();
+    const authName = (authUser?.name || '').trim().toLowerCase();
 
-    const taskAssigneeId = (t.assigneeId || '').toLowerCase();
-    const taskAssigneeName = (t.assigneeName || '').toLowerCase().trim();
+    const taskAssigneeId = (t.assigneeId || '').trim();
+    const taskAssigneeName = (t.assigneeName || '').trim().toLowerCase();
+    const taskCreatorId = (t.creatorId || '').trim();
+    const taskCreatorName = (t.creatorName || '').trim().toLowerCase();
 
-    // 🎓 PHASE 1 (COMPLETED): Faculty Member Task Scoping Isolation
-    // Faculty members can ONLY view tasks assigned TO them.
+    // Helper: Strict match — ID (primary) or EXACT full name (fallback only)
+    const matchesAsAssignee =
+      (authId && taskAssigneeId === authId) ||
+      (authEmpId && taskAssigneeId === authEmpId) ||
+      (authName && taskAssigneeName === authName);
+
+    const matchesAsCreator =
+      (authId && taskCreatorId === authId) ||
+      (authEmpId && taskCreatorId === authEmpId) ||
+      (authName && taskCreatorName === authName);
+
+    // 🎓 PHASE 1: Faculty — can ONLY view tasks assigned strictly TO them
     if (currentRole === 'faculty') {
-      const isAssignedToFaculty = 
-        (authId && taskAssigneeId === authId) ||
-        (authEmpId && taskAssigneeId === authEmpId) ||
-        (authName && taskAssigneeName.includes(authName)) ||
-        (authName && authName.includes(taskAssigneeName));
-
-      return isAssignedToFaculty;
+      return matchesAsAssignee;
     }
 
-    // 👑 PHASE 2 & 3 (COMPLETED): Executive Super Admin Global Oversight
-    // Super Admins (Dr. Nitin Tandon, Dr. Simranjeet Kaur Gill, ID 10001, Dr. Manjit Singh) can view ALL tasks assigned across CT University.
-    const isSuperAdminAccount = 
-      currentRole === 'superAdmin' || 
-      authEmpId === '10001' || 
-      authId === 'usr-10001' ||
-      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authEmpId) ||
-      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authId);
+    // 👑 PHASE 3: Executive Super Admin — can view ALL tasks across CT University
+    const isSuperAdminAccount =
+      currentRole === 'superAdmin' ||
+      ['24051', '17572', '10001', '001'].includes(authEmpId) ||
+      ['usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(authId);
 
     if (isSuperAdminAccount) {
       return true;
     }
 
-    // 🏛️ PHASE 2 (COMPLETED): University Administrator / HOD Direct Assignment Chain Scoping
-    // Admins can ONLY view:
-    // 1. Tasks assigned TO them (Incoming from Super Admin or another Admin)
-    // 2. Tasks assigned BY them (Delegated to Faculty or another Admin)
-    const taskCreatorName = (t.creatorName || '').toLowerCase().trim();
-    const taskCreatorId = (t.creatorId || '').toLowerCase().trim();
-
-    const isCreatorOfTask = 
-      (authId && taskCreatorId === authId) ||
-      (authEmpId && taskCreatorId === authEmpId) ||
-      (authName && taskCreatorName.includes(authName)) ||
-      (authName && authName.includes(taskCreatorName));
-
-    const isAssignedToAdmin = 
-      (authId && taskAssigneeId === authId) ||
-      (authEmpId && taskAssigneeId === authEmpId) ||
-      (authName && taskAssigneeName.includes(authName)) ||
-      (authName && authName.includes(taskAssigneeName));
-
-    return isCreatorOfTask || isAssignedToAdmin;
+    // 🏛️ PHASE 2: University Administrator / HOD — ONLY their direct assignment chain:
+    // ✅ Tasks assigned TO them (Incoming from Super Admin or from another Admin)
+    // ✅ Tasks assigned BY them (Delegated to Faculty or to another Admin)
+    // 🚫 Tasks between other Admins and other Faculty/Admins are HIDDEN
+    return matchesAsCreator || matchesAsAssignee;
   });
 
   // Filter Tasks by Search, Priority & Tag
