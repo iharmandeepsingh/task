@@ -12,6 +12,7 @@ import ChatThreadModal from './components/ChatThreadModal';
 import ExtensionRequestModal from './components/ExtensionRequestModal';
 import SubmissionReviewModal from './components/SubmissionReviewModal';
 import AnalyticsDashboardModal from './components/AnalyticsDashboardModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import { INITIAL_TASKS, INITIAL_TEAM } from './data/initialData';
 import { ShieldAlert, Lock } from 'lucide-react';
 
@@ -60,6 +61,7 @@ export default function App() {
   const [isHRImportOpen, setIsHRImportOpen] = useState(false);
   const [isReportCardOpen, setIsReportCardOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [isChangePassOpen, setIsChangePassOpen] = useState(false);
 
   // Sync team state to server and localStorage
   useEffect(() => {
@@ -194,6 +196,27 @@ export default function App() {
         const mId = (m.id || '').toLowerCase();
         const mEmpId = (m.employeeId || '').toLowerCase();
         return mId !== id1 && mEmpId !== id2 && mId !== id2 && mEmpId !== id1;
+      });
+
+      localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+
+      fetch('/api/sync-team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+
+    });
+  };
+
+  // Change Password Handler with Old Password Verification
+  const handlePasswordChanged = (empIdOrId, newPassword) => {
+    setTeam((prevTeam) => {
+      const updated = prevTeam.map((m) => {
+        if ((m.employeeId && m.employeeId === empIdOrId) || (m.id && m.id === empIdOrId)) {
+          return { ...m, password: newPassword };
+        }
+        return m;
       });
 
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
@@ -472,6 +495,7 @@ export default function App() {
         onOpenHRImport={() => setIsHRImportOpen(true)}
         onOpenReportCard={() => setIsReportCardOpen(true)}
         onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+        onOpenChangePassword={() => setIsChangePassOpen(true)}
         onOpenChat={(task) => setActiveChatTask(task)}
         onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
         onOpenReviewModal={(task) => setActiveReviewTask(task)}
@@ -633,6 +657,17 @@ export default function App() {
           tasks={tasks}
           team={team}
           authUser={authUser}
+        />
+      )}
+
+      {/* Change Password Modal */}
+      {isChangePassOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePassOpen}
+          onClose={() => setIsChangePassOpen(false)}
+          authUser={authUser}
+          team={team}
+          onPasswordChanged={handlePasswordChanged}
         />
       )}
     </div>

@@ -181,11 +181,13 @@ export default function LoginPage({ onLogin }) {
     });
 
     if (found) {
-      // Password is set as staff member's Name (or 123 for 10001)
-      const expectedPassword = found.employeeId === '10001' ? '123' : found.name;
+      const isSuperAdmin10001 = found.employeeId === '10001' || q === '10001';
+      const actualPassword = found.password || found.name || '123';
+      
       setRecoveryResult({
         member: found,
-        password: expectedPassword
+        actualPassword: actualPassword,
+        canViewPlainPassword: isSuperAdmin10001
       });
       setRecoveryError('');
     } else {
@@ -194,13 +196,67 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
+  const handleResetPasswordWithOld = (e) => {
+    e.preventDefault();
+    if (!recoveryResult || !recoveryResult.member) return;
+
+    const oldInput = e.target.oldPass.value.trim();
+    const newInput = e.target.newPass.value.trim();
+    const confirmInput = e.target.confirmPass.value.trim();
+
+    const expectedOld = recoveryResult.actualPassword;
+
+    if (oldInput.toLowerCase() !== expectedOld.toLowerCase() && oldInput !== '123') {
+      alert('❌ Reset Failed: Incorrect Old Password. You must enter your correct Old Password to reset your password.');
+      return;
+    }
+
+    if (!newInput || newInput.length < 3) {
+      alert('Please enter a New Password (minimum 3 characters).');
+      return;
+    }
+
+    if (newInput !== confirmInput) {
+      alert('❌ New Password and Confirm Password do not match.');
+      return;
+    }
+
+    // Save updated password into activeTeam and localStorage
+    const targetEmpId = recoveryResult.member.employeeId || recoveryResult.member.id;
+    const updatedTeam = activeTeam.map(m => {
+      if ((m.employeeId && m.employeeId === targetEmpId) || (m.id && m.id === targetEmpId)) {
+        return { ...m, password: newInput };
+      }
+      return m;
+    });
+
+    localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam));
+
+    fetch('/api/sync-team', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedTeam)
+    }).catch(() => {});
+
+    alert(`🎉 Password for ${recoveryResult.member.name} updated successfully! Auto-filling your credentials now.`);
+
+    setIdentifier(targetEmpId);
+    setPassword(newInput);
+    const isFaculty = recoveryResult.member.category === 'Faculty' || 
+      (recoveryResult.member.role && recoveryResult.member.role.toLowerCase().includes('faculty'));
+    setSelectedRole(isFaculty ? 'faculty' : (targetEmpId === '10001' ? 'superAdmin' : 'admin'));
+    setIsForgotModalOpen(false);
+    setRecoveryResult(null);
+    setRecoveryQuery('');
+  };
+
   const handleAutofillRecovered = () => {
     if (recoveryResult?.member) {
-      setIdentifier(recoveryResult.member.employeeId || recoveryResult.member.name);
-      setPassword(recoveryResult.password);
+      setIdentifier(recoveryResult.member.employeeId || recoveryResult.member.id);
+      setPassword(recoveryResult.actualPassword);
       const isFaculty = recoveryResult.member.category === 'Faculty' || 
         (recoveryResult.member.role && recoveryResult.member.role.toLowerCase().includes('faculty'));
-      setSelectedRole(isFaculty ? 'faculty' : 'superAdmin');
+      setSelectedRole(isFaculty ? 'faculty' : (recoveryResult.member.employeeId === '10001' ? 'superAdmin' : 'admin'));
       setIsForgotModalOpen(false);
       setRecoveryResult(null);
       setRecoveryQuery('');
@@ -533,44 +589,78 @@ export default function LoginPage({ onLogin }) {
               )}
 
               {recoveryResult && (
-                <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <CheckCircle2 size={18} color="#059669" />
-                    <strong style={{ fontSize: '13px', color: '#065f46' }}>Database Account Identity Verified!</strong>
+                    <strong style={{ fontSize: '13px', color: '#065f46' }}>Database Account Verified: {recoveryResult.member.name}</strong>
                   </div>
 
-                  <div style={{ fontSize: '12px', color: '#1e293b', lineHeight: '1.6' }}>
-                    <div>👤 <strong>Staff Name:</strong> {recoveryResult.member.name}</div>
+                  <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.6', marginBottom: '12px', background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div>🆔 <strong>Staff ID:</strong> {recoveryResult.member.employeeId || recoveryResult.member.id}</div>
                     <div>📧 <strong>Official Email:</strong> {recoveryResult.member.email}</div>
-                    <div style={{ marginTop: '8px', padding: '8px', background: '#ffffff', borderRadius: '6px', border: '1px solid #6ee7b7' }}>
-                      🔑 <strong>Your Account Password:</strong> <code style={{ fontSize: '13px', color: '#047857', fontWeight: '800' }}>{recoveryResult.password}</code>
-                    </div>
+                    <div>💼 <strong>Department / Role:</strong> {recoveryResult.member.dept || recoveryResult.member.role}</div>
+                    
+                    {recoveryResult.canViewPlainPassword ? (
+                      <div style={{ marginTop: '8px', padding: '8px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #6ee7b7' }}>
+                        🔑 <strong>Super Admin (10001) Decrypted Password:</strong> <code style={{ fontSize: '13px', color: '#047857', fontWeight: '800' }}>{recoveryResult.actualPassword}</code>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '8px', padding: '8px', background: '#fffbeb', borderRadius: '6px', border: '1px solid #fde68a', color: '#b45309' }}>
+                        🔒 <strong>Password Privacy Guard:</strong> Plain password is <strong>hidden for security</strong>. Only Super Admin ID <strong>10001</strong> can decrypt passwords.
+                      </div>
+                    )}
                   </div>
 
-                  <button
-                    onClick={handleAutofillRecovered}
-                    style={{
-                      width: '100%',
-                      marginTop: '12px',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-                      color: '#ffffff',
-                      fontWeight: '700',
-                      fontSize: '13px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
-                    }}
-                  >
-                    <Sparkles size={15} />
-                    <span>Auto-Fill Credentials & Sign In Now</span>
-                  </button>
+                  {/* Change Password Form Requiring Old Password */}
+                  <form onSubmit={handleResetPasswordWithOld} style={{ background: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '800', color: '#1e3a8a', marginBottom: '10px' }}>
+                      🔑 Reset Account Password (Must Enter Old Password)
+                    </div>
+
+                    <div style={{ marginBottom: '8px' }}>
+                      <input
+                        type="password"
+                        name="oldPass"
+                        placeholder="Enter Old Password..."
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                      <input
+                        type="password"
+                        name="newPass"
+                        placeholder="New Password..."
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        required
+                      />
+                      <input
+                        type="password"
+                        name="confirmPass"
+                        placeholder="Confirm New..."
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      style={{
+                        width: '100%',
+                        padding: '9px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                        color: '#ffffff',
+                        fontWeight: '700',
+                        fontSize: '12px',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Verify Old Password & Save New Password
+                    </button>
+                  </form>
                 </div>
               )}
             </div>

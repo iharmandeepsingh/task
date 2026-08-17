@@ -1,5 +1,5 @@
 import React from 'react';
-import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3 } from 'lucide-react';
+import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3, KeyRound } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar({
@@ -16,6 +16,7 @@ export default function Navbar({
   onOpenHRImport,
   onOpenReportCard,
   onOpenAnalytics,
+  onOpenChangePassword,
   onOpenChat,
   onOpenExtensionModal,
   onOpenReviewModal,
@@ -98,27 +99,49 @@ export default function Navbar({
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              background: '#fee2e2',
-              color: '#dc2626',
-              border: 'none',
-              fontSize: '11px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              marginLeft: '8px'
-            }}
-            title="Sign out of CT University portal"
-          >
-            <LogOut size={13} />
-            <span>Sign Out</span>
-          </button>
+          <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
+            <button
+              onClick={onOpenChangePassword}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: '1px solid #bfdbfe',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+              title="Change Account Password"
+            >
+              <KeyRound size={13} />
+              <span>Change Pass</span>
+            </button>
+
+            <button
+              onClick={onLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#fee2e2',
+                color: '#dc2626',
+                border: 'none',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+              title="Sign out of CT University portal"
+            >
+              <LogOut size={13} />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
