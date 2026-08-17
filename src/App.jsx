@@ -105,35 +105,20 @@ export default function App() {
       fetch('/api/sync-team')
         .then((r) => r.json())
         .then((data) => {
-          if (data && Array.isArray(data.team) && data.team.length > 0) {
+          if (data && Array.isArray(data.team)) {
             setTeam((prev) => {
               const savedDeleted = localStorage.getItem('ctu_deleted_employee_ids');
               const deletedSet = new Set((savedDeleted ? JSON.parse(savedDeleted) : []).map(id => String(id).toLowerCase()));
               
-              const teamMap = new Map();
-              prev.forEach(m => {
+              const filteredCloud = data.team.filter(m => {
                 const k1 = (m.id || '').toLowerCase();
                 const k2 = (m.employeeId || '').toLowerCase();
-                if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
-                  teamMap.set(k2 || k1, m);
-                }
+                return !deletedSet.has(k1) && !deletedSet.has(k2);
               });
 
-              data.team.forEach(m => {
-                const k1 = (m.id || '').toLowerCase();
-                const k2 = (m.employeeId || '').toLowerCase();
-                if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
-                  // Only add from cloud if not deleted
-                  if (!teamMap.has(k2 || k1)) {
-                    teamMap.set(k2 || k1, m);
-                  }
-                }
-              });
-
-              const merged = Array.from(teamMap.values());
-              if (merged.length !== prev.length || JSON.stringify(prev) !== JSON.stringify(merged)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(merged));
-                return merged;
+              if (JSON.stringify(prev) !== JSON.stringify(filteredCloud)) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(filteredCloud));
+                return filteredCloud;
               }
               return prev;
             });

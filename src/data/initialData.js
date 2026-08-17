@@ -10,39 +10,7 @@ export const INITIAL_TEAM = [
   { id: 'usr-24051', employeeId: '24051', name: 'Dr. Nitin Tandon', role: 'Super Admin', category: 'Admin', dept: 'Vice Chancellor / Executive Director & Dean Research', email: 'drnitin@ctuniversity.in', avatar: 'NT' },
   { id: 'usr-17572', employeeId: '17572', name: 'Dr. Simranjeet Kaur Gill', role: 'Super Admin', category: 'Admin', dept: 'Pro Vice Chancellor / Dean Academics / Principal of SOL', email: 'principalsol@ctuniversity.in', avatar: 'SG' },
   { id: 'usr-10001', employeeId: '10001', name: 'Super Admin', role: 'Super Admin', category: 'Admin', dept: 'University Executive Administration', email: 'superadmin.10001@ctu.edu.in', avatar: 'SA' },
-  { id: 'usr-0', employeeId: '001', name: 'Dr. Manjit Singh', role: 'Super Admin', category: 'Admin', dept: 'University Administration', email: 'superadmin@ctu.edu.in', avatar: 'MS' },
-  { id: 'usr-1', employeeId: '102', name: 'Dr. Gurpreet Singh', role: 'University Admin', category: 'Admin', dept: 'Central Academic Affairs', email: 'head.cse@ctu.edu.in', avatar: 'GS' },
-  { id: 'usr-2', employeeId: '205', name: 'Ms. Pooja Rani', role: 'HR Lead', category: 'Admin', dept: 'Human Resources', email: 'hr.head@ctu.edu.in', avatar: 'PR' },
-  { id: 'usr-10', employeeId: '102-ADM', name: 'Mr. Suresh Grover', role: 'Finance Officer', category: 'Admin', dept: 'Accounts & Finance', email: 'suresh.accounts@ctu.edu.in', avatar: 'SG' },
-
-  // Faculty Directory (School of Management, Engineering, Law, Pharmacy, Sciences)
-  { id: 'usr-26001', employeeId: '26001', name: 'Arvin Vinayek', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering & Technology', email: 'arvin.vinayek@ctu.edu.in', avatar: 'AV' },
-  { id: 'usr-arvin', employeeId: 'ARVIN', name: 'Arvin Vinayek', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering & Technology', email: 'arvin.vinayek@ctu.edu.in', avatar: 'AV' },
-  { id: 'usr-26010', employeeId: '26010', name: 'Shilpa Debnath', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Management & Sciences', email: 'shilpa.debnath@ctu.edu.in', avatar: 'SD' },
-  { id: 'usr-26011', employeeId: '26011', name: 'Sumanpreet Kaur', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering & Technology', email: 'sumanpreet.engineering@ctu.edu.in', avatar: 'SK' },
-  { id: 'usr-26012', employeeId: '26012', name: 'Dr. Harmanpreet Singh', role: 'Professor & Head', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'harman.faculty@ctu.edu.in', avatar: 'HS' },
-  { id: 'usr-26013', employeeId: '26013', name: 'Dr. Preeti Verma', role: 'Associate Professor', category: 'Faculty', dept: 'School of Engineering', email: 'preeti.verma@ctu.edu.in', avatar: 'PV' },
-  { id: 'usr-26014', employeeId: '26014', name: 'Er. Vikramjeet Singh', role: 'Senior Lecturer', category: 'Faculty', dept: 'Mechanical Engineering', email: 'vikram.singh@ctu.edu.in', avatar: 'VS' },
-  { id: 'usr-26015', employeeId: '26015', name: 'Prof. Ananya Sharma', role: 'Professor', category: 'Faculty', dept: 'School of Law', email: 'ananya.law@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-26016', employeeId: '26016', name: 'Dr. Rajesh Kumar', role: 'Associate Professor', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'rajesh.kumar@ctu.edu.in', avatar: 'RK' },
-  { id: 'usr-26017', employeeId: '26017', name: 'Dr. Simranjeet Kaur', role: 'Assistant Professor', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'simranjeet.kaur@ctu.edu.in', avatar: 'SK' },
-  { id: 'usr-26018', employeeId: '26018', name: 'Prof. Amit Sharma', role: 'Professor', category: 'Faculty', dept: 'School of Management', email: 'amit.sharma@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-26019', employeeId: '26019', name: 'Er. Gurleen Kaur', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering & Technology', email: 'gurleen.kaur@ctu.edu.in', avatar: 'GK' },
-  { id: 'usr-26020', employeeId: '26020', name: 'Dr. Jaspreet Singh', role: 'Associate Professor', category: 'Faculty', dept: 'School of Pharmaceutical Sciences', email: 'jaspreet.pharmacy@ctu.edu.in', avatar: 'JS' },
-  { id: 'usr-26021', employeeId: '26021', name: 'Ms. Navneet Kaur', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Humanities & Physical Education', email: 'navneet.humanities@ctu.edu.in', avatar: 'NK' },
-  { id: 'usr-26022', employeeId: '26022', name: 'Dr. Rahul Sharma', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Hotel Management & Tourism', email: 'rahul.hm@ctu.edu.in', avatar: 'RS' },
-  { id: 'usr-26023', employeeId: '26023', name: 'Er. Manpreet Kaur', role: 'Senior Lecturer', category: 'Faculty', dept: 'School of Engineering & Technology', email: 'manpreet.eng@ctu.edu.in', avatar: 'MK' },
-  { id: 'usr-26024', employeeId: '26024', name: 'Dr. Amandeep Singh', role: 'Associate Professor', category: 'Faculty', dept: 'School of Agriculture', email: 'amandeep.agri@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-26025', employeeId: '26025', name: 'Ms. Harpreet Kaur', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Design & Innovation', email: 'harpreet.design@ctu.edu.in', avatar: 'HK' },
-
-  // Faculty ID Shortcodes (301-315)
-  { id: 'usr-301', employeeId: '301', name: 'Dr. Preeti Verma', role: 'Assistant Professor', category: 'Faculty', dept: 'School of Engineering', email: 'preeti@ctu.edu.in', avatar: 'PV' },
-  { id: 'usr-302', employeeId: '302', name: 'Er. Vikramjeet Singh', role: 'Senior Lecturer', category: 'Faculty', dept: 'Mechanical Engineering', email: 'vikram@ctu.edu.in', avatar: 'VS' },
-  { id: 'usr-303', employeeId: '303', name: 'Dr. Simranjeet Kaur', role: 'Associate Professor', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'simran@ctu.edu.in', avatar: 'SK' },
-  { id: 'usr-304', employeeId: '304', name: 'Prof. Amit Sharma', role: 'Professor', category: 'Faculty', dept: 'School of Management', email: 'amit.sharma@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-309', employeeId: '309', name: 'Dr. Harmanpreet Singh', role: 'Faculty', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'harman.faculty@ctu.edu.in', avatar: 'HS' },
-  { id: 'usr-312', employeeId: '312', name: 'Prof. Ananya Sharma', role: 'Faculty', category: 'Faculty', dept: 'School of Law', email: 'ananya.law@ctu.edu.in', avatar: 'AS' },
-  { id: 'usr-315', employeeId: '315', name: 'Dr. Rajesh Kumar', role: 'Faculty', category: 'Faculty', dept: 'Computer Science & Engineering', email: 'rajesh@ctu.edu.in', avatar: 'RK' }
+  { id: 'usr-0', employeeId: '001', name: 'Dr. Manjit Singh', role: 'Super Admin', category: 'Admin', dept: 'University Administration', email: 'superadmin@ctu.edu.in', avatar: 'MS' }
 ];
 
 export const INITIAL_TASKS = [
