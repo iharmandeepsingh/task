@@ -11,6 +11,7 @@ import FacultyReportCardModal from './components/FacultyReportCardModal';
 import ChatThreadModal from './components/ChatThreadModal';
 import ExtensionRequestModal from './components/ExtensionRequestModal';
 import SubmissionReviewModal from './components/SubmissionReviewModal';
+import AnalyticsDashboardModal from './components/AnalyticsDashboardModal';
 import { INITIAL_TASKS, INITIAL_TEAM } from './data/initialData';
 import { ShieldAlert, Lock } from 'lucide-react';
 
@@ -58,6 +59,7 @@ export default function App() {
   const [activeReviewTask, setActiveReviewTask] = useState(null);
   const [isHRImportOpen, setIsHRImportOpen] = useState(false);
   const [isReportCardOpen, setIsReportCardOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   // Sync team state to server and localStorage
   useEffect(() => {
@@ -468,6 +470,7 @@ export default function App() {
         onLogout={handleLogout}
         onOpenHRImport={() => setIsHRImportOpen(true)}
         onOpenReportCard={() => setIsReportCardOpen(true)}
+        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
       />
 
       <main className="main-content">
@@ -615,6 +618,17 @@ export default function App() {
           authUser={authUser}
           onSubmitTask={handleSubmitTask}
           onReviewSubmission={handleReviewSubmission}
+        />
+      )}
+
+      {/* NAAC Analytics & Official Exporter Modal */}
+      {isAnalyticsOpen && (
+        <AnalyticsDashboardModal
+          isOpen={isAnalyticsOpen}
+          onClose={() => setIsAnalyticsOpen(false)}
+          tasks={tasks}
+          team={team}
+          authUser={authUser}
         />
       )}
     </div>

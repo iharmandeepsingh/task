@@ -1,5 +1,5 @@
 import React from 'react';
-import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award } from 'lucide-react';
+import { School, Shield, UserCheck, Users, PlusCircle, Search, Filter, FileSpreadsheet, LogOut, Lock, Award, BarChart3 } from 'lucide-react';
 
 export default function Navbar({
   activeView,
@@ -13,6 +13,7 @@ export default function Navbar({
   onLogout,
   onOpenHRImport,
   onOpenReportCard,
+  onOpenAnalytics,
 }) {
   const roleTitleMap = {
     superAdmin: 'Super Admin (Global Scope)',
@@ -123,10 +124,14 @@ export default function Navbar({
             </button>
           )}
 
-          {currentRole === 'hr' && (
-            <button className="btn-secondary" onClick={onOpenHRImport}>
-              <FileSpreadsheet size={16} />
-              <span>Bulk CSV/XLSX Import</span>
+          {!isFaculty && (
+            <button 
+              className="btn-secondary" 
+              onClick={onOpenAnalytics}
+              style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 10px rgba(30, 58, 138, 0.25)' }}
+            >
+              <BarChart3 size={16} />
+              <span>NAAC Analytics & Exporter</span>
             </button>
           )}
 
