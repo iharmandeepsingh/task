@@ -13,7 +13,75 @@ export const INITIAL_TEAM = [
   { id: 'usr-0', employeeId: '001', name: 'Dr. Manjit Singh', role: 'Super Admin', category: 'Admin', dept: 'University Administration', email: 'superadmin@ctu.edu.in', avatar: 'MS' }
 ];
 
-export const INITIAL_TASKS = [];
+export const INITIAL_TASKS = [
+  {
+    id: 'CTU-ENG-301',
+    title: 'Smart City Internet of Things Research Paper Submission',
+    description: 'Prepare and submit peer-reviewed manuscript for IEEE IoT Journal.',
+    creatorName: 'Dr. Nitin Tandon (Super Admin)',
+    creatorId: 'usr-24051',
+    assigneeId: 'usr-10001',
+    assigneeName: 'Super Admin',
+    departmentName: 'School of Engineering & Technology',
+    priority: 'High',
+    stage: 'In Progress',
+    deadlineHealth: 'Green',
+    progressPercent: 50,
+    dueDate: '2026-08-25',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-av-1', text: 'Compile experimental data plots', done: true },
+      { id: 'st-av-2', text: 'Draft IEEE two-column paper template', done: false }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
+    id: 'CTU-MGT-401',
+    title: 'NAAC Executive Management Accreditation Audit',
+    description: 'Assemble School of Management syllabus modules and student feedback audits.',
+    creatorName: 'Dr. Simranjeet Kaur Gill (Super Admin)',
+    creatorId: 'usr-17572',
+    assigneeId: 'usr-24051',
+    assigneeName: 'Dr. Nitin Tandon',
+    departmentName: 'School of Management & Sciences',
+    priority: 'Urgent',
+    stage: 'In Progress',
+    deadlineHealth: 'Green',
+    progressPercent: 75,
+    dueDate: '2026-08-22',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-sd-1', text: 'Collect student feedback forms', done: true },
+      { id: 'st-sd-2', text: 'Compile course outcome report', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  },
+  {
+    id: 'CTU-CSE-101',
+    title: 'NAAC Accreditation Criterion 3 Research Report',
+    description: 'Compile research publications, consultancy grants, and patents data for NAAC inspection.',
+    creatorName: 'Dr. Manjit Singh (Super Admin)',
+    creatorId: 'usr-0',
+    assigneeId: 'usr-17572',
+    assigneeName: 'Dr. Simranjeet Kaur Gill',
+    departmentName: 'Computer Science & Engineering',
+    priority: 'High',
+    stage: 'Submitted for Review',
+    deadlineHealth: 'Yellow',
+    progressPercent: 90,
+    dueDate: '2026-08-20',
+    isIdle: false,
+    subtasks: [
+      { id: 'st-1', text: 'Gather Scopus publication index', done: true },
+      { id: 'st-2', text: 'Verify consultancy project receipts', done: true },
+      { id: 'st-3', text: 'Draft PDF annexure summary', done: true }
+    ],
+    extensions: [],
+    chatMessages: []
+  }
+];
 
 export const STAGES = ['Assigned', 'In Progress', 'Submitted for Review', 'Under Review', 'Accepted', 'Completed', 'Rejected', 'Re-issued'];
 export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
