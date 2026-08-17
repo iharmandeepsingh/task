@@ -21,15 +21,29 @@ export default function App() {
   });
 
   const [tasks, setTasks] = useState(() => {
-    localStorage.removeItem('ctu_tasks_data');
+    const saved = localStorage.getItem('ctu_tasks_data');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
     return INITIAL_TASKS;
   });
 
-  const [deletedEmployeeIds, setDeletedEmployeeIds] = useState([]);
+  const [deletedEmployeeIds, setDeletedEmployeeIds] = useState(() => {
+    const saved = localStorage.getItem('ctu_deleted_employee_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const [team, setTeam] = useState(() => {
-    localStorage.removeItem('ctu_team_data');
-    localStorage.removeItem('ctu_deleted_employee_ids');
+    const saved = localStorage.getItem('ctu_team_data');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
     return INITIAL_TEAM;
   });
 
@@ -71,7 +85,7 @@ export default function App() {
       fetch('/api/sync-team')
         .then((r) => r.json())
         .then((data) => {
-          if (data && Array.isArray(data.team)) {
+          if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
               if (JSON.stringify(prev) !== JSON.stringify(data.team)) {
                 localStorage.setItem('ctu_team_data', JSON.stringify(data.team));
@@ -86,7 +100,7 @@ export default function App() {
       fetch('/api/sync-tasks')
         .then((r) => r.json())
         .then((data) => {
-          if (data && Array.isArray(data.tasks) && data.tasks.length > 0) {
+          if (data && Array.isArray(data.tasks)) {
             setTasks((prev) => {
               if (JSON.stringify(prev) !== JSON.stringify(data.tasks)) {
                 localStorage.setItem('ctu_tasks_data', JSON.stringify(data.tasks));
@@ -103,6 +117,8 @@ export default function App() {
     const interval = setInterval(syncFromCloud, 4000);
     return () => clearInterval(interval);
   }, []);
+
+
 
   useEffect(() => {
     if (authUser) {
