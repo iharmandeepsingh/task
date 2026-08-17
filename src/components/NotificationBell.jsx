@@ -190,15 +190,16 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
           position: 'absolute',
           top: '46px',
           right: 0,
-          width: '360px',
-          maxWidth: '90vw',
+          width: '340px',
+          maxWidth: 'calc(100vw - 24px)',
           background: '#ffffff',
           borderRadius: '14px',
-          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
           border: '1px solid #e2e8f0',
-          zIndex: 1100,
+          zIndex: 9999,
           overflow: 'hidden',
-          animation: 'fadeIn 0.2s ease'
+          animation: 'fadeIn 0.2s ease',
+          boxSizing: 'border-box'
         }}>
           {/* Dropdown Header */}
           <div style={{
@@ -240,8 +241,8 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
             )}
           </div>
 
-          {/* Notifications List */}
-          <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+          {/* Notifications List with Viewport Safety Scroll */}
+          <div style={{ maxHeight: 'calc(70vh - 100px)', minHeight: '120px', overflowY: 'auto' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
                 🔔 No recent notifications. You are all caught up!

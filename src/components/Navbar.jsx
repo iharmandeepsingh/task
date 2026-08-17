@@ -146,7 +146,7 @@ export default function Navbar({
           </div>
         </div>
 
-        <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="navbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* 🌙 Dark Mode / ☀️ Light Mode Toggle */}
           <button
             onClick={onToggleTheme}

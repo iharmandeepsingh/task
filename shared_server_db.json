@@ -4984,6 +4984,32 @@
   ],
   "tasks": [
     {
+      "id": "CTU-CSE-194",
+      "title": "title",
+      "description": "title",
+      "stage": "Assigned",
+      "priority": "Medium",
+      "assigneeId": "usr-imp-1786938431093-3",
+      "assigneeName": "Dr. Abhilash Thakur",
+      "tags": [
+        "Academic",
+        "CSE"
+      ],
+      "dueDate": "2026-08-20T17:00",
+      "dueTime": "17:00",
+      "subtasks": [
+        {
+          "id": "s-1786985910184",
+          "text": "title",
+          "done": false
+        }
+      ],
+      "attachments": [],
+      "progressPercent": 0,
+      "deadlineHealth": "Green",
+      "isIdle": false
+    },
+    {
       "id": "CTU-CSE-336",
       "title": "exam",
       "description": "exam",
@@ -5006,7 +5032,7 @@
       "id": "CTU-CSE-451",
       "title": "erp handle foe students",
       "description": "has to do all the erp work",
-      "stage": "Completed",
+      "stage": "Under Review",
       "priority": "High",
       "assigneeId": "usr-imp-1786938392080-17",
       "assigneeName": "Arvin Vinayek",
@@ -5027,7 +5053,7 @@
           "done": true
         }
       ],
-      "progressPercent": 100,
+      "progressPercent": 90,
       "deadlineHealth": "Green",
       "isIdle": false,
       "chatMessages": [
