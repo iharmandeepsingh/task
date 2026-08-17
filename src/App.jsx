@@ -37,34 +37,16 @@ export default function App() {
   });
 
   const [team, setTeam] = useState(() => {
-    const savedDeleted = localStorage.getItem('ctu_deleted_employee_ids');
-    const deletedSet = new Set((savedDeleted ? JSON.parse(savedDeleted) : []).map(id => String(id).toLowerCase()));
     const saved = localStorage.getItem('ctu_team_data');
-    
-    const teamMap = new Map();
-    INITIAL_TEAM.forEach(m => {
-      const k1 = (m.id || '').toLowerCase();
-      const k2 = (m.employeeId || '').toLowerCase();
-      if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
-        teamMap.set(k2 || k1, m);
-      }
-    });
-
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(m => {
-            const k1 = (m.id || '').toLowerCase();
-            const k2 = (m.employeeId || '').toLowerCase();
-            if (!deletedSet.has(k1) && !deletedSet.has(k2)) {
-              teamMap.set(k2 || k1, m);
-            }
-          });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
       } catch (e) {}
     }
-    return Array.from(teamMap.values());
+    return INITIAL_TEAM;
   });
 
   const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'team'
@@ -107,18 +89,9 @@ export default function App() {
         .then((data) => {
           if (data && Array.isArray(data.team)) {
             setTeam((prev) => {
-              const savedDeleted = localStorage.getItem('ctu_deleted_employee_ids');
-              const deletedSet = new Set((savedDeleted ? JSON.parse(savedDeleted) : []).map(id => String(id).toLowerCase()));
-              
-              const filteredCloud = data.team.filter(m => {
-                const k1 = (m.id || '').toLowerCase();
-                const k2 = (m.employeeId || '').toLowerCase();
-                return !deletedSet.has(k1) && !deletedSet.has(k2);
-              });
-
-              if (JSON.stringify(prev) !== JSON.stringify(filteredCloud)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(filteredCloud));
-                return filteredCloud;
+              if (JSON.stringify(prev) !== JSON.stringify(data.team)) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(data.team));
+                return data.team;
               }
               return prev;
             });
