@@ -5007,7 +5007,7 @@
       "id": "CTU-CSE-626",
       "title": "jnvfjv",
       "description": "nj fvjh",
-      "stage": "Assigned",
+      "stage": "Under Review",
       "priority": "Medium",
       "assigneeId": "usr-imp-1786938392080-17",
       "assigneeName": "Arvin Vinayek",
@@ -5021,23 +5021,31 @@
         {
           "id": "s-1786989939132",
           "text": "jdbv",
-          "done": false
+          "done": true
         }
       ],
       "attachments": [],
-      "progressPercent": 0,
+      "progressPercent": 100,
       "deadlineHealth": "Green",
       "isIdle": false,
       "creatorName": "Dr. Abhilash Thakur",
       "creatorId": "usr-imp-1786938431093-3",
       "creatorRole": "Administrative Staff",
-      "departmentName": "Vc office"
+      "departmentName": "Vc office",
+      "extensions": [
+        {
+          "id": "ext-1787067603239",
+          "reason": "klnknki",
+          "requestedDeadline": "2026-08-12",
+          "status": "PENDING"
+        }
+      ]
     },
     {
       "id": "CTU-CSE-495",
       "title": "jvfehdv",
       "description": "dkvhirue",
-      "stage": "In Progress",
+      "stage": "Submitted for Review",
       "priority": "Medium",
       "assigneeId": "usr-imp-1786938431093-3",
       "assigneeName": "Dr. Abhilash Thakur",
@@ -5049,7 +5057,7 @@
       "dueTime": "17:00",
       "subtasks": [],
       "attachments": [],
-      "progressPercent": 30,
+      "progressPercent": 90,
       "deadlineHealth": "Green",
       "isIdle": false
     },

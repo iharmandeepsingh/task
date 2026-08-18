@@ -53,8 +53,29 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
   const notifications = [];
 
   tasks.forEach((t) => {
-    const isAssignee = authUser?.name === t.assigneeName || authUser?.id === t.assigneeId;
-    const isCreator = authUser?.name === t.creatorName || authUser?.id === t.creatorId;
+    const authEmpId = (authUser?.employeeId || '').trim();
+    const authId = (authUser?.id || '').trim();
+    const authName = (authUser?.name || '').trim().toLowerCase();
+
+    const taskAssigneeId = (t.assigneeId || '').trim();
+    const taskAssigneeName = (t.assigneeName || '').trim().toLowerCase();
+    const taskCreatorId = (t.creatorId || '').trim();
+    const taskCreatorName = (t.creatorName || '').trim().toLowerCase();
+
+    const isAssignee =
+      (authId && taskAssigneeId === authId) ||
+      (authEmpId && taskAssigneeId === authEmpId) ||
+      (authName && taskAssigneeName === authName);
+
+    const isCreator =
+      (authId && taskCreatorId === authId) ||
+      (authEmpId && taskCreatorId === authEmpId) ||
+      (authName && taskCreatorName === authName);
+
+    const isSuperAdmin =
+      authUser?.role === 'superAdmin' ||
+      ['10001', '24051', '17572', '001'].includes(authEmpId) ||
+      ['usr-0', 'usr-10001', 'usr-24051'].includes(authId);
 
     // 1. Task Assignment Notification
     if (isAssignee) {
@@ -72,7 +93,7 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
     // 2. Chat Replies & Activity
     if (t.chatMessages && t.chatMessages.length > 0) {
       const lastMsg = t.chatMessages[t.chatMessages.length - 1];
-      if (lastMsg.sender !== authUser?.name && (isAssignee || isCreator)) {
+      if (lastMsg.sender !== authUser?.name && (isAssignee || isCreator || isSuperAdmin)) {
         notifications.push({
           id: `notif-chat-${t.id}-${lastMsg.id || t.chatMessages.length}`,
           type: 'CHAT',
@@ -89,12 +110,13 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
     // 3. Extension Requests & Approvals
     if (t.extensions && t.extensions.length > 0) {
       const lastExt = t.extensions[t.extensions.length - 1];
-      if (lastExt.status === 'PENDING' && isCreator) {
+      const extDate = lastExt.requestedDeadline || lastExt.requestedDate;
+      if (lastExt.status === 'PENDING' && (isCreator || isSuperAdmin)) {
         notifications.push({
           id: `notif-ext-${t.id}-${lastExt.requestedAt || 'req'}`,
           type: 'EXTENSION_PENDING',
           title: `⏳ Extension Requested: ${t.title}`,
-          message: `${t.assigneeName} requested extension until ${lastExt.requestedDate}. Reason: "${lastExt.reason}"`,
+          message: `${t.assigneeName} requested extension until ${extDate}. Reason: "${lastExt.reason}"`,
           timestamp: 'Action Needed',
           task: t,
           action: 'EXTENSION',
@@ -105,7 +127,7 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
           id: `notif-ext-app-${t.id}`,
           type: 'EXTENSION_APPROVED',
           title: `✅ Deadline Extension Approved!`,
-          message: `Your deadline for "${t.title}" has been extended to ${lastExt.requestedDate}.`,
+          message: `Your deadline for "${t.title}" has been extended to ${extDate}.`,
           timestamp: 'Approved',
           task: t,
           icon: <CheckCircle2 size={16} color="#10b981" />

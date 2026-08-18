@@ -475,6 +475,7 @@ export default function App() {
 
   // Extension request application handler
   const handleRequestExtension = (taskId, extensionObj) => {
+    const targetTask = tasks.find(t => t.id === taskId);
     setTasks((prevTasks) => {
       const updated = prevTasks.map((t) => {
         if (t.id === taskId) {
@@ -486,7 +487,7 @@ export default function App() {
       localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
       return updated;
     });
-    alert('Deadline extension request submitted to your Head of Department!');
+    alert(`Deadline extension request submitted to ${targetTask?.creatorName || 'Assigner / Super Admin'}!`);
   };
 
   // Extension approval handler
@@ -512,8 +513,9 @@ export default function App() {
 
   // Submission submit & review handler
   const handleSubmitTask = (taskId, notes) => {
+    const targetTask = tasks.find(t => t.id === taskId);
     handleMoveStage(taskId, 'Submitted for Review');
-    alert('Task successfully submitted to your Head of Department for review!');
+    alert(`Task successfully submitted to ${targetTask?.creatorName || 'Assigner / Super Admin'} for review!`);
     setActiveReviewTask(null);
   };
 

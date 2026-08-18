@@ -8,7 +8,38 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
 
   if (!isOpen || !task) return null;
 
-  const isFaculty = authUser?.role === 'faculty';
+  const authEmpId = (authUser?.employeeId || '').trim();
+  const authId = (authUser?.id || '').trim();
+  const authName = (authUser?.name || '').trim().toLowerCase();
+
+  const taskAssigneeId = (task.assigneeId || '').trim();
+  const taskAssigneeName = (task.assigneeName || '').trim().toLowerCase();
+  const taskCreatorId = (task.creatorId || '').trim();
+  const taskCreatorName = (task.creatorName || '').trim().toLowerCase();
+
+  // Is current logged-in user the assignee on this specific task?
+  const isAssignee =
+    (authId && taskAssigneeId === authId) ||
+    (authEmpId && taskAssigneeId === authEmpId) ||
+    (authName && taskAssigneeName === authName);
+
+  // Is current logged-in user the creator/assigner on this specific task?
+  const isCreator =
+    (authId && taskCreatorId === authId) ||
+    (authEmpId && taskCreatorId === authEmpId) ||
+    (authName && taskCreatorName === authName);
+
+  // Is current user Super Admin?
+  const isSuperAdmin =
+    authUser?.role === 'superAdmin' ||
+    ['10001', '24051', '17572', '001'].includes(authEmpId) ||
+    ['usr-0', 'usr-10001', 'usr-24051'].includes(authId);
+
+  // Can current user submit work on this task?
+  const canSubmitWork = isAssignee || (!isCreator && !isSuperAdmin);
+
+  // Can current user review/approve this task?
+  const canReviewWork = isCreator || isSuperAdmin;
 
   const handleFacultySubmitWork = (e) => {
     e.preventDefault();
@@ -20,7 +51,7 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
   };
 
   const handleApprove = () => {
-    onReviewSubmission(task.id, true, 'Approved by Department Head');
+    onReviewSubmission(task.id, true, `Approved by ${authUser?.name || 'Assigner'}`);
     onClose();
   };
 
@@ -65,7 +96,7 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
             </div>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, color: '#ffffff' }}>
-                {isFaculty ? 'Submit Completed Task Work' : 'Review Task Submission'}
+                {canSubmitWork && !canReviewWork ? 'Submit Completed Task Work' : 'Review Task Submission'}
               </h3>
               <p style={{ fontSize: '11px', color: '#a7f3d0', margin: 0 }}>Task: {task.id} • {task.title}</p>
             </div>
@@ -82,20 +113,22 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
             <div style={{ fontWeight: '700', color: '#1e293b' }}>Description:</div>
             <div style={{ color: '#475569' }}>{task.description}</div>
             <div style={{ marginTop: '6px', color: '#64748b' }}>
-              <strong>Assignee:</strong> {task.assigneeName} • <strong>Stage:</strong> {task.stage}
+              <strong>Assignee:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'} • <strong>Stage:</strong> {task.stage}
             </div>
           </div>
 
-          {/* Faculty Submit Work Form */}
-          {isFaculty && (
-            <form onSubmit={handleFacultySubmitWork}>
+          {/* Submit Work Form (For Assignee) */}
+          {canSubmitWork && (
+            <form onSubmit={handleFacultySubmitWork} style={{ marginBottom: canReviewWork ? '24px' : '0' }}>
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>Submission Notes & Deliverables Summary</label>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  Submission Notes & Deliverables Summary
+                </label>
                 <textarea
                   rows={4}
                   value={submissionNotes}
                   onChange={(e) => setSubmissionNotes(e.target.value)}
-                  placeholder="Describe your completed work, attached files, or links..."
+                  placeholder={`Describe your completed work, links, or deliverables for ${task.creatorName || 'Assigner / Super Admin'}...`}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', resize: 'vertical' }}
                   required
                 />
@@ -105,15 +138,17 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
                 type="submit"
                 style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#059669', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                <Send size={15} /> Submit for Head Review
+                <Send size={15} /> Submit for Review to {task.creatorName || 'Assigner'}
               </button>
             </form>
           )}
 
-          {/* HOD / Admin Review Form */}
-          {!isFaculty && (
-            <div>
-              <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '12px' }}>Reviewer Action</h4>
+          {/* Assigner / Super Admin Review Form */}
+          {canReviewWork && (
+            <div style={{ marginTop: canSubmitWork ? '16px' : '0', borderTop: canSubmitWork ? '1px dashed #cbd5e1' : 'none', paddingTop: canSubmitWork ? '16px' : '0' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '12px' }}>
+                Reviewer Action ({authUser?.name || 'Assigner'})
+              </h4>
               
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <button
@@ -136,7 +171,7 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
                       rows={3}
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
-                      placeholder="Provide revision instructions (e.g. Questions did not align with Bloom Taxonomy)..."
+                      placeholder="Provide revision instructions (e.g. Please format syllabus according to OBE guidelines)..."
                       style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none' }}
                       required
                     />
@@ -156,7 +191,7 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
                     type="submit"
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#dc2626', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '12px' }}
                   >
-                    Re-issue Task to Assignee
+                    Re-issue Task to Assignee ({task.assigneeName})
                   </button>
                 </form>
               </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Clock, Calendar, AlertCircle, CheckCircle2, XCircle, Send, Check } from 'lucide-react';
+import { formatDueDateWithDayTime } from '../data/initialData';
 
 export default function ExtensionRequestModal({ isOpen, onClose, task, authUser, onRequestExtension, onApproveExtension }) {
   const [reason, setReason] = useState('');
@@ -7,7 +8,41 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
 
   if (!isOpen || !task) return null;
 
-  const isFaculty = authUser?.role === 'faculty';
+  const authEmpId = (authUser?.employeeId || '').trim();
+  const authId = (authUser?.id || '').trim();
+  const authName = (authUser?.name || '').trim().toLowerCase();
+
+  const taskAssigneeId = (task.assigneeId || '').trim();
+  const taskAssigneeName = (task.assigneeName || '').trim().toLowerCase();
+  const taskCreatorId = (task.creatorId || '').trim();
+  const taskCreatorName = (task.creatorName || '').trim().toLowerCase();
+
+  // Is current logged-in user the assignee on this specific task?
+  const isAssignee =
+    (authId && taskAssigneeId === authId) ||
+    (authEmpId && taskAssigneeId === authEmpId) ||
+    (authName && taskAssigneeName === authName);
+
+  // Is current logged-in user the creator/assigner on this specific task?
+  const isCreator =
+    (authId && taskCreatorId === authId) ||
+    (authEmpId && taskCreatorId === authEmpId) ||
+    (authName && taskCreatorName === authName);
+
+  // Is current user Super Admin?
+  const isSuperAdmin =
+    authUser?.role === 'superAdmin' ||
+    ['10001', '24051', '17572', '001'].includes(authEmpId) ||
+    ['usr-0', 'usr-10001', 'usr-24051'].includes(authId);
+
+  // Can the current user submit an extension request on this task?
+  // Yes, if they are the Assignee (regardless of whether they are Faculty, Admin, or HOD)
+  const canRequestExtension = isAssignee || (!isCreator && !isSuperAdmin);
+
+  // Can the current user approve an extension request on this task?
+  // Yes, if they are the Creator/Assigner or Super Admin
+  const canApproveExtension = isCreator || isSuperAdmin;
+
   const existingExtensions = task.extensions || [];
 
   const handleApplyRequest = (e) => {
@@ -21,6 +56,8 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
       id: `ext-${Date.now()}`,
       reason: reason.trim(),
       requestedDeadline,
+      requestedDate: requestedDeadline,
+      requestedAt: new Date().toISOString(),
       status: 'PENDING'
     };
 
@@ -66,7 +103,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
                 Deadline Extension Management
               </h3>
               <p style={{ fontSize: '11px', color: '#fef3c7', margin: 0 }}>
-                {task.id} • Current Due: <strong>{task.dueDate}</strong>
+                {task.id} • Current Due: <strong>{formatDueDateWithDayTime(task.dueDate, task.dueTime)}</strong>
               </p>
             </div>
           </div>
@@ -80,7 +117,10 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
         <div style={{ padding: '18px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Task Info Pill */}
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#92400e' }}>
-            <strong>Task Title:</strong> {task.title}
+            <div><strong>Task:</strong> {task.title}</div>
+            <div style={{ marginTop: '4px', fontSize: '11px', color: '#b45309' }}>
+              <strong>Assigned To:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'}
+            </div>
           </div>
 
           {/* Existing Extensions List */}
@@ -94,7 +134,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
                   <div key={e.id} style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
-                        Target Date: {e.requestedDeadline}
+                        Target Date: {e.requestedDeadline || e.requestedDate}
                       </span>
                       <span style={{
                         padding: '2px 8px', borderRadius: '10px', fontWeight: '700', fontSize: '10px',
@@ -109,13 +149,13 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
                       <strong>Reason:</strong> {e.reason}
                     </div>
 
-                    {!isFaculty && e.status === 'PENDING' && (
+                    {canApproveExtension && e.status === 'PENDING' && (
                       <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                         <button
-                          onClick={() => onApproveExtension(task.id, e.id, e.requestedDeadline)}
+                          onClick={() => onApproveExtension(task.id, e.id, e.requestedDeadline || e.requestedDate)}
                           style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#16a34a', color: '#ffffff', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)' }}
                         >
-                          <CheckCircle2 size={15} /> Approve New Deadline
+                          <CheckCircle2 size={15} /> Approve New Deadline ({e.requestedDeadline || e.requestedDate})
                         </button>
                       </div>
                     )}
@@ -125,8 +165,8 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
             </div>
           )}
 
-          {/* New Extension Request Form for Faculty */}
-          {isFaculty && (
+          {/* Extension Request Form (Available to Assignee on this task) */}
+          {canRequestExtension && (
             <form onSubmit={handleApplyRequest} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
                 Submit New Extension Request
@@ -153,7 +193,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
                   rows={3}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="State academic reason (e.g. Awaiting verified finance receipts or university exam schedule change)..."
+                  placeholder={`State reason for ${task.creatorName || 'Assigner / Super Admin'} (e.g. Awaiting verified finance receipts or university exam schedule change)...`}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                   required
                 />
@@ -163,7 +203,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
                 type="submit"
                 style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)' }}
               >
-                <Send size={15} /> Submit Extension Request to HOD
+                <Send size={15} /> Submit Extension Request to {task.creatorName || 'Assigner / Super Admin'}
               </button>
             </form>
           )}
