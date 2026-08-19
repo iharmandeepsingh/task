@@ -24,7 +24,13 @@ export default async function handler(req, res) {
     const collection = db.collection('ctu_team');
 
     if (req.method === 'POST') {
-      const teamData = req.body;
+      let teamData = req.body;
+      if (typeof teamData === 'string') {
+        try {
+          teamData = JSON.parse(teamData);
+        } catch (e) {}
+      }
+
       if (!Array.isArray(teamData)) {
         return res.status(400).json({ error: 'Body must be an array of team members' });
       }

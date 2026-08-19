@@ -24,7 +24,13 @@ export default async function handler(req, res) {
     const collection = db.collection('ctu_tasks');
 
     if (req.method === 'POST') {
-      const tasksData = req.body;
+      let tasksData = req.body;
+      if (typeof tasksData === 'string') {
+        try {
+          tasksData = JSON.parse(tasksData);
+        } catch (e) {}
+      }
+
       if (!Array.isArray(tasksData)) {
         return res.status(400).json({ error: 'Body must be an array of tasks' });
       }
