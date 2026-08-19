@@ -113,6 +113,13 @@ export default function App() {
               }
               return prev;
             });
+          } else if (data && Array.isArray(data.team) && data.team.length === 0 && team.length > 0) {
+            // Auto-seed MongoDB if empty
+            fetch('/api/sync-team', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(team),
+            }).catch(() => {});
           }
         })
         .catch(() => {});
@@ -120,7 +127,7 @@ export default function App() {
       fetch('/api/sync-tasks')
         .then((r) => r.json())
         .then((data) => {
-          if (data && Array.isArray(data.tasks)) {
+          if (data && Array.isArray(data.tasks) && data.tasks.length > 0) {
             setTasks((prev) => {
               if (JSON.stringify(prev) !== JSON.stringify(data.tasks)) {
                 localStorage.setItem('ctu_tasks_data', JSON.stringify(data.tasks));
@@ -128,6 +135,13 @@ export default function App() {
               }
               return prev;
             });
+          } else if (data && Array.isArray(data.tasks) && data.tasks.length === 0 && tasks.length > 0) {
+            // Auto-seed MongoDB if empty
+            fetch('/api/sync-tasks', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tasks),
+            }).catch(() => {});
           }
         })
         .catch(() => {});

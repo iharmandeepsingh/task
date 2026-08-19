@@ -13,6 +13,7 @@
     "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
     "lucide-react": "^1.28.0",
+    "mongodb": "^6.13.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "xlsx": "^0.18.5"
