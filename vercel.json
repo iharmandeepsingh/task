@@ -1,13 +1,8 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/sync-team",
-      "destination": "/api/sync-team.js"
-    },
-    {
-      "source": "/api/sync-tasks",
-      "destination": "/api/sync-tasks.js"
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
     }
   ]
 }
