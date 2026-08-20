@@ -118,19 +118,41 @@ export default function App() {
         .then((data) => {
           if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
-              if (JSON.stringify(prev) !== JSON.stringify(data.team)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(data.team));
-                return data.team;
+              // MERGE: cloud data + local data so newly added admins are never lost
+              const merged = new Map();
+              data.team.forEach(m => merged.set(m.employeeId || m.id, m));
+              // Local members not in cloud get added too (newly added admin/faculty)
+              prev.forEach(m => {
+                const key = m.employeeId || m.id;
+                if (!merged.has(key)) merged.set(key, m);
+              });
+              const mergedArr = Array.from(merged.values());
+              // If merged is different from cloud, push merged back to MongoDB
+              if (mergedArr.length !== data.team.length) {
+                fetch('/api/sync-team', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(mergedArr),
+                }).catch(() => {});
+              }
+              if (JSON.stringify(prev) !== JSON.stringify(mergedArr)) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(mergedArr));
+                return mergedArr;
               }
               return prev;
             });
-          } else if (data && Array.isArray(data.team) && data.team.length === 0 && team.length > 0) {
-            // Auto-seed MongoDB if empty
-            fetch('/api/sync-team', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(team),
-            }).catch(() => {});
+          } else if (data && Array.isArray(data.team) && data.team.length === 0) {
+            // Auto-seed MongoDB with current local team if cloud is empty
+            setTeam((prev) => {
+              if (prev.length > 0) {
+                fetch('/api/sync-team', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(prev),
+                }).catch(() => {});
+              }
+              return prev;
+            });
           }
         })
         .catch(() => {});

@@ -38,3 +38,4 @@ mobile/pubspec.lock
 .idea/
 *.swp
 *.swo
+.vercel
