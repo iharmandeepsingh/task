@@ -113,21 +113,35 @@ export default function App() {
   // Auto-fetch latest team & tasks from shared server on mount and every 4 seconds
   useEffect(() => {
     const syncFromCloud = () => {
+      // Get current deleted IDs from localStorage (most up-to-date)
+      const deletedIds = (() => {
+        try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
+      })();
+
       fetch('/api/sync-team')
         .then((r) => r.json())
         .then((data) => {
           if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
-              // MERGE: cloud data + local data so newly added admins are never lost
+              // MERGE: cloud data + local data so newly added members are never lost
               const merged = new Map();
-              data.team.forEach(m => merged.set(m.employeeId || m.id, m));
-              // Local members not in cloud get added too (newly added admin/faculty)
+              // Add cloud members, SKIP any that were deleted
+              data.team.forEach(m => {
+                const key = (m.employeeId || m.id || '').toLowerCase();
+                if (!deletedIds.includes(key)) {
+                  merged.set(m.employeeId || m.id, m);
+                }
+              });
+              // Add local members not in cloud (newly added), skip deleted
               prev.forEach(m => {
-                const key = m.employeeId || m.id;
-                if (!merged.has(key)) merged.set(key, m);
+                const key = (m.employeeId || m.id || '').toLowerCase();
+                const mapKey = m.employeeId || m.id;
+                if (!merged.has(mapKey) && !deletedIds.includes(key)) {
+                  merged.set(mapKey, m);
+                }
               });
               const mergedArr = Array.from(merged.values());
-              // If merged is different from cloud, push merged back to MongoDB
+              // If merged differs from cloud (e.g. deletions/additions), push back to MongoDB
               if (mergedArr.length !== data.team.length) {
                 fetch('/api/sync-team', {
                   method: 'POST',
@@ -248,11 +262,10 @@ export default function App() {
     const id1 = (targetMember?.id || memberId).toLowerCase();
     const id2 = (targetMember?.employeeId || memberId).toLowerCase();
 
-    setDeletedEmployeeIds((prevDeleted) => {
-      const updatedDeleted = Array.from(new Set([...prevDeleted, id1, id2]));
-      localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(updatedDeleted));
-      return updatedDeleted;
-    });
+    // Track deleted IDs so sync loop never re-adds them
+    const newDeletedIds = Array.from(new Set([...deletedEmployeeIds, id1, id2]));
+    setDeletedEmployeeIds(newDeletedIds);
+    localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
 
     setTeam((prevTeam) => {
       const updated = prevTeam.filter((m) => {
@@ -263,12 +276,14 @@ export default function App() {
 
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
 
+      // Push the updated team (without deleted member) to MongoDB immediately
       fetch('/api/sync-team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       }).catch(() => {});
 
+      return updated; // ← THIS WAS MISSING — without this, React never updates the state
     });
   };
 
