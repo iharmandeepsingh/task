@@ -5,17 +5,19 @@ import { INITIAL_TEAM } from '../data/initialData';
 export default function LoginPage({ onLogin }) {
   // Always fetch latest master team directory from localStorage or INITIAL_TEAM
   const activeTeam = (() => {
+    // Always start from full 208-member INITIAL_TEAM as base
+    const teamMap = new Map();
+    INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
     const saved = localStorage.getItem('ctu_team_data');
-    if (!saved) return INITIAL_TEAM;
-    try {
-      const parsed = JSON.parse(saved);
-      const teamMap = new Map();
-      INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-      parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
-      return Array.from(teamMap.values());
-    } catch (e) {
-      return INITIAL_TEAM;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+        }
+      } catch (e) {}
     }
+    return Array.from(teamMap.values());
   })();
 
   const [identifier, setIdentifier] = useState('');

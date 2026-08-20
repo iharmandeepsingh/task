@@ -41,14 +41,25 @@ export default function App() {
   });
 
   const [team, setTeam] = useState(() => {
+    // Always merge localStorage (user changes) ON TOP of full INITIAL_TEAM (208 faculty)
+    // This ensures all 208 faculty always appear even on fresh/new devices
     const saved = localStorage.getItem('ctu_team_data');
+    const teamMap = new Map();
+    // Start with full 208-member base roster
+    INITIAL_TEAM.forEach(m => teamMap.set(m.employeeId || m.id, m));
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge saved changes on top (preserves edits/imports)
+          parsed.forEach(m => teamMap.set(m.employeeId || m.id, m));
+        }
       } catch (e) {}
     }
-    return INITIAL_TEAM;
+    const merged = Array.from(teamMap.values());
+    // Persist full merged roster back to localStorage
+    try { localStorage.setItem('ctu_team_data', JSON.stringify(merged)); } catch(e) {}
+    return merged;
   });
 
   const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'calendar', 'team'
