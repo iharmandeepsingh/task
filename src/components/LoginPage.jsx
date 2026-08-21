@@ -5,15 +5,33 @@ import { INITIAL_TEAM } from '../data/initialData';
 export default function LoginPage({ onLogin }) {
   // Always fetch latest master team directory from localStorage or INITIAL_TEAM
   const activeTeam = (() => {
-    // Always start from full 208-member INITIAL_TEAM as base
+    // Read deleted IDs so deleted accounts cannot log in
+    const deletedIds = (() => {
+      try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
+    })();
+    const deletedSet = new Set(deletedIds.map(d => String(d).toLowerCase().trim()).filter(Boolean));
+
     const teamMap = new Map();
-    INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+    INITIAL_TEAM.forEach(m => {
+      const k1 = String(m.id || '').toLowerCase().trim();
+      const k2 = String(m.employeeId || '').toLowerCase().trim();
+      if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
+        teamMap.set((m.employeeId || m.id).toLowerCase(), m);
+      }
+    });
+
     const saved = localStorage.getItem('ctu_team_data');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+          parsed.forEach(m => {
+            const k1 = String(m.id || '').toLowerCase().trim();
+            const k2 = String(m.employeeId || '').toLowerCase().trim();
+            if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
+              teamMap.set((m.employeeId || m.id).toLowerCase(), m);
+            }
+          });
         }
       } catch (e) {}
     }

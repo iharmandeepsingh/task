@@ -5,25 +5,31 @@ export default function TeamDirectory({ team = [], tasks = [], currentRole, auth
   const [selectedFilter, setSelectedFilter] = useState('ALL'); // 'ALL', 'FACULTY', 'ADMIN'
   const [searchQuery, setSearchQuery] = useState('');
   const [showVaultModal, setShowVaultModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
 
   // Check if current logged-in user is Super Admin ID 10001
   const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
 
-  const filteredTeam = team.filter((member) => {
+  const filteredTeam = (team || []).filter((member) => {
+    if (!member) return false;
     let matchesCategory = true;
+    const memberRole = String(member.role || '').toLowerCase();
+    const memberCategory = String(member.category || '').toLowerCase();
+
     if (selectedFilter === 'FACULTY') {
-      matchesCategory = member.category === 'Faculty' || (member.role && member.role.toLowerCase().includes('faculty')) || (member.role && member.role.toLowerCase().includes('professor'));
+      matchesCategory = memberCategory === 'faculty' || memberRole.includes('faculty') || memberRole.includes('professor') || memberRole.includes('lecturer');
     } else if (selectedFilter === 'ADMIN') {
-      matchesCategory = member.category === 'Admin' || (member.role && (member.role.toLowerCase().includes('admin') || member.role.toLowerCase().includes('hr') || member.role.toLowerCase().includes('head')));
+      matchesCategory = memberCategory === 'admin' || memberRole.includes('admin') || memberRole.includes('hr') || memberRole.includes('head');
     }
 
     const q = searchQuery.trim().toLowerCase();
     const matchesSearch = !q || 
-      (member.name && member.name.toLowerCase().includes(q)) ||
-      (member.employeeId && member.employeeId.toLowerCase().includes(q)) ||
-      (member.email && member.email.toLowerCase().includes(q)) ||
-      (member.dept && member.dept.toLowerCase().includes(q)) ||
-      (member.role && member.role.toLowerCase().includes(q));
+      String(member.name || '').toLowerCase().includes(q) ||
+      String(member.employeeId || '').toLowerCase().includes(q) ||
+      String(member.id || '').toLowerCase().includes(q) ||
+      String(member.email || '').toLowerCase().includes(q) ||
+      String(member.dept || '').toLowerCase().includes(q) ||
+      memberRole.includes(q);
 
     return matchesCategory && matchesSearch;
   });
@@ -227,13 +233,7 @@ export default function TeamDirectory({ team = [], tasks = [], currentRole, auth
 
                         {/* 🗑️ Delete Button */}
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete "${member.name}" (Staff ID: ${member.employeeId || member.id}) from the Master Directory?`)) {
-                              if (onDeleteEmployee) {
-                                onDeleteEmployee(member.id);
-                              }
-                            }
-                          }}
+                          onClick={() => setMemberToDelete(member)}
                           style={{
                             background: '#fee2e2',
                             color: '#dc2626',
@@ -373,6 +373,84 @@ export default function TeamDirectory({ team = [], tasks = [], currentRole, auth
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ Custom Delete Confirmation Modal (Smooth In-App UI, No Browser Glitch) */}
+      {memberToDelete && (
+        <div className="modal-backdrop" onClick={() => setMemberToDelete(null)} style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1200, padding: '16px'
+        }}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{
+            width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '18px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)', overflow: 'hidden',
+            border: '1px solid #fecaca', animation: 'scaleIn 0.15s ease-out'
+          }}>
+            <div style={{ padding: '20px 24px', textAlign: 'center' }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: '#fee2e2', color: '#dc2626',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px', border: '2px solid #fca5a5'
+              }}>
+                <Trash2 size={28} />
+              </div>
+
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
+                Delete Staff Member?
+              </h3>
+
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px', lineHeight: '1.5' }}>
+                Are you sure you want to permanently remove <strong style={{ color: '#0f172a' }}>"{memberToDelete.name}"</strong> (Staff ID: <code style={{ color: '#2563eb', fontWeight: '800' }}>{memberToDelete.employeeId || memberToDelete.id}</code>) from the Master Directory and Database?
+              </p>
+
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '20px', fontSize: '12px', color: '#475569', textAlign: 'left' }}>
+                <div>🏛️ <strong>Dept:</strong> {memberToDelete.dept || 'Engineering'}</div>
+                <div>🛡️ <strong>Role:</strong> {memberToDelete.role || 'Faculty'}</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setMemberToDelete(null)}
+                  style={{
+                    flex: 1, padding: '10px 16px', borderRadius: '10px',
+                    background: '#f1f5f9', border: '1px solid #cbd5e1',
+                    color: '#475569', fontWeight: '700', fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idToDelete = memberToDelete.id || memberToDelete.employeeId;
+                    setMemberToDelete(null);
+                    if (onDeleteEmployee) {
+                      onDeleteEmployee(idToDelete);
+                    }
+                  }}
+                  style={{
+                    flex: 1, padding: '10px 16px', borderRadius: '10px',
+                    background: '#dc2626', border: 'none',
+                    color: '#ffffff', fontWeight: '800', fontSize: '13px',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                  }}
+                >
+                  <Trash2 size={15} />
+                  <span>Yes, Delete</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -127,6 +127,7 @@ export default function App() {
       const deletedIds = (() => {
         try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
       })();
+      const deletedSet = new Set(deletedIds.map(d => String(d).toLowerCase().trim()).filter(Boolean));
 
       fetch('/api/sync-team')
         .then((r) => r.json())
@@ -136,16 +137,26 @@ export default function App() {
           if (data.team.length > 0) {
             // Filter deleted members out of cloud data
             const cloudFiltered = data.team.filter(m => {
-              const key = (m.employeeId || m.id || '').toLowerCase();
-              return !deletedIds.includes(key);
+              const mId = String(m.id || '').toLowerCase().trim();
+              const mEmpId = String(m.employeeId || '').toLowerCase().trim();
+              return (!mId || !deletedSet.has(mId)) && (!mEmpId || !deletedSet.has(mEmpId));
             });
 
             setTeam((prev) => {
               // Find members that exist locally but NOT in cloud (newly added on this device)
-              const cloudIds = new Set(cloudFiltered.map(m => m.employeeId || m.id));
+              const cloudKeys = new Set();
+              cloudFiltered.forEach(m => {
+                if (m.id) cloudKeys.add(String(m.id).toLowerCase().trim());
+                if (m.employeeId) cloudKeys.add(String(m.employeeId).toLowerCase().trim());
+              });
+
               const localOnly = prev.filter(m => {
-                const key = (m.employeeId || m.id || '').toLowerCase();
-                return !cloudIds.has(m.employeeId || m.id) && !deletedIds.includes(key);
+                const mId = String(m.id || '').toLowerCase().trim();
+                const mEmpId = String(m.employeeId || '').toLowerCase().trim();
+                const isDeleted = (mId && deletedSet.has(mId)) || (mEmpId && deletedSet.has(mEmpId));
+                if (isDeleted) return false;
+                const inCloud = (mId && cloudKeys.has(mId)) || (mEmpId && cloudKeys.has(mEmpId));
+                return !inCloud;
               });
 
               const merged = localOnly.length > 0 ? [...cloudFiltered, ...localOnly] : cloudFiltered;
@@ -160,10 +171,10 @@ export default function App() {
               }
 
               // Use ID-based comparison to avoid re-renders from object ordering differences
-              const prevIds = prev.map(m => m.employeeId || m.id).sort().join(',');
-              const mergedIds = merged.map(m => m.employeeId || m.id).sort().join(',');
+              const prevKeys = prev.map(m => String(m.employeeId || m.id)).sort().join(',');
+              const mergedKeys = merged.map(m => String(m.employeeId || m.id)).sort().join(',');
 
-              if (prevIds !== mergedIds) {
+              if (prevKeys !== mergedKeys) {
                 localStorage.setItem('ctu_team_data', JSON.stringify(merged));
                 return merged;
               }
@@ -273,20 +284,33 @@ export default function App() {
 
   // Delete Faculty / Admin Employee Record Handler
   const handleDeleteEmployee = (memberId) => {
-    const targetMember = team.find(m => m.id === memberId || m.employeeId === memberId);
-    const id1 = (targetMember?.id || memberId).toLowerCase();
-    const id2 = (targetMember?.employeeId || memberId).toLowerCase();
+    if (!memberId) return;
+    const cleanId = String(memberId).toLowerCase().trim();
+    const targetMember = team.find(m => 
+      String(m.id || '').toLowerCase().trim() === cleanId || 
+      String(m.employeeId || '').toLowerCase().trim() === cleanId
+    );
+
+    const id1 = String(targetMember?.id || memberId || '').toLowerCase().trim();
+    const id2 = String(targetMember?.employeeId || '').toLowerCase().trim();
 
     // Track deleted IDs so sync loop never re-adds them
-    const newDeletedIds = Array.from(new Set([...deletedEmployeeIds, id1, id2]));
+    const toAdd = [id1, id2].filter(Boolean);
+    const existingDeleted = (() => {
+      try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
+    })();
+    const newDeletedIds = Array.from(new Set([...existingDeleted, ...toAdd]));
     setDeletedEmployeeIds(newDeletedIds);
     localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
 
+    const deletedSet = new Set(newDeletedIds);
+
     setTeam((prevTeam) => {
       const updated = prevTeam.filter((m) => {
-        const mId = (m.id || '').toLowerCase();
-        const mEmpId = (m.employeeId || '').toLowerCase();
-        return mId !== id1 && mEmpId !== id2 && mId !== id2 && mEmpId !== id1;
+        const mId = String(m.id || '').toLowerCase().trim();
+        const mEmpId = String(m.employeeId || '').toLowerCase().trim();
+        const isDeleted = (mId && deletedSet.has(mId)) || (mEmpId && deletedSet.has(mEmpId));
+        return !isDeleted;
       });
 
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
@@ -298,7 +322,7 @@ export default function App() {
         body: JSON.stringify(updated),
       }).catch(() => {});
 
-      return updated; // ← THIS WAS MISSING — without this, React never updates the state
+      return updated;
     });
   };
 
