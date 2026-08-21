@@ -41,23 +41,38 @@ export default function App() {
   });
 
   const [team, setTeam] = useState(() => {
-    // Always merge localStorage (user changes) ON TOP of full INITIAL_TEAM (208 faculty)
-    // This ensures all 208 faculty always appear even on fresh/new devices
+    // Read deleted IDs first so we never resurface deleted members
+    const deletedIds = (() => {
+      try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
+    })();
+
     const saved = localStorage.getItem('ctu_team_data');
     const teamMap = new Map();
-    // Start with full 208-member base roster
-    INITIAL_TEAM.forEach(m => teamMap.set(m.employeeId || m.id, m));
+
+    // Start with INITIAL_TEAM base roster but SKIP any previously deleted members
+    INITIAL_TEAM.forEach(m => {
+      const key = (m.employeeId || m.id || '').toLowerCase();
+      if (!deletedIds.includes(key)) {
+        teamMap.set(m.employeeId || m.id, m);
+      }
+    });
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge saved changes on top (preserves edits/imports)
-          parsed.forEach(m => teamMap.set(m.employeeId || m.id, m));
+          // Merge saved changes on top, skip deleted
+          parsed.forEach(m => {
+            const key = (m.employeeId || m.id || '').toLowerCase();
+            if (!deletedIds.includes(key)) {
+              teamMap.set(m.employeeId || m.id, m);
+            }
+          });
         }
       } catch (e) {}
     }
+
     const merged = Array.from(teamMap.values());
-    // Persist full merged roster back to localStorage
     try { localStorage.setItem('ctu_team_data', JSON.stringify(merged)); } catch(e) {}
     return merged;
   });
@@ -90,14 +105,9 @@ export default function App() {
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isChangePassOpen, setIsChangePassOpen] = useState(false);
 
-  // Sync team state to server and localStorage
+  // Save team to localStorage whenever it changes (NO auto-POST to MongoDB — explicit POSTs only)
   useEffect(() => {
     localStorage.setItem('ctu_team_data', JSON.stringify(team));
-    fetch('/api/sync-team', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(team),
-    }).catch(() => {});
   }, [team]);
 
   // Sync tasks state to server and localStorage
@@ -113,7 +123,7 @@ export default function App() {
   // Auto-fetch latest team & tasks from shared server on mount and every 4 seconds
   useEffect(() => {
     const syncFromCloud = () => {
-      // Get current deleted IDs from localStorage (most up-to-date)
+      // Always read deletedIds fresh from localStorage
       const deletedIds = (() => {
         try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
       })();
@@ -121,42 +131,47 @@ export default function App() {
       fetch('/api/sync-team')
         .then((r) => r.json())
         .then((data) => {
-          if (data && Array.isArray(data.team) && data.team.length > 0) {
+          if (!data || !Array.isArray(data.team)) return;
+
+          if (data.team.length > 0) {
+            // Filter deleted members out of cloud data
+            const cloudFiltered = data.team.filter(m => {
+              const key = (m.employeeId || m.id || '').toLowerCase();
+              return !deletedIds.includes(key);
+            });
+
             setTeam((prev) => {
-              // MERGE: cloud data + local data so newly added members are never lost
-              const merged = new Map();
-              // Add cloud members, SKIP any that were deleted
-              data.team.forEach(m => {
+              // Find members that exist locally but NOT in cloud (newly added on this device)
+              const cloudIds = new Set(cloudFiltered.map(m => m.employeeId || m.id));
+              const localOnly = prev.filter(m => {
                 const key = (m.employeeId || m.id || '').toLowerCase();
-                if (!deletedIds.includes(key)) {
-                  merged.set(m.employeeId || m.id, m);
-                }
+                return !cloudIds.has(m.employeeId || m.id) && !deletedIds.includes(key);
               });
-              // Add local members not in cloud (newly added), skip deleted
-              prev.forEach(m => {
-                const key = (m.employeeId || m.id || '').toLowerCase();
-                const mapKey = m.employeeId || m.id;
-                if (!merged.has(mapKey) && !deletedIds.includes(key)) {
-                  merged.set(mapKey, m);
-                }
-              });
-              const mergedArr = Array.from(merged.values());
-              // If merged differs from cloud (e.g. deletions/additions), push back to MongoDB
-              if (mergedArr.length !== data.team.length) {
+
+              const merged = localOnly.length > 0 ? [...cloudFiltered, ...localOnly] : cloudFiltered;
+
+              // If local has additions, push merged back to MongoDB
+              if (localOnly.length > 0) {
                 fetch('/api/sync-team', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(mergedArr),
+                  body: JSON.stringify(merged),
                 }).catch(() => {});
               }
-              if (JSON.stringify(prev) !== JSON.stringify(mergedArr)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(mergedArr));
-                return mergedArr;
+
+              // Use ID-based comparison to avoid re-renders from object ordering differences
+              const prevIds = prev.map(m => m.employeeId || m.id).sort().join(',');
+              const mergedIds = merged.map(m => m.employeeId || m.id).sort().join(',');
+
+              if (prevIds !== mergedIds) {
+                localStorage.setItem('ctu_team_data', JSON.stringify(merged));
+                return merged;
               }
-              return prev;
+              return prev; // No change — don't re-render
             });
-          } else if (data && Array.isArray(data.team) && data.team.length === 0) {
-            // Auto-seed MongoDB with current local team if cloud is empty
+
+          } else {
+            // MongoDB empty — seed it with current local team
             setTeam((prev) => {
               if (prev.length > 0) {
                 fetch('/api/sync-team', {
