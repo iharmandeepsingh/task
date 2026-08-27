@@ -59,7 +59,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Task Chat: ${task.taskCode}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            Text('Head <-> Faculty Communication Channel', style: const TextStyle(fontSize: 11, color: Colors.white70)),
+            const Text('Head <-> Faculty Communication Channel', style: TextStyle(fontSize: 11, color: Colors.white70)),
           ],
         ),
       ),
@@ -108,7 +108,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
                             color: isMe ? AppTheme.primaryBlue : Colors.white,
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2)),
                             ],
                             border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
                           ),
@@ -136,7 +136,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: isMe ? Colors.white.withOpacity(0.15) : const Color(0xFFF1F5F9),
+                                    color: isMe ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFF1F5F9),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(

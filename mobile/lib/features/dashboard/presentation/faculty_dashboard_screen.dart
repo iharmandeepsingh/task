@@ -137,9 +137,9 @@ class _FacultyDashboardScreenState extends State<FacultyDashboardScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.06),
+            color: AppTheme.primaryBlue.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.15)),
+            border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.15)),
           ),
           child: Row(
             children: [
@@ -233,7 +233,7 @@ class _FacultyDashboardScreenState extends State<FacultyDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withOpacity(0.1),
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -247,7 +247,7 @@ class _FacultyDashboardScreenState extends State<FacultyDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: task.status.color.withOpacity(0.12),
+                    color: task.status.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -324,8 +324,8 @@ class _FacultyDashboardScreenState extends State<FacultyDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.replay_rounded, size: 16, color: Color(0xFF1D4ED8)),
                         SizedBox(width: 6),
                         Text('Task Re-issued by Head', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1D4ED8))),

@@ -11,10 +11,10 @@ class EmployeeImportScreen extends StatefulWidget {
 class _EmployeeImportScreenState extends State<EmployeeImportScreen> {
   String _selectedFileName = 'No file selected';
   bool _isParsed = false;
-  int _validRows = 180;
-  int _warningRows = 4;
-  int _errorRows = 0;
-  int _duplicateRows = 0;
+  final int _validRows = 180;
+  final int _warningRows = 4;
+  final int _errorRows = 0;
+  final int _duplicateRows = 0;
 
   void _simulateUpload(String fileName) {
     setState(() {
@@ -176,9 +176,9 @@ class _EmployeeImportScreenState extends State<EmployeeImportScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -203,7 +203,7 @@ class _EmployeeImportScreenState extends State<EmployeeImportScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: isWarning ? AppTheme.yellowDeadline.withOpacity(0.15) : AppTheme.greenDeadline.withOpacity(0.15),
+              color: isWarning ? AppTheme.yellowDeadline.withValues(alpha: 0.15) : AppTheme.greenDeadline.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(

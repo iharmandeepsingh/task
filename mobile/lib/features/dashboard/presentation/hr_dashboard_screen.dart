@@ -130,18 +130,18 @@ class _HRDashboardScreenState extends State<HRDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.roleHR.withOpacity(0.08),
+              color: AppTheme.roleHR.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.roleHR.withOpacity(0.2)),
+              border: Border.all(color: AppTheme.roleHR.withValues(alpha: 0.2)),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   backgroundColor: AppTheme.roleHR,
                   child: Icon(Icons.people_alt_rounded, color: Colors.white),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
+                SizedBox(width: 14),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -171,7 +171,7 @@ class _HRDashboardScreenState extends State<HRDashboardScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
                 child: Text(emp.avatarInitials, style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
               ),
               title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -179,7 +179,7 @@ class _HRDashboardScreenState extends State<HRDashboardScreen> {
               trailing: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(emp.role.displayName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),

@@ -41,9 +41,9 @@ class DeadlineBadge extends StatelessWidget {
         vertical: compact ? 3 : 5,
       ),
       decoration: BoxDecoration(
-        color: health.color.withOpacity(0.12),
+        color: health.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: health.color.withOpacity(0.4), width: 1),
+        border: Border.all(color: health.color.withValues(alpha: 0.4), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

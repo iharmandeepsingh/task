@@ -35,7 +35,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> w
         // Super Admin Global Control Header
         Container(
           padding: const EdgeInsets.all(16),
-          color: AppTheme.roleSuperAdmin.withOpacity(0.1),
+          color: AppTheme.roleSuperAdmin.withValues(alpha: 0.1),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,7 +145,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> w
             subtitle: const Text('Faculty: 18 • Active Tasks: 12 • Completed: 45'),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppTheme.greenDeadline.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: AppTheme.greenDeadline.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
               child: const Text('92% Health', style: TextStyle(color: AppTheme.greenDeadline, fontWeight: FontWeight.bold, fontSize: 11)),
             ),
           ),
@@ -156,7 +156,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> w
             subtitle: const Text('Faculty: 12 • Active Tasks: 8 • Completed: 30'),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppTheme.yellowDeadline.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: AppTheme.yellowDeadline.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
               child: const Text('85% Health', style: TextStyle(color: AppTheme.yellowDeadline, fontWeight: FontWeight.bold, fontSize: 11)),
             ),
           ),
@@ -169,9 +169,9 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> w
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundColor: _getRoleColor(role).withOpacity(0.15),
+                                    backgroundColor: _getRoleColor(role).withValues(alpha: 0.15),
                                     child: Icon(_getRoleIcon(role), color: _getRoleColor(role), size: 20),
                                   ),
                                   const SizedBox(width: 14),

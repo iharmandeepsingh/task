@@ -46,7 +46,7 @@ class _HeadDashboardScreenState extends State<HeadDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedAssigneeId,
+                  initialValue: selectedAssigneeId,
                   decoration: const InputDecoration(labelText: 'Assign to Faculty', border: OutlineInputBorder()),
                   items: CTUSystemService.sampleUsers.where((u) => u.role == UserRole.faculty).map((u) {
                     return DropdownMenuItem(value: u.id, child: Text('${u.name} (${u.departmentName})'));
@@ -57,7 +57,7 @@ class _HeadDashboardScreenState extends State<HeadDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<PriorityLevel>(
-                  value: priority,
+                  initialValue: priority,
                   decoration: const InputDecoration(labelText: 'Priority Level', border: OutlineInputBorder()),
                   items: PriorityLevel.values.map((p) {
                     return DropdownMenuItem(value: p, child: Text(p.name.toUpperCase()));
@@ -223,9 +223,9 @@ class _HeadDashboardScreenState extends State<HeadDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.roleHead.withOpacity(0.08),
+              color: AppTheme.roleHead.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.roleHead.withOpacity(0.2)),
+              border: Border.all(color: AppTheme.roleHead.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [

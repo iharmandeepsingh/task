@@ -60,9 +60,9 @@ class _DashboardHubScreenState extends State<DashboardHubScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'CT UNIVERSITY',
-              style: const TextStyle(fontSize: 12, letterSpacing: 1.0, color: Colors.white70),
+              style: TextStyle(fontSize: 12, letterSpacing: 1.0, color: Colors.white70),
             ),
             Text(
               user.name,
@@ -76,7 +76,7 @@ class _DashboardHubScreenState extends State<DashboardHubScreen> {
             icon: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
