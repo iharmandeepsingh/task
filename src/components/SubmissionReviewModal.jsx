@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, RefreshCw, AlertCircle, FileText, Send } from 'lucide-react';
+import { X, CheckCircle, RefreshCw, AlertCircle, FileText, Send, Calendar, Clock } from 'lucide-react';
 
 export default function SubmissionReviewModal({ isOpen, onClose, task, authUser, onReviewSubmission, onSubmitTask }) {
   const [feedback, setFeedback] = useState('');
@@ -65,6 +65,14 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
     onClose();
   };
 
+  const handleQuickAddHours = (hours) => {
+    const baseDate = newRestartDeadline ? new Date(newRestartDeadline) : new Date();
+    const newDate = new Date(baseDate.getTime() + hours * 60 * 60 * 1000);
+    // Format YYYY-MM-DDTHH:MM for datetime-local
+    const isoString = new Date(newDate.getTime() - newDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setNewRestartDeadline(isoString);
+  };
+
   return (
     <div className="modal-backdrop" style={{
       position: 'fixed',
@@ -113,8 +121,14 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
             <div style={{ fontWeight: '700', color: '#1e293b' }}>Description:</div>
             <div style={{ color: '#475569' }}>{task.description}</div>
             <div style={{ marginTop: '6px', color: '#64748b' }}>
-              <strong>Assignee:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'} • <strong>Stage:</strong> {task.stage}
+              <strong>Assignee:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'} • <strong>Stage:</strong> {task.stage} • <strong>Due Date:</strong> {task.dueDate || 'Not set'}
             </div>
+            {task.requiredFormats && !task.requiredFormats.includes('ANY') && (
+              <div style={{ marginTop: '8px', padding: '6px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', color: '#166534', fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📌 Mandatory Submission Formats:</span>
+                <span style={{ color: '#047857' }}>{task.requiredFormats.join(' + ')}</span>
+              </div>
+            )}
           </div>
 
           {/* Submit Work Form (For Assignee) */}
@@ -161,37 +175,47 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
               </div>
 
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-                <h5 style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <RefreshCw size={14} /> Re-issue Task with Revision Feedback
+                <h5 style={{ fontSize: '12.5px', fontWeight: '700', color: '#dc2626', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <RefreshCw size={15} /> Re-issue Task with Revision Feedback & Due Date
                 </h5>
 
                 <form onSubmit={handleReissue}>
-                  <div style={{ marginBottom: '10px' }}>
+                  <div style={{ marginBottom: '12px' }}>
                     <textarea
                       rows={3}
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
                       placeholder="Provide revision instructions (e.g. Please format syllabus according to OBE guidelines)..."
-                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none' }}
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none' }}
                       required
                     />
                   </div>
 
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>New Restart Due Date (Optional)</label>
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: '700', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={13} /> Extended Deadline / Due Date
+                      </label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button type="button" onClick={() => handleQuickAddHours(24)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+24h</button>
+                        <button type="button" onClick={() => handleQuickAddHours(48)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+48h</button>
+                        <button type="button" onClick={() => handleQuickAddHours(72)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+3 Days</button>
+                        <button type="button" onClick={() => handleQuickAddHours(168)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+1 Week</button>
+                      </div>
+                    </div>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={newRestartDeadline}
                       onChange={(e) => setNewRestartDeadline(e.target.value)}
-                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none' }}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
 
                   <button
                     type="submit"
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#dc2626', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '12px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#dc2626', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '12.5px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
-                    Re-issue Task to Assignee ({task.assigneeName})
+                    <RefreshCw size={14} /> Re-issue Task to Assignee ({task.assigneeName})
                   </button>
                 </form>
               </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import StatsOverview from './components/StatsOverview';
 import KanbanBoard from './components/KanbanBoard';
@@ -13,10 +14,15 @@ import ExtensionRequestModal from './components/ExtensionRequestModal';
 import SubmissionReviewModal from './components/SubmissionReviewModal';
 import AnalyticsDashboardModal from './components/AnalyticsDashboardModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
-import CalendarView from './components/CalendarView';
 import TagFilterBar from './components/TagFilterBar';
+import SuperAdminVerification from './components/SuperAdminVerification';
+import MobileBottomNav from './components/MobileBottomNav';
+import MobileMoreSheet from './components/MobileMoreSheet';
+import TaskActionSheet from './components/TaskActionSheet';
+import FilterBottomSheet from './components/FilterBottomSheet';
 import { INITIAL_TASKS, INITIAL_TEAM } from './data/initialData';
 import { ShieldAlert, Lock } from 'lucide-react';
+import { getApiUrl } from './utils/apiBase';
 
 export default function App() {
   const [authUser, setAuthUser] = useState(() => {
@@ -41,32 +47,84 @@ export default function App() {
   });
 
   const [team, setTeam] = useState(() => {
-    // Always merge localStorage (user changes) ON TOP of full INITIAL_TEAM (208 faculty)
-    // This ensures all 208 faculty always appear even on fresh/new devices
+    const TEAM_VERSION = 'v3'; // bump this when INITIAL_TEAM changes to force a clean reset
+    const savedVersion = localStorage.getItem('ctu_team_version');
+
+    // If version mismatch, clear stale localStorage so INITIAL_TEAM is authoritative
+    if (savedVersion !== TEAM_VERSION) {
+      localStorage.removeItem('ctu_team_data');
+      localStorage.setItem('ctu_team_version', TEAM_VERSION);
+    }
+
     const saved = localStorage.getItem('ctu_team_data');
     const teamMap = new Map();
-    // Start with full 208-member base roster
+
+    // Start with full base roster — this has correct category, dept, etc.
     INITIAL_TEAM.forEach(m => teamMap.set(m.employeeId || m.id, m));
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge saved changes on top (preserves edits/imports)
-          parsed.forEach(m => teamMap.set(m.employeeId || m.id, m));
+          parsed.forEach(savedMember => {
+            const key = savedMember.employeeId || savedMember.id;
+            const base = teamMap.get(key); // existing from INITIAL_TEAM
+            // Merge: use saved data but fall back to INITIAL_TEAM for missing fields like category/dept
+            teamMap.set(key, {
+              ...(base || {}),       // base fields (category, dept, etc.)
+              ...savedMember,        // saved overrides (name edits, imports, etc.)
+              // Always preserve category and dept from INITIAL_TEAM if savedMember is missing them
+              category: savedMember.category || base?.category || 'Faculty',
+              dept: savedMember.dept || base?.dept || 'School of Engineering & Technology',
+            });
+          });
         }
       } catch (e) {}
     }
+
     const merged = Array.from(teamMap.values());
-    // Persist full merged roster back to localStorage
     try { localStorage.setItem('ctu_team_data', JSON.stringify(merged)); } catch(e) {}
     return merged;
   });
 
-  const [activeView, setActiveView] = useState('kanban'); // 'kanban', 'list', 'calendar', 'team'
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Derive activeView from current URL path — keeps all existing conditional rendering working
+  const pathToView = {
+    '/':               'kanban',
+    '/dashboard':      'kanban',
+    '/tasks':          'list',
+    '/staff-records':  'staff',
+    '/team':           'staff',
+    '/verification':   'staff',
+  };
+  const activeView = pathToView[location.pathname] || 'kanban';
+
+  // Drop-in replacement for setActiveView — navigate to the matching URL instead
+  const setActiveView = (view) => {
+    const viewToPath = {
+      'kanban':       '/',
+      'list':         '/tasks',
+      'staff':        '/staff-records',
+      'team':         '/staff-records',
+      'verification': '/staff-records',
+    };
+    navigate(viewToPath[view] || '/');
+  };
+
+  const [verificationRecordsState, setVerificationRecordsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ctu_staff_verification');
+      const parsed = JSON.parse(saved || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
   const [selectedTag, setSelectedTag] = useState('ALL');
   const [filterDirection, setFilterDirection] = useState('ALL'); // 'ALL', 'INCOMING', 'OUTGOING'
+  const [filterDept, setFilterDept] = useState('ALL'); // Department filter for admin/superAdmin
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('ctu_theme') || 'light';
   });
@@ -80,6 +138,19 @@ export default function App() {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const [mobileActionTask, setMobileActionTask] = useState(null);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [activeChatTask, setActiveChatTask] = useState(null);
@@ -90,14 +161,9 @@ export default function App() {
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isChangePassOpen, setIsChangePassOpen] = useState(false);
 
-  // Sync team state to server and localStorage
+  // Sync team state to localStorage (API sync happens in handleImportEmployees for new imports only)
   useEffect(() => {
     localStorage.setItem('ctu_team_data', JSON.stringify(team));
-    fetch('/api/sync-team', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(team),
-    }).catch(() => {});
   }, [team]);
 
   // Sync tasks state to server and localStorage
@@ -113,26 +179,69 @@ export default function App() {
   // Auto-fetch latest team & tasks from shared server on mount and every 4 seconds
   useEffect(() => {
     const syncFromCloud = () => {
-      // Get current deleted IDs from localStorage (most up-to-date)
       const deletedIds = (() => {
         try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
       })();
 
-      fetch('/api/sync-team')
+      // 1. Sync Staff Verification Records from MongoDB
+      fetch(getApiUrl('/api/sync-verification'))
+        .then((r) => r.json())
+        .then((data) => {
+          if (data && Array.isArray(data.records) && data.records.length > 0) {
+            setVerificationRecordsState(data.records);
+            try { localStorage.setItem('ctu_staff_verification', JSON.stringify(data.records)); } catch (e) {}
+
+            // Merge uploaded verification staff into team state if not already present
+            setTeam((prev) => {
+              const teamMap = new Map();
+              prev.forEach(m => teamMap.set(String(m.employeeId || m.id).toLowerCase(), m));
+
+              data.records.forEach(r => {
+                const sId = String(r.staffId || r.employeeId || '').trim();
+                if (!sId || deletedIds.includes(sId.toLowerCase())) return;
+
+                if (!teamMap.has(sId.toLowerCase())) {
+                  teamMap.set(sId.toLowerCase(), {
+                    id: `usr-${sId}`,
+                    employeeId: sId,
+                    name: r.name || `Faculty Member ${sId}`,
+                    role: r.role || (r.category === 'Admin' ? 'Administrative Staff' : 'Faculty Member'),
+                    category: r.category || 'Faculty',
+                    dept: r.department || (r.category === 'Admin' ? 'University Administration' : 'School of Engineering & Technology'),
+                    email: r.email || '',
+                    phone: r.phone || '',
+                    avatar: r.name ? r.name.substring(0, 2).toUpperCase() : 'U',
+                    status: 'Active',
+                    hasAccount: true,
+                    source: 'VERIFICATION_SYNC'
+                  });
+                }
+              });
+
+              const updatedTeam = Array.from(teamMap.values());
+              if (updatedTeam.length !== prev.length) {
+                try { localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam)); } catch (e) {}
+                return updatedTeam;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+
+      // 2. Sync Team Data from MongoDB
+      fetch(getApiUrl('/api/sync-team'))
         .then((r) => r.json())
         .then((data) => {
           if (data && Array.isArray(data.team) && data.team.length > 0) {
             setTeam((prev) => {
-              // MERGE: cloud data + local data so newly added members are never lost
               const merged = new Map();
-              // Add cloud members, SKIP any that were deleted
               data.team.forEach(m => {
                 const key = (m.employeeId || m.id || '').toLowerCase();
                 if (!deletedIds.includes(key)) {
                   merged.set(m.employeeId || m.id, m);
                 }
               });
-              // Add local members not in cloud (newly added), skip deleted
               prev.forEach(m => {
                 const key = (m.employeeId || m.id || '').toLowerCase();
                 const mapKey = m.employeeId || m.id;
@@ -141,29 +250,9 @@ export default function App() {
                 }
               });
               const mergedArr = Array.from(merged.values());
-              // If merged differs from cloud (e.g. deletions/additions), push back to MongoDB
-              if (mergedArr.length !== data.team.length) {
-                fetch('/api/sync-team', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(mergedArr),
-                }).catch(() => {});
-              }
               if (JSON.stringify(prev) !== JSON.stringify(mergedArr)) {
-                localStorage.setItem('ctu_team_data', JSON.stringify(mergedArr));
+                try { localStorage.setItem('ctu_team_data', JSON.stringify(mergedArr)); } catch(e) {}
                 return mergedArr;
-              }
-              return prev;
-            });
-          } else if (data && Array.isArray(data.team) && data.team.length === 0) {
-            // Auto-seed MongoDB with current local team if cloud is empty
-            setTeam((prev) => {
-              if (prev.length > 0) {
-                fetch('/api/sync-team', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(prev),
-                }).catch(() => {});
               }
               return prev;
             });
@@ -171,33 +260,28 @@ export default function App() {
         })
         .catch(() => {});
 
-      fetch('/api/sync-tasks')
+      // 3. Sync Tasks from MongoDB
+      fetch(getApiUrl('/api/sync-tasks'))
         .then((r) => r.json())
         .then((data) => {
           if (data && Array.isArray(data.tasks) && data.tasks.length > 0) {
             setTasks((prev) => {
               if (JSON.stringify(prev) !== JSON.stringify(data.tasks)) {
-                localStorage.setItem('ctu_tasks_data', JSON.stringify(data.tasks));
+                try { localStorage.setItem('ctu_tasks_data', JSON.stringify(data.tasks)); } catch (e) {}
                 return data.tasks;
               }
               return prev;
             });
-          } else if (data && Array.isArray(data.tasks) && data.tasks.length === 0 && tasks.length > 0) {
-            // Auto-seed MongoDB if empty
-            fetch('/api/sync-tasks', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(tasks),
-            }).catch(() => {});
           }
         })
         .catch(() => {});
     };
 
     syncFromCloud();
-    const interval = setInterval(syncFromCloud, 4000);
+    const interval = setInterval(syncFromCloud, 5000);
     return () => clearInterval(interval);
   }, []);
+
 
 
 
@@ -217,21 +301,25 @@ export default function App() {
     setAuthUser(null);
   };
 
-  // Handle Batch Import Execution with Smart Upsert Merge
-  const handleImportEmployees = (importedRows, category = 'faculty') => {
+  // Handle Batch Import Execution with Smart Upsert Merge & MongoDB Sync
+  const handleImportEmployees = async (importedRows, category = 'faculty') => {
+    if (!Array.isArray(importedRows) || importedRows.length === 0) return;
+
     const formattedMembers = importedRows.map((emp, idx) => {
       const names = (emp.displayName || 'Employee').split(' ');
       const initials = names.map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'EM';
       const cleanEmpId = emp.empId || `26${100 + idx}`;
+      const isFacultyCat = category === 'faculty' || emp.targetRole === 'Faculty';
 
       return {
         id: `usr-imp-${Date.now()}-${idx}`,
         employeeId: cleanEmpId,
         name: emp.displayName || 'Staff Member',
-        role: emp.designation || (category === 'faculty' ? 'Faculty Member' : 'Administrative Staff'),
-        category: category === 'faculty' ? 'Faculty' : 'Admin',
-        dept: emp.dept || (category === 'faculty' ? 'Computer Science & Engineering' : 'University Administration'),
+        role: emp.designation || (isFacultyCat ? 'Faculty Member' : 'Administrative Staff'),
+        category: isFacultyCat ? 'Faculty' : 'Admin',
+        dept: emp.dept || (isFacultyCat ? 'School of Engineering & Technology' : 'University Administration'),
         email: emp.email || `${(emp.displayName || 'staff').toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`,
+        phone: emp.phone || '',
         avatar: initials,
         status: 'Active',
         source: 'EXCEL_IMPORT',
@@ -239,13 +327,32 @@ export default function App() {
       };
     });
 
+    const verificationRecords = importedRows.map((emp, idx) => {
+      const isFacultyCat = category === 'faculty' || emp.targetRole === 'Faculty';
+      return {
+        staffId: emp.empId || `26${100 + idx}`,
+        name: emp.displayName || 'Staff Member',
+        email: emp.email || '',
+        phone: emp.phone || '',
+        department: emp.dept || (isFacultyCat ? 'School of Engineering & Technology' : 'University Administration'),
+        category: isFacultyCat ? 'Faculty' : 'Admin',
+        role: emp.designation || (isFacultyCat ? 'Faculty Member' : 'Administrative Staff'),
+        status: 'Pre-Authorized',
+        uploadedAt: new Date().toISOString()
+      };
+    });
+
+    // 1. Update React State & LocalStorage for Team Data
     setTeam((prevTeam) => {
       const teamMap = new Map();
-      prevTeam.forEach(m => teamMap.set(m.employeeId, m));
+      (prevTeam || []).forEach(m => {
+        if (m && (m.employeeId || m.id)) {
+          teamMap.set(String(m.employeeId || m.id).toLowerCase(), m);
+        }
+      });
 
-      // Smart Upsert: add new members or update existing
       formattedMembers.forEach(newMem => {
-        teamMap.set(newMem.employeeId, newMem);
+        teamMap.set(String(newMem.employeeId).toLowerCase(), newMem);
       });
 
       const updated = Array.from(teamMap.values());
@@ -253,7 +360,43 @@ export default function App() {
       return updated;
     });
 
-    setActiveView('team');
+    // 2. Update Verification LocalStorage AND React State (direct prop to SuperAdminVerification)
+    try {
+      const existingVer = JSON.parse(localStorage.getItem('ctu_staff_verification') || '[]');
+      const verMap = new Map();
+      existingVer.forEach(v => verMap.set(String(v.staffId).toLowerCase(), v));
+      verificationRecords.forEach(v => verMap.set(String(v.staffId).toLowerCase(), v));
+      const merged = Array.from(verMap.values());
+      localStorage.setItem('ctu_staff_verification', JSON.stringify(merged));
+      // Update React state so SuperAdminVerification gets new records as prop immediately
+      setVerificationRecordsState(merged);
+    } catch (e) {}
+
+    // 3. Persist to MongoDB Server Collections via APIs
+    try {
+      await fetch(getApiUrl('/api/sync-verification'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records: verificationRecords })
+      });
+    } catch (e) {
+      console.warn("MongoDB sync-verification upload:", e);
+    }
+
+    try {
+      await fetch(getApiUrl('/api/sync-team'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formattedMembers)
+      });
+    } catch (e) {
+      console.warn("MongoDB sync-team upload:", e);
+    }
+
+    // 4. Fire event to trigger re-fetch in SuperAdminVerification
+    window.dispatchEvent(new Event('ctu_records_updated'));
+
+    setActiveView('staff');
   };
 
   // Delete Faculty / Admin Employee Record Handler
@@ -266,6 +409,13 @@ export default function App() {
     const newDeletedIds = Array.from(new Set([...deletedEmployeeIds, id1, id2]));
     setDeletedEmployeeIds(newDeletedIds);
     localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
+
+    // Also delete from MongoDB verification collection
+    fetch('/api/sync-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', staffId: targetMember?.employeeId || memberId })
+    }).catch(() => {});
 
     setTeam((prevTeam) => {
       const updated = prevTeam.filter((m) => {
@@ -283,7 +433,41 @@ export default function App() {
         body: JSON.stringify(updated),
       }).catch(() => {});
 
-      return updated; // ← THIS WAS MISSING — without this, React never updates the state
+      return updated;
+    });
+  };
+
+  // Bulk Delete Employee Records Handler
+  const handleBulkDeleteEmployees = (targetIds) => {
+    if (!Array.isArray(targetIds) || targetIds.length === 0) return;
+    const targetSet = new Set(targetIds.map(id => String(id).toLowerCase().trim()));
+
+    const newDeletedIds = Array.from(new Set([...deletedEmployeeIds, ...targetSet]));
+    setDeletedEmployeeIds(newDeletedIds);
+    localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
+
+    fetch('/api/sync-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk-delete', staffIds: targetIds })
+    }).catch(() => {});
+
+    setTeam((prevTeam) => {
+      const updated = prevTeam.filter((m) => {
+        const mId = (m.id || '').toLowerCase();
+        const mEmpId = (m.employeeId || '').toLowerCase();
+        return !targetSet.has(mId) && !targetSet.has(mEmpId);
+      });
+
+      localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+
+      fetch('/api/sync-team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+
+      return updated;
     });
   };
 
@@ -360,16 +544,29 @@ export default function App() {
     return matchesAsCreator || matchesAsAssignee;
   });
 
-  // Filter Tasks by Search, Priority & Tag
+  // Filter Tasks by Search, Priority, Tag & Department
   const filteredTasks = roleScopedTasks.filter((t) => {
+    if (!t) return false;
+    const q = (searchQuery || '').toLowerCase();
+    const titleStr = (t.title || '').toLowerCase();
+    const descStr = (t.description || '').toLowerCase();
+    const assigneeStr = (t.assigneeName || '').toLowerCase();
+
     const matchesSearch = 
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.assigneeName && t.assigneeName.toLowerCase().includes(searchQuery.toLowerCase()));
+      !q ||
+      titleStr.includes(q) ||
+      descStr.includes(q) ||
+      assigneeStr.includes(q);
 
     const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
 
     const matchesTag = selectedTag === 'ALL' || (Array.isArray(t.tags) && t.tags.includes(selectedTag));
+
+    // Department filter — only active for admin/superAdmin roles
+    const matchesDept = 
+      filterDept === 'ALL' ||
+      currentRole === 'faculty' || // faculty sees all their own tasks regardless
+      (t.departmentName || '').toLowerCase().includes(filterDept.toLowerCase());
 
     // Directional Task Filtering (Incoming vs Delegated)
     let matchesDirection = true;
@@ -379,7 +576,7 @@ export default function App() {
       matchesDirection = authUser?.name === t.creatorName || authUser?.id === t.creatorId || authUser?.employeeId === t.creatorId;
     }
 
-    return matchesSearch && matchesPriority && matchesTag && matchesDirection;
+    return matchesSearch && matchesPriority && matchesTag && matchesDept && matchesDirection;
   });
 
   // Handlers
@@ -617,6 +814,9 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         filterPriority={filterPriority}
         setFilterPriority={setFilterPriority}
+        filterDept={filterDept}
+        selectedTag={selectedTag}
+        filterDirection={filterDirection}
         authUser={authUser}
         tasks={tasks}
         theme={theme}
@@ -629,54 +829,123 @@ export default function App() {
         onOpenChat={(task) => setActiveChatTask(task)}
         onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
         onOpenReviewModal={(task) => setActiveReviewTask(task)}
+        isMobile={isMobile}
+        onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
       />
 
-      <main className="main-content">
-        {/* Role Scope Notice Banner */}
-        <div style={{
-          padding: '10px 16px',
-          borderRadius: '10px',
-          background: currentRole === 'faculty' ? '#fffbebf0' : '#f0f9ff',
-          border: `1px solid ${currentRole === 'faculty' ? '#fde68a' : '#bae6fd'}`,
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '12px',
-          color: 'var(--text-primary)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Lock size={15} color={currentRole === 'faculty' ? '#d97706' : '#0284c7'} />
-            <span>
-              <strong>Authenticated Role Scope: {authUser.roleTitle}</strong> • {
-                currentRole === 'faculty'
-                  ? 'Faculty Workspace: View self-assigned tasks, update subtasks, request extensions & view report card.'
-                  : currentRole === 'hod'
-                  ? 'Scoped to Computer Science & Engineering department tasks & faculty oversight.'
-                  : currentRole === 'superAdmin'
-                  ? 'Global University Access: Managing all schools, departments, RBAC & system configs.'
-                  : 'Authorized access granted for current scope.'
-              }
-            </span>
+      <main className="main-content" style={{ paddingBottom: isMobile ? '80px' : '24px', padding: isMobile ? '10px' : '24px' }}>
+        {/* 🎓 Dedicated Faculty Workspace Welcome & Action Banner */}
+        {currentRole === 'faculty' ? (
+          <div style={{
+            padding: isMobile ? '12px 14px' : '14px 20px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)',
+            color: '#ffffff',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: isMobile ? '34px' : '40px',
+                height: isMobile ? '34px' : '40px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(245, 158, 11, 0.35)'
+              }}>
+                <Award size={isMobile ? 18 : 22} color="#ffffff" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+                  {authUser.name}
+                </h3>
+                <p style={{ fontSize: isMobile ? '10.5px' : '11.5px', color: '#93c5fd', margin: 0 }}>
+                  {authUser.dept || 'CT University Faculty Workspace'} • {roleScopedTasks.length} Assigned Tasks
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsReportCardOpen(true)}
+              style={{
+                padding: isMobile ? '6px 12px' : '8px 16px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: isMobile ? '11.5px' : '12.5px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+              }}
+            >
+              <Award size={14} />
+              <span>My Report Card</span>
+            </button>
           </div>
+        ) : (
+          /* Role Scope Notice Banner (Non-Faculty Desktop Only) */
+          !isMobile && (
+            <div style={{
+              padding: '10px 16px',
+              borderRadius: '10px',
+              background: '#f0f9ff',
+              border: '1px solid #bae6fd',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '12px',
+              color: 'var(--text-primary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Lock size={15} color="#0284c7" />
+                <span>
+                  <strong>Authenticated Role Scope: {authUser.roleTitle}</strong> • {
+                    currentRole === 'hod'
+                      ? 'Scoped to Computer Science & Engineering department tasks & faculty oversight.'
+                      : currentRole === 'superAdmin'
+                      ? 'Global University Access: Managing all schools, departments, RBAC & system configs.'
+                      : 'Authorized access granted for current scope.'
+                  }
+                </span>
+              </div>
 
-          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-            Logged in as {authUser.name}
-          </span>
-        </div>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                Logged in as {authUser.name}
+              </span>
+            </div>
+          )
+        )}
 
-        <StatsOverview tasks={filteredTasks} currentRole={currentRole} />
+        <StatsOverview tasks={filteredTasks} currentRole={currentRole} isMobile={isMobile} />
 
-        {/* 🏷️ Quick Tag & Directional Assignment Filter Pills */}
+        {/* 🏷️ Quick Department, Tag & Directional Assignment Filter Pills (Desktop & Mobile Optimized) */}
         <TagFilterBar
           tasks={roleScopedTasks}
           selectedTag={selectedTag}
           onSelectTag={setSelectedTag}
           filterDirection={filterDirection}
           onSelectDirection={setFilterDirection}
+          filterDept={filterDept}
+          onSelectDept={setFilterDept}
           authUser={authUser}
           currentRole={currentRole}
+          isMobile={isMobile}
+          onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
         />
+
 
         {activeView === 'kanban' && (
           <KanbanBoard 
@@ -709,28 +978,20 @@ export default function App() {
           />
         )}
 
-        {activeView === 'calendar' && (
-          <CalendarView 
-            tasks={filteredTasks}
-            onEditTask={handleOpenEditTask}
-            onOpenChat={(task) => setActiveChatTask(task)}
-            onMoveStage={handleMoveStage}
-          />
-        )}
-
-        {activeView === 'team' && (
+        {(activeView === 'team' || activeView === 'staff' || activeView === 'verification') && (
           currentRole !== 'faculty' ? (
-            <TeamDirectory 
-              team={team} 
-              tasks={tasks}
-              currentRole={currentRole}
-              authUser={authUser}
+            <SuperAdminVerification 
+              viewType="table"
+              team={team}
+              records={verificationRecordsState}
               onOpenHRImport={() => setIsHRImportOpen(true)}
               onDeleteEmployee={handleDeleteEmployee}
+              onBulkDeleteEmployees={handleBulkDeleteEmployees}
+              isMobile={isMobile}
             />
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #fee2e2', color: '#dc2626', fontWeight: '700', fontSize: '14px', marginTop: '20px' }}>
-              ⚠️ Access Restricted: Faculty accounts do not have authorization to view Employee Master Directory or HR Data.
+              ⚠️ Access Restricted: Faculty accounts do not have authorization to view Employee Master Directory or Staff Records.
             </div>
           )
         )}
@@ -821,6 +1082,71 @@ export default function App() {
           authUser={authUser}
           team={team}
           onPasswordChanged={handlePasswordChanged}
+        />
+      )}
+
+      {/* Mobile Quick Action Sheet */}
+      {mobileActionTask && (
+        <TaskActionSheet
+          isOpen={!!mobileActionTask}
+          onClose={() => setMobileActionTask(null)}
+          task={mobileActionTask}
+          authUser={authUser}
+          onMoveStage={handleMoveStage}
+          onEditTask={handleOpenEditTask}
+          onDeleteTask={handleDeleteTask}
+          onOpenChat={(task) => setActiveChatTask(task)}
+          onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
+          onOpenReviewModal={(task) => setActiveReviewTask(task)}
+          currentRole={currentRole}
+        />
+      )}
+
+      {/* Mobile Filter Bottom Sheet */}
+      {isFilterSheetOpen && (
+        <FilterBottomSheet
+          isOpen={isFilterSheetOpen}
+          onClose={() => setIsFilterSheetOpen(false)}
+          filterPriority={filterPriority}
+          setFilterPriority={setFilterPriority}
+          selectedTag={selectedTag}
+          setSelectedTag={setSelectedTag}
+          filterDirection={filterDirection}
+          setFilterDirection={setFilterDirection}
+          filterDept={filterDept}
+          setFilterDept={setFilterDept}
+          availableTags={Array.from(new Set(roleScopedTasks.flatMap(t => Array.isArray(t.tags) ? t.tags : [])))}
+          currentRole={currentRole}
+        />
+      )}
+
+      {/* Mobile More Actions Bottom Sheet */}
+      {isMoreSheetOpen && (
+        <MobileMoreSheet
+          isOpen={isMoreSheetOpen}
+          onClose={() => setIsMoreSheetOpen(false)}
+          authUser={authUser}
+          currentRole={currentRole}
+          onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+          onOpenReportCard={() => setIsReportCardOpen(true)}
+          onOpenChangePassword={() => setIsChangePassOpen(true)}
+          onOpenHRImport={() => setIsHRImportOpen(true)}
+          setActiveView={setActiveView}
+          onToggleTheme={handleToggleTheme}
+          theme={theme}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {/* Mobile Fixed Bottom Navigation */}
+      {isMobile && (
+        <MobileBottomNav
+          activeView={activeView}
+          setActiveView={setActiveView}
+          currentRole={currentRole}
+          onNewTask={handleOpenNewTask}
+          onOpenReportCard={() => setIsReportCardOpen(true)}
+          onOpenMoreSheet={() => setIsMoreSheetOpen(true)}
         />
       )}
     </div>

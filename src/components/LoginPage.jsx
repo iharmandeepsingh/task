@@ -1,29 +1,59 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, User, Building2, KeyRound, AlertCircle, ArrowRight, ShieldAlert, CheckCircle2, HelpCircle, X, Sparkles, Mail } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldAlert, CheckCircle2, HelpCircle, X, KeyRound, AlertCircle, ArrowRight, User, Phone, Building2, ArrowLeft } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
+import { getApiUrl } from '../utils/apiBase';
 
 export default function LoginPage({ onLogin }) {
   // Always fetch latest master team directory from localStorage or INITIAL_TEAM
   const activeTeam = (() => {
-    // Always start from full 208-member INITIAL_TEAM as base
+    const deletedIds = (() => {
+      try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
+    })();
+    const deletedSet = new Set(deletedIds.map(d => String(d).toLowerCase().trim()).filter(Boolean));
+
     const teamMap = new Map();
-    INITIAL_TEAM.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+    INITIAL_TEAM.forEach(m => {
+      const k1 = String(m.id || '').toLowerCase().trim();
+      const k2 = String(m.employeeId || '').toLowerCase().trim();
+      if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
+        teamMap.set((m.employeeId || m.id).toLowerCase(), m);
+      }
+    });
+
     const saved = localStorage.getItem('ctu_team_data');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          parsed.forEach(m => teamMap.set((m.employeeId || m.id).toLowerCase(), m));
+          parsed.forEach(m => {
+            const k1 = String(m.id || '').toLowerCase().trim();
+            const k2 = String(m.employeeId || '').toLowerCase().trim();
+            if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
+              teamMap.set((m.employeeId || m.id).toLowerCase(), m);
+            }
+          });
         }
       } catch (e) {}
     }
     return Array.from(teamMap.values());
   })();
 
+  const [isRegistering, setIsRegistering] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState('faculty'); // 'superAdmin', 'admin', 'faculty'
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Register state
+  const [regName, setRegName] = useState('');
+  const [regStaffId, setRegStaffId] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regDept, setRegDept] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
   // Forgot Password Modal State
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -31,154 +61,283 @@ export default function LoginPage({ onLogin }) {
   const [recoveryResult, setRecoveryResult] = useState(null);
   const [recoveryError, setRecoveryError] = useState('');
 
-  // Role Selector Cards
-  const ROLE_CARDS = {
-    superAdmin: {
-      roleKey: 'superAdmin',
-      roleTitle: 'Super Administrator',
-      avatar: 'SA',
-      badgeColor: '#8b5cf6',
-    },
-    admin: {
-      roleKey: 'admin',
-      roleTitle: 'University Administrator',
-      avatar: 'UA',
-      badgeColor: '#3b82f6',
-    },
-    faculty: {
-      roleKey: 'faculty',
-      roleTitle: 'Faculty Member',
-      avatar: 'FM',
-      badgeColor: '#ec4899',
-    }
-  };
-
-  const handleSelectRole = (roleKey) => {
-    setSelectedRole(roleKey);
-    setErrorMessage('');
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const cleanId = identifier.trim().toLowerCase();
 
     if (!cleanId) {
-      setErrorMessage('Please enter your University Employee / Staff ID');
+      setErrorMessage('Please enter your Staff ID');
       return;
     }
 
-    // Step 1: Database Identity Verification
     const matchedUser = activeTeam.find((m) => {
       const fullEmpId = (m.employeeId || '').trim().toLowerCase();
       const numDigits = fullEmpId.replace(/\D/g, '');
-      const fullName = (m.name || '').trim().toLowerCase();
+      const fullId = (m.id || '').trim().toLowerCase();
       const fullEmail = (m.email || '').trim().toLowerCase();
       const emailPrefix = fullEmail.split('@')[0];
+      const fullName = (m.name || '').trim().toLowerCase();
 
       return (
         fullEmpId === cleanId ||
         (numDigits && numDigits === cleanId) ||
-        fullName === cleanId ||
-        fullName.includes(cleanId) ||
+        fullId === cleanId ||
+        fullId === `usr-${cleanId}` ||
         fullEmail === cleanId ||
-        emailPrefix === cleanId
+        emailPrefix === cleanId ||
+        fullName === cleanId
       );
     });
 
-    // STRICT SECURITY GUARD: Reject login if record is NOT in database
     if (!matchedUser) {
-      setErrorMessage(`🛑 Security Access Denied: Staff ID / Record "${identifier}" is NOT present in the CT University Master Database. Only registered university staff can log in.`);
+      setErrorMessage(`Staff ID "${identifier.trim()}" not found. Please check your Staff ID or register.`);
       return;
     }
 
-    // Step 2: Password Verification against Database Record
     const cleanPass = password.trim().toLowerCase();
     const cleanName = (matchedUser.name || '').trim().toLowerCase();
     const cleanEmpId = (matchedUser.employeeId || '').trim().toLowerCase();
     const nameParts = cleanName.split(' ').filter(p => p.length > 1);
-
+    
+    // Check real password or fallback to defaults
+    const actualPassword = matchedUser.password || '';
+    
     const isPasswordValid = 
-      cleanPass === '123' ||
-      cleanPass === 'password123!' ||
-      cleanPass === cleanName ||
-      cleanPass === cleanEmpId ||
-      nameParts.some(part => cleanPass.includes(part)) ||
-      cleanPass.includes(cleanName);
+      (actualPassword && cleanPass === actualPassword.toLowerCase()) ||
+      (!actualPassword && (
+        cleanPass === '123' ||
+        cleanPass === 'password123!' ||
+        cleanPass === cleanName ||
+        cleanPass === cleanEmpId ||
+        nameParts.some(part => cleanPass.includes(part)) ||
+        cleanPass.includes(cleanName)
+      ));
 
     if (!isPasswordValid) {
-      setErrorMessage(`🔒 Authentication Failed: Incorrect password for ${matchedUser.name}. Enter staff name (e.g. "${matchedUser.name}") or password.`);
+      setErrorMessage(`Incorrect password. Please try again.`);
       return;
     }
 
-    // Step 3: Role-Scoped Authorization Guard
+    let autoDetectedRole = 'faculty';
+    let autoRoleTitle = matchedUser.role || 'Faculty Member';
     const userRoleStr = (matchedUser.role || '').toLowerCase();
-    const userEmpId = (matchedUser.employeeId || matchedUser.id || '').toLowerCase();
+    const userCategory = (matchedUser.category || '').toLowerCase();
+    const userEmpId = String(matchedUser.employeeId || matchedUser.id || '').toLowerCase();
 
-    const isSuperAdminAccount = 
+    if (
       userRoleStr === 'super admin' || 
       userRoleStr.includes('superadmin') ||
-      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(userEmpId);
-
-    const isFacultyAccount = matchedUser.category === 'Faculty' || 
-      userRoleStr.includes('faculty') || 
-      userRoleStr.includes('professor') || 
-      userRoleStr.includes('lecturer');
-
-    // Rule 1: Only registered Super Admins can log in under Super Administrator portal
-    if (selectedRole === 'superAdmin' && !isSuperAdminAccount) {
-      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is registered as a University Administrator / Department Head and does NOT have Super Admin privileges. Please select the University Administrator portal.`);
-      return;
+      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(userEmpId)
+    ) {
+      autoDetectedRole = 'superAdmin';
+      autoRoleTitle = 'Super Administrator';
+    } else if (
+      userRoleStr.includes('hod') || 
+      userRoleStr.includes('head of department') ||
+      userRoleStr.includes('h.o.d')
+    ) {
+      autoDetectedRole = 'hod';
+      autoRoleTitle = matchedUser.role || 'Head of Department';
+    } else if (
+      userCategory === 'admin' ||
+      userRoleStr.includes('admin') ||
+      userRoleStr.includes('director') ||
+      userRoleStr.includes('dean') ||
+      userRoleStr.includes('registrar') ||
+      userRoleStr.includes('chancellor')
+    ) {
+      autoDetectedRole = 'admin';
+      autoRoleTitle = matchedUser.role || 'University Administrator';
+    } else {
+      autoDetectedRole = 'faculty';
+      autoRoleTitle = matchedUser.role || 'Faculty Member';
     }
 
-    // Rule 2: Faculty accounts CANNOT log in under Super Admin or University Admin portals
-    if (isFacultyAccount && selectedRole !== 'faculty') {
-      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is registered under Faculty data and CANNOT log in as ${selectedRole === 'superAdmin' ? 'Super Administrator' : 'University Administrator'}. Please select the Faculty Member portal.`);
-      return;
-    }
-
-    // Rule 3: Administrative accounts CANNOT log in under Faculty portal
-    if (!isFacultyAccount && matchedUser.category === 'Admin' && selectedRole === 'faculty') {
-      setErrorMessage(`🛑 RBAC Authorization Denied: "${matchedUser.name}" (${matchedUser.employeeId || matchedUser.id}) is an Administrative account and must select the University Administrator portal.`);
-      return;
-    }
-
-    const roleTitle = selectedRole === 'superAdmin' 
-      ? 'Super Administrator' 
-      : (selectedRole === 'admin' ? 'University Administrator' : 'Faculty Member');
-
-    // Grant access and open personal workspace with database identity
     onLogin({
       id: matchedUser.id,
       employeeId: matchedUser.employeeId,
       email: matchedUser.email,
       name: matchedUser.name,
-      role: selectedRole,
-      roleTitle: matchedUser.role || roleTitle,
+      role: autoDetectedRole,
+      roleTitle: autoRoleTitle,
       dept: matchedUser.dept,
       avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
     });
   };
 
-  // Password Recovery Search Handler
+  // Auto-fill registration details when Staff ID is entered
+  const handleStaffIdChange = (val) => {
+    setRegStaffId(val);
+    const cleanId = String(val).trim().toLowerCase();
+    if (!cleanId) return;
+
+    const matched = activeTeam.find(m => {
+      if (!m) return false;
+      const empId = String(m.employeeId || '').toLowerCase().trim();
+      const id = String(m.id || '').toLowerCase().trim();
+      const sId = String(m.staffId || '').toLowerCase().trim();
+      return empId === cleanId || id === cleanId || id === `usr-${cleanId}` || sId === cleanId;
+    });
+
+    if (matched) {
+      if (matched.name) setRegName(matched.name);
+      if (matched.email) setRegEmail(matched.email);
+      if (matched.dept) setRegDept(matched.dept);
+      if (matched.phone) setRegPhone(matched.phone);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim() || !regStaffId.trim() || !regDept) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
+    const cleanEmail = regEmail.trim().toLowerCase();
+    const cleanStaffId = regStaffId.trim().toLowerCase();
+
+    // Check if staff ID or email exists in active roster
+    const existing = activeTeam.find(m => {
+      if (!m) return false;
+      const empId = String(m.employeeId || '').toLowerCase().trim();
+      const id = String(m.id || '').toLowerCase().trim();
+      const sId = String(m.staffId || '').toLowerCase().trim();
+      const email = String(m.email || '').toLowerCase().trim();
+
+      return (
+        (cleanStaffId && (empId === cleanStaffId || id === cleanStaffId || id === `usr-${cleanStaffId}` || sId === cleanStaffId)) ||
+        (cleanEmail && email === cleanEmail)
+      );
+    });
+    
+    // If account exists and already has a confirmed password set and is Active
+    if (existing && existing.password && existing.status === 'Active') {
+      setErrorMessage('An active account with this email or Staff ID already exists. Please sign in.');
+      return;
+    }
+
+    let verificationRecord = null;
+    try {
+      const checkRes = await fetch(getApiUrl(`/api/check-verification?staffId=${encodeURIComponent(cleanStaffId)}`));
+      if (checkRes.ok) {
+        const data = await checkRes.json();
+        if (data.record) {
+          verificationRecord = data.record;
+        }
+      }
+    } catch (e) {
+      console.warn("Verification check failed", e);
+    }
+
+    // Pre-authorized if exists in team roster, in verification pool, or standard CT University ID
+    const isPreAuthorized = 
+      !!existing || 
+      !!verificationRecord || 
+      /^\d{3,7}$/.test(cleanStaffId) || 
+      cleanStaffId.startsWith('adm') || 
+      cleanStaffId.startsWith('ctu-') ||
+      cleanStaffId.startsWith('usr-');
+
+    if (!isPreAuthorized) {
+      setErrorMessage('Verification Failed: Your Staff ID is not pre-authorized. Please contact Super Admin.');
+      return;
+    }
+
+    const isAdmin = 
+      (existing && (existing.category === 'Admin' || String(existing.role || '').toLowerCase().includes('admin'))) ||
+      (verificationRecord && (verificationRecord.category === 'Admin' || String(verificationRecord.role || '').toLowerCase().includes('admin'))) ||
+      cleanStaffId.startsWith('adm') ||
+      cleanStaffId.startsWith('ctu-adm') ||
+      ['10001', '24051', '17572'].includes(cleanStaffId);
+
+    const assignedCategory = isAdmin ? 'Admin' : (existing?.category || verificationRecord?.category || 'Faculty');
+    const assignedRole = existing?.role || verificationRecord?.role || (isAdmin ? 'Administrative Staff' : 'Faculty Member');
+
+    const initials = regName.split(/\s+/).map(n => n[0]).join('').substring(0,2).toUpperCase();
+
+    const registeredUser = {
+      ...(existing || {}),
+      id: existing?.id || `usr-${Date.now()}`,
+      employeeId: regStaffId.trim(),
+      name: regName.trim(),
+      email: regEmail.trim(),
+      phone: regPhone.trim(),
+      password: regPassword.trim(),
+      role: assignedRole,
+      category: assignedCategory,
+      dept: regDept || existing?.dept || verificationRecord?.department || (isAdmin ? 'University Administration' : 'School of Engineering & Technology'),
+      avatar: initials,
+      status: 'Active',
+      hasAccount: true
+    };
+
+    const updatedTeam = existing 
+      ? activeTeam.map(m => {
+          const eId = String(m.employeeId || '').toLowerCase().trim();
+          const id = String(m.id || '').toLowerCase().trim();
+          const em = String(m.email || '').toLowerCase().trim();
+          return (eId === cleanStaffId || id === cleanStaffId || em === cleanEmail) ? registeredUser : m;
+        })
+      : [...activeTeam, registeredUser];
+
+    localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam));
+    
+    // 1. Sync updated registered user to ctu_team in MongoDB
+    fetch(getApiUrl('/api/sync-team'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team: updatedTeam })
+    }).catch(() => {});
+
+    // 2. Remove the person from the pre-verification list (ctu_staff_verification) in MongoDB
+    fetch(getApiUrl('/api/sync-verification'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', staffId: regStaffId.trim() })
+    }).catch(() => {});
+
+    alert(`🎉 Registration successful as ${assignedCategory} (${assignedRole})! You can now sign in.`);
+    setIsRegistering(false);
+    setIdentifier(regStaffId.trim());
+    setPassword('');
+    // Reset form
+    setRegName('');
+    setRegStaffId('');
+    setRegEmail('');
+    setRegPhone('');
+    setRegDept('');
+    setRegPassword('');
+    setRegConfirmPassword('');
+    setErrorMessage('');
+  };
+
   const handleRecoverPassword = (e) => {
     e.preventDefault();
     const q = recoveryQuery.trim().toLowerCase();
     if (!q) {
-      setRecoveryError('Please enter your Staff ID or Email.');
+      setRecoveryError('Please enter your Staff ID.');
       return;
     }
 
     const found = activeTeam.find((m) => {
       const fullEmpId = (m.employeeId || '').trim().toLowerCase();
       const numDigits = fullEmpId.replace(/\D/g, '');
-      const fullName = (m.name || '').trim().toLowerCase();
+      const fullId = (m.id || '').trim().toLowerCase();
       const fullEmail = (m.email || '').trim().toLowerCase();
+      const fullName = (m.name || '').trim().toLowerCase();
       return (
         fullEmpId === q ||
         (numDigits && numDigits === q) ||
-        fullName === q ||
-        fullName.includes(q) ||
-        fullEmail === q
+        fullId === q ||
+        fullId === `usr-${q}` ||
+        fullEmail === q ||
+        fullName === q
       );
     });
 
@@ -194,7 +353,7 @@ export default function LoginPage({ onLogin }) {
       setRecoveryError('');
     } else {
       setRecoveryResult(null);
-      setRecoveryError(`No staff account found for "${recoveryQuery}". Please verify your Staff ID or contact HR.`);
+      setRecoveryError(`No staff account found for Staff ID "${recoveryQuery}".`);
     }
   };
 
@@ -205,11 +364,10 @@ export default function LoginPage({ onLogin }) {
     const oldInput = e.target.oldPass.value.trim();
     const newInput = e.target.newPass.value.trim();
     const confirmInput = e.target.confirmPass.value.trim();
-
     const expectedOld = recoveryResult.actualPassword;
 
     if (oldInput.toLowerCase() !== expectedOld.toLowerCase() && oldInput !== '123') {
-      alert('❌ Reset Failed: Incorrect Old Password. You must enter your correct Old Password to reset your password.');
+      alert('❌ Reset Failed: Incorrect Old Password.');
       return;
     }
 
@@ -223,7 +381,6 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    // Save updated password into activeTeam and localStorage
     const targetEmpId = recoveryResult.member.employeeId || recoveryResult.member.id;
     const updatedTeam = activeTeam.map(m => {
       if ((m.employeeId && m.employeeId === targetEmpId) || (m.id && m.id === targetEmpId)) {
@@ -234,35 +391,27 @@ export default function LoginPage({ onLogin }) {
 
     localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam));
 
-    fetch('/api/sync-team', {
+    fetch(getApiUrl('/api/sync-team'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedTeam)
+      body: JSON.stringify({ team: updatedTeam })
     }).catch(() => {});
 
-    alert(`🎉 Password for ${recoveryResult.member.name} updated successfully! Auto-filling your credentials now.`);
-
+    alert(`Password updated successfully!`);
     setIdentifier(targetEmpId);
     setPassword(newInput);
-    const isFaculty = recoveryResult.member.category === 'Faculty' || 
-      (recoveryResult.member.role && recoveryResult.member.role.toLowerCase().includes('faculty'));
-    setSelectedRole(isFaculty ? 'faculty' : (targetEmpId === '10001' ? 'superAdmin' : 'admin'));
     setIsForgotModalOpen(false);
     setRecoveryResult(null);
     setRecoveryQuery('');
   };
 
-  const handleAutofillRecovered = () => {
-    if (recoveryResult?.member) {
-      setIdentifier(recoveryResult.member.employeeId || recoveryResult.member.id);
-      setPassword(recoveryResult.actualPassword);
-      const isFaculty = recoveryResult.member.category === 'Faculty' || 
-        (recoveryResult.member.role && recoveryResult.member.role.toLowerCase().includes('faculty'));
-      setSelectedRole(isFaculty ? 'faculty' : (recoveryResult.member.employeeId === '10001' ? 'superAdmin' : 'admin'));
-      setIsForgotModalOpen(false);
-      setRecoveryResult(null);
-      setRecoveryQuery('');
-    }
+  const getPasswordStrength = () => {
+    let strength = 0;
+    if (regPassword.length > 5) strength += 1;
+    if (regPassword.length > 8) strength += 1;
+    if (/[A-Z]/.test(regPassword)) strength += 1;
+    if (/[0-9]/.test(regPassword)) strength += 1;
+    return strength;
   };
 
   return (
@@ -271,396 +420,429 @@ export default function LoginPage({ onLogin }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+      backgroundColor: '#f4f7fb',
       fontFamily: "'Inter', sans-serif",
-      padding: '16px',
-      color: '#f8fafc',
+      padding: '24px',
+      color: '#1e293b',
       boxSizing: 'border-box'
     }}>
-      <div className="login-card-container" style={{
-        width: '100%',
-        maxWidth: '960px',
-        background: 'rgba(30, 41, 59, 0.95)',
-        backdropFilter: 'blur(16px)',
-        borderRadius: '20px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Top Header Branding */}
-        <div style={{
-          padding: '24px 20px',
-          background: 'linear-gradient(180deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+      {!isRegistering ? (
+        <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Logo and Titles (Login) */}
+          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
+              width: '48px',
+              height: '48px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              background: '#1e293b',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
-            }}>
-              <Building2 size={22} color="#ffffff" />
-            </div>
-            <div>
-              <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: '#ffffff', margin: 0 }}>
-                CT UNIVERSITY
-              </h1>
-              <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '600' }}>
-                Protected Staff Authentication System
-              </p>
-            </div>
-          </div>
-
-          <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#f8fafc', marginBottom: '6px' }}>
-            Database-Verified Portal Sign In
-          </h2>
-          <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4', margin: 0 }}>
-            Strict security active: Staff data is verified against master database. Unregistered accounts are denied access.
-          </p>
-        </div>
-
-        {/* Clean Role Selector Cards */}
-        <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <label style={{ fontSize: '11px', fontWeight: '700', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px' }}>
-            Select Login Portal Role:
-          </label>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-            {Object.keys(ROLE_CARDS).map((roleKey) => {
-              const card = ROLE_CARDS[roleKey];
-              const isSelected = selectedRole === roleKey;
-
-              return (
-                <div
-                  key={roleKey}
-                  onClick={() => handleSelectRole(roleKey)}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    background: isSelected ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                    border: isSelected ? `2px solid ${card.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                  }}
-                >
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    background: card.badgeColor,
-                    color: '#ffffff',
-                    fontWeight: '800',
-                    fontSize: '13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    {card.avatar}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#ffffff' : '#e2e8f0' }}>
-                      {card.roleTitle}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Form Inputs & Actions */}
-        <div style={{ padding: '20px' }}>
-          {errorMessage && (
-            <div style={{
-              padding: '12px 14px',
-              borderRadius: '10px',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid #ef4444',
-              color: '#fca5a5',
-              fontSize: '12px',
               marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              lineHeight: '1.4'
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}>
-              <ShieldAlert size={20} color="#f87171" style={{ flexShrink: 0 }} />
-              <div>{errorMessage}</div>
+              <img src="/ctu-logo.png" alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
-                University Employee / Staff ID
-              </label>
-              <div style={{ position: 'relative' }}>
-                <User size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                <input
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => {
-                    setIdentifier(e.target.value);
-                    setErrorMessage('');
-                  }}
-                  placeholder="Enter Staff ID (e.g. 26001, 26010, 309, 301, 24051)..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px 10px 38px',
-                    borderRadius: '10px',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#cbd5e1', margin: 0 }}>
-                  Password (Staff Name or Password)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsForgotModalOpen(true);
-                    setRecoveryQuery(identifier);
-                    setRecoveryResult(null);
-                    setRecoveryError('');
-                  }}
-                  style={{ background: 'none', border: 'none', color: '#60a5fa', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <HelpCircle size={12} />
-                  <span>Forgot Password?</span>
-                </button>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <KeyRound size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter staff name as password (e.g. Arvin Vinayek)..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px 10px 38px',
-                    borderRadius: '10px',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                color: '#ffffff',
-                fontSize: '14px',
-                fontWeight: '700',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.5)'
-              }}
-            >
-              <span>Verify Database Identity & Sign In ({ROLE_CARDS[selectedRole]?.roleTitle || 'Portal'})</span>
-              <ArrowRight size={16} />
-            </button>
-          </form>
-
-          <div style={{
-            marginTop: '14px',
-            fontSize: '11px',
-            color: '#64748b',
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}>
-            <Lock size={12} /> Master Database Match Verification Active • Unregistered Accounts Denied
+            <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#0f172a', margin: '0 0 6px 0' }}>
+              CT University
+            </h1>
+            <p style={{ fontSize: '14px', color: '#475569', margin: 0 }}>
+              Sign in to your workspace
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* 🔑 Forgot Password Recovery Modal */}
-      {isForgotModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.85)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100,
-          padding: '16px'
-        }}>
+          {/* Login Card */}
           <div style={{
             width: '100%',
-            maxWidth: '480px',
             background: '#ffffff',
-            borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)',
-            overflow: 'hidden',
-            color: '#0f172a'
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            padding: '24px',
+            boxSizing: 'border-box'
           }}>
-            <div style={{
-              padding: '16px 20px',
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <KeyRound size={18} color="#60a5fa" />
-                <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
-                  Account Password Recovery & Reset
-                </h3>
+            {errorMessage && (
+              <div style={{
+                padding: '12px',
+                borderRadius: '6px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                fontSize: '13px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <AlertCircle size={16} />
+                <div>{errorMessage}</div>
               </div>
-              <button
-                onClick={() => { setIsForgotModalOpen(false); setRecoveryResult(null); setRecoveryError(''); }}
-                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#ffffff', cursor: 'pointer' }}
-              >
-                <X size={15} />
-              </button>
-            </div>
+            )}
 
-            <div style={{ padding: '20px' }}>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 14px 0' }}>
-                Enter your <strong>Staff ID</strong> or <strong>Official Email</strong> to recover your account password.
-              </p>
-
-              <form onSubmit={handleRecoverPassword} style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '8px' }}>
+                  Staff ID
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <User size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '10px' }} />
                   <input
                     type="text"
-                    value={recoveryQuery}
-                    onChange={(e) => setRecoveryQuery(e.target.value)}
-                    placeholder="Enter Staff ID (e.g. 26001, 26010, 309)..."
-                    style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+                    value={identifier}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value);
+                      setErrorMessage('');
+                    }}
+                    placeholder="e.g. 26006 or 10001"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 38px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                      color: '#0f172a',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#334155', margin: 0 }}>
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotModalOpen(true);
+                      setRecoveryQuery(identifier);
+                      setRecoveryResult(null);
+                      setRecoveryError('');
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '13px', cursor: 'pointer', padding: 0 }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{
+                      width: '100%',
+                      padding: '10px 38px 10px 38px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                      color: '#0f172a',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
                     required
                   />
                   <button
-                    type="submit"
-                    style={{ padding: '10px 16px', borderRadius: '8px', background: '#2563eb', color: '#ffffff', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                   >
-                    Verify ID
+                    {showPassword ? <EyeOff size={16} color="#94a3b8" /> : <Eye size={16} color="#94a3b8" />}
                   </button>
                 </div>
-              </form>
+              </div>
 
-              {recoveryError && (
-                <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#dc2626', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="checkbox" id="keepSigned" style={{ width: '16px', height: '16px', accentColor: '#1e293b', cursor: 'pointer' }} />
+                <label htmlFor="keepSigned" style={{ fontSize: '13px', color: '#475569', cursor: 'pointer' }}>
+                  Keep me signed in
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  background: '#1e293b',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'background 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.background = '#0f172a'}
+                onMouseOut={(e) => e.target.style.background = '#1e293b'}
+              >
+                Sign In <ArrowRight size={16} />
+              </button>
+            </form>
+          </div>
+
+          <div style={{ marginTop: '24px', fontSize: '13px', color: '#64748b' }}>
+            Don't have an account?{' '}
+            <button 
+              type="button" 
+              onClick={() => { setIsRegistering(true); setErrorMessage(''); }}
+              style={{ background: 'none', border: 'none', color: '#0284c7', cursor: 'pointer', padding: 0, fontSize: '13px', fontWeight: '500' }}
+            >
+              Sign up
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Register Flow */
+        <div style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          
+          <div style={{
+            width: '100%',
+            background: '#ffffff',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+          }}>
+            
+            {/* Top Bar (Verification) */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#ffffff'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => { setIsRegistering(false); setErrorMessage(''); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                >
+                  <ArrowLeft size={18} color="#0f172a" />
+                </button>
+                <span style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a' }}>Verification</span>
+              </div>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '8px', background: '#1e293b', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <User size={16} color="#ffffff" />
+              </div>
+            </div>
+
+            <div style={{ padding: '24px 32px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', margin: '0 0 6px 0' }}>
+                Staff Registration
+              </h2>
+              <p style={{ fontSize: '13px', color: '#2563eb', margin: '0 0 24px 0', lineHeight: '1.4' }}>
+                Enter your details to provision your enterprise account.
+              </p>
+
+              {errorMessage && (
+                <div style={{
+                  padding: '12px', borderRadius: '6px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px'
+                }}>
                   <AlertCircle size={16} />
-                  <span>{recoveryError}</span>
+                  <div>{errorMessage}</div>
                 </div>
               )}
 
+              <form onSubmit={handleRegister}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Staff ID</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text" value={regStaffId} onChange={(e) => handleStaffIdChange(e.target.value)}
+                      placeholder="e.g. 26006 or 10001"
+                      style={{ width: '100%', padding: '10px 12px 10px 16px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Staff Name</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                    <input
+                      type="text" value={regName} onChange={(e) => setRegName(e.target.value)}
+                      placeholder="e.g. Rohit"
+                      style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Work Email</label>
+                  <div style={{ position: 'relative' }}>
+                    <Mail size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                    <input
+                      type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)}
+                      placeholder="rohit26006@ctuniversity.in"
+                      style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Phone Number</label>
+                  <div style={{ position: 'relative' }}>
+                    <Phone size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                    <input
+                      type="tel" value={regPhone} onChange={(e) => setRegPhone(e.target.value)}
+                      placeholder="9876543210"
+                      style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Department</label>
+                  <div style={{ position: 'relative' }}>
+                    <Building2 size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px', pointerEvents: 'none' }} />
+                    <input
+                      type="text"
+                      value={regDept}
+                      onChange={(e) => setRegDept(e.target.value)}
+                      placeholder="e.g. School of Agriculture & Natural Sciences"
+                      style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                    <input
+                      type={showRegPassword ? 'text' : 'password'} value={regPassword} onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="••••••••"
+                      style={{ width: '100%', padding: '10px 38px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                    <button type="button" onClick={() => setShowRegPassword(!showRegPassword)} style={{ position: 'absolute', right: '12px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      {showRegPassword ? <EyeOff size={16} color="#64748b" /> : <Eye size={16} color="#64748b" />}
+                    </button>
+                  </div>
+                  {/* Password Strength Meter */}
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                    {[1, 2, 3, 4].map(idx => (
+                      <div key={idx} style={{ flex: 1, height: '4px', borderRadius: '2px', background: getPasswordStrength() >= idx ? '#cbd5e1' : '#f1f5f9' }}></div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '6px' }}>Re-enter Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <KeyRound size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                    <input
+                      type={showRegConfirmPassword ? 'text' : 'password'} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      style={{ width: '100%', padding: '10px 38px 10px 38px', borderRadius: '6px', border: 'none', background: '#f1f5f9', fontSize: '14px', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                    <button type="button" onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)} style={{ position: 'absolute', right: '12px', top: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      {showRegConfirmPassword ? <EyeOff size={16} color="#64748b" /> : <Eye size={16} color="#64748b" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    background: '#1e293b',
+                    color: '#ffffff',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginBottom: '16px'
+                  }}
+                >
+                  Register Account <ArrowRight size={16} />
+                </button>
+
+                <div style={{ textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+                  Already have an account?{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsRegistering(false); setErrorMessage(''); }}
+                    style={{ background: 'none', border: 'none', color: '#0f172a', cursor: 'pointer', padding: 0, fontSize: '12px', fontWeight: '500' }}
+                  >
+                    Sign In
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {isForgotModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px'
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '400px', background: '#ffffff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '600', margin: 0, color: '#0f172a' }}>Recover Password via Staff ID</h3>
+              <button onClick={() => setIsForgotModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} color="#64748b" /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <form onSubmit={handleRecoverPassword} style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                <input
+                  type="text" value={recoveryQuery} onChange={(e) => setRecoveryQuery(e.target.value)}
+                  placeholder="Enter your Staff ID (e.g. 26006)"
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }} required
+                />
+                <button type="submit" style={{ padding: '8px 16px', borderRadius: '6px', background: '#3b82f6', color: '#fff', border: 'none', fontSize: '13px', cursor: 'pointer' }}>
+                  Verify
+                </button>
+              </form>
+
+              {recoveryError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '10px' }}>{recoveryError}</div>}
+
               {recoveryResult && (
-                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <CheckCircle2 size={18} color="#059669" />
-                    <strong style={{ fontSize: '13px', color: '#065f46' }}>Database Account Verified: {recoveryResult.member.name}</strong>
-                  </div>
-
-                  <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.6', marginBottom: '12px', background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div>🆔 <strong>Staff ID:</strong> {recoveryResult.member.employeeId || recoveryResult.member.id}</div>
-                    <div>📧 <strong>Official Email:</strong> {recoveryResult.member.email}</div>
-                    <div>💼 <strong>Department / Role:</strong> {recoveryResult.member.dept || recoveryResult.member.role}</div>
-                    
-                    {recoveryResult.canViewPlainPassword ? (
-                      <div style={{ marginTop: '8px', padding: '8px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #6ee7b7' }}>
-                        🔑 <strong>Super Admin (10001) Decrypted Password:</strong> <code style={{ fontSize: '13px', color: '#047857', fontWeight: '800' }}>{recoveryResult.actualPassword}</code>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: '8px', padding: '8px', background: '#fffbeb', borderRadius: '6px', border: '1px solid #fde68a', color: '#b45309' }}>
-                        🔒 <strong>Password Privacy Guard:</strong> Plain password is <strong>hidden for security</strong>. Only Super Admin ID <strong>10001</strong> can decrypt passwords.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Change Password Form Requiring Old Password */}
-                  <form onSubmit={handleResetPasswordWithOld} style={{ background: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-                    <div style={{ fontSize: '12px', fontWeight: '800', color: '#1e3a8a', marginBottom: '10px' }}>
-                      🔑 Reset Account Password (Must Enter Old Password)
-                    </div>
-
-                    <div style={{ marginBottom: '8px' }}>
-                      <input
-                        type="password"
-                        name="oldPass"
-                        placeholder="Enter Old Password..."
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                      <input
-                        type="password"
-                        name="newPass"
-                        placeholder="New Password..."
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
-                        required
-                      />
-                      <input
-                        type="password"
-                        name="confirmPass"
-                        placeholder="Confirm New..."
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      style={{
-                        width: '100%',
-                        padding: '9px',
-                        borderRadius: '8px',
-                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                        color: '#ffffff',
-                        fontWeight: '700',
-                        fontSize: '12px',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Verify Old Password & Save New Password
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#0f172a' }}><strong>Verified:</strong> {recoveryResult.member.name}</p>
+                  <form onSubmit={handleResetPasswordWithOld}>
+                    <input type="password" name="oldPass" placeholder="Old Password" style={{ width: '100%', padding: '8px', marginBottom: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }} required />
+                    <input type="password" name="newPass" placeholder="New Password" style={{ width: '100%', padding: '8px', marginBottom: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }} required />
+                    <input type="password" name="confirmPass" placeholder="Confirm New" style={{ width: '100%', padding: '8px', marginBottom: '12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }} required />
+                    <button type="submit" style={{ width: '100%', padding: '8px', background: '#1e293b', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', cursor: 'pointer' }}>
+                      Update Password
                     </button>
                   </form>
                 </div>

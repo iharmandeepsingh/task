@@ -15,6 +15,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [taskAttachments, setTaskAttachments] = useState([]);
+  const [requiredFormats, setRequiredFormats] = useState(['ANY']);
 
   useEffect(() => {
     if (taskToEdit) {
@@ -28,6 +29,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setDueTime(taskToEdit.dueTime || (taskToEdit.dueDate && taskToEdit.dueDate.includes('T') ? taskToEdit.dueDate.split('T')[1].substring(0, 5) : '17:00'));
       setSubtasks(taskToEdit.subtasks || []);
       setTaskAttachments(taskToEdit.attachments || []);
+      setRequiredFormats(taskToEdit.requiredFormats && taskToEdit.requiredFormats.length > 0 ? taskToEdit.requiredFormats : ['ANY']);
     } else {
       setTitle('');
       setDescription('');
@@ -39,6 +41,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       setDueTime('17:00');
       setSubtasks([]);
       setTaskAttachments([]);
+      setRequiredFormats(['ANY']);
     }
     setFacultySearch('');
   }, [taskToEdit, isOpen, team]);
@@ -80,6 +83,7 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
       dueTime,
       subtasks,
       attachments: taskAttachments,
+      requiredFormats: requiredFormats.length > 0 ? requiredFormats : ['ANY'],
       progressPercent: stage === 'Accepted' ? 100 : 0,
       deadlineHealth: 'Green',
       isIdle: false
@@ -413,6 +417,71 @@ export default function TaskModal({ isOpen, onClose, onSave, taskToEdit, team })
                 </button>
               </div>
             ))}
+          </div>
+
+          {/* 📁 Mandatory Submission File Formats Section */}
+          <div style={{ background: '#f0f9ff', padding: '14px', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                <FileText size={16} color="#0284c7" />
+                <span>Mandatory Submission File Format(s)</span>
+              </label>
+              <span style={{ fontSize: '11px', color: '#0284c7', fontWeight: '600' }}>
+                Auto-rejects non-matching formats
+              </span>
+            </div>
+            <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 10px 0' }}>
+              Select which file format(s) the assignee is required to submit. Submissions in any other format will be automatically blocked.
+            </p>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { key: 'EXCEL', label: '📊 Excel (.xlsx, .xls, .csv)', color: '#10b981' },
+                { key: 'PDF',   label: '📑 PDF (.pdf)',               color: '#ef4444' },
+                { key: 'WORD',  label: '📝 Word (.docx, .doc)',       color: '#2563eb' },
+                { key: 'IMAGE', label: '🖼️ Image (.png, .jpg)',       color: '#8b5cf6' },
+                { key: 'ANY',   label: '🌐 Any Format (No Lock)',     color: '#64748b' }
+              ].map(fmt => {
+                const isSelected = requiredFormats.includes(fmt.key);
+                return (
+                  <button
+                    key={fmt.key}
+                    type="button"
+                    onClick={() => {
+                      if (fmt.key === 'ANY') {
+                        setRequiredFormats(['ANY']);
+                      } else {
+                        let updated = requiredFormats.filter(k => k !== 'ANY');
+                        if (isSelected) {
+                          updated = updated.filter(k => k !== fmt.key);
+                        } else {
+                          updated = [...updated, fmt.key];
+                        }
+                        setRequiredFormats(updated.length > 0 ? updated : ['ANY']);
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      border: isSelected ? `2px solid ${fmt.color}` : '1px solid #cbd5e1',
+                      background: isSelected ? '#ffffff' : '#f8fafc',
+                      color: isSelected ? '#0f172a' : '#475569',
+                      fontSize: '12px',
+                      fontWeight: isSelected ? '800' : '600',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>{fmt.label}</span>
+                    {isSelected && <span style={{ color: fmt.color, fontSize: '13px' }}>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Direct Document Attachment Upload Section */}

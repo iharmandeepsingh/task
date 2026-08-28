@@ -515,14 +515,48 @@ body {
   .search-input-wrapper, .filter-dropdown-wrapper {
     width: 100%;
   }
+}
 
+@media (max-width: 768px) {
   .main-content {
-    padding: 14px;
+    padding: 10px 12px 80px 12px !important;
   }
 
   .stats-overview-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .stats-overview-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stat-card {
+    min-width: 135px !important;
+    flex-shrink: 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .stat-header {
+    margin-bottom: 4px !important;
+  }
+
+  .stat-title {
+    font-size: 11px !important;
+  }
+
+  .stat-value {
+    font-size: 18px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .stat-desc {
+    font-size: 9.5px !important;
+    white-space: nowrap;
   }
 
   .mobile-stage-filter-bar {
@@ -530,15 +564,25 @@ body {
   }
 
   .kanban-container {
-    padding-bottom: 20px;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
+    padding-bottom: 12px;
+    margin: 0 -4px;
   }
 
   .kanban-column {
-    width: 85vw;
-    min-width: 280px;
-    scroll-snap-align: center;
+    min-width: 85vw !important;
+    max-width: 85vw !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  .kanban-card {
+    padding: 12px !important;
+    border-radius: 12px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #e2e8f0 !important;
   }
 
   .desktop-table-container {
@@ -557,23 +601,15 @@ body {
     max-height: 95vh;
     border-radius: 14px;
   }
+
 }
 
 @media (max-width: 480px) {
-  .stats-overview-grid {
-    grid-template-columns: 1fr;
-  }
-
   .brand-title {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .brand-subtitle {
-    font-size: 10px;
-  }
-
-  .kanban-column {
-    width: 86vw;
-    min-width: 270px;
+    font-size: 9px;
   }
 }

@@ -26,30 +26,20 @@ export default function KanbanBoard({
     <div>
       {/* Mobile Touch Stage Filter Bar (Visible on mobile screens) */}
       <div className="mobile-stage-filter-bar" style={{
-        marginBottom: '14px',
+        marginBottom: '12px',
         background: '#ffffff',
-        padding: '10px 12px',
+        padding: '8px 10px',
         borderRadius: '12px',
         border: '1px solid #e2e8f0',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Layers size={14} color="#2563eb" />
-            <span>Workflow Stages:</span>
-          </div>
-          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-            {selectedMobileStage === 'ALL' ? 'Showing All 7 Columns' : `Filtered: ${selectedMobileStage}`}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           <button
             onClick={() => setSelectedMobileStage('ALL')}
             style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              background: selectedMobileStage === 'ALL' ? '#1e3a8a' : '#f1f5f9',
+              padding: '5px 11px',
+              borderRadius: '16px',
+              background: selectedMobileStage === 'ALL' ? '#1e293b' : '#f1f5f9',
               color: selectedMobileStage === 'ALL' ? '#ffffff' : '#475569',
               border: 'none',
               fontSize: '11px',
@@ -59,7 +49,7 @@ export default function KanbanBoard({
               flexShrink: 0
             }}
           >
-            All Columns ({tasks.length})
+            All Stages ({tasks.length})
           </button>
 
           {STAGES.map((s) => {
@@ -70,11 +60,11 @@ export default function KanbanBoard({
                 key={s}
                 onClick={() => setSelectedMobileStage(s)}
                 style={{
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  background: isSel ? '#2563eb' : '#f1f5f9',
+                  padding: '5px 10px',
+                  borderRadius: '16px',
+                  background: isSel ? '#2563eb' : '#f8fafc',
                   color: isSel ? '#ffffff' : '#475569',
-                  border: 'none',
+                  border: isSel ? '1px solid #2563eb' : '1px solid #e2e8f0',
                   fontSize: '11px',
                   fontWeight: '700',
                   cursor: 'pointer',
@@ -87,11 +77,12 @@ export default function KanbanBoard({
               >
                 <span>{s}</span>
                 <span style={{
-                  padding: '1px 5px',
-                  borderRadius: '10px',
-                  background: isSel ? 'rgba(255,255,255,0.25)' : '#cbd5e1',
-                  color: isSel ? '#ffffff' : '#1e293b',
-                  fontSize: '10px'
+                  padding: '0 5px',
+                  borderRadius: '8px',
+                  background: isSel ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+                  color: isSel ? '#ffffff' : '#334155',
+                  fontSize: '9.5px',
+                  fontWeight: '800'
                 }}>
                   {count}
                 </span>
@@ -120,7 +111,7 @@ export default function KanbanBoard({
                 <div className="column-cards">
                   {stageTasks.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px 12px', background: '#ffffff', borderRadius: '12px', border: '1.5px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px' }}>
-                      No tasks currently in <strong>{stage}</strong> stage
+                      No tasks in <strong>{stage}</strong>
                     </div>
                   ) : (
                     stageTasks.map((task) => {
@@ -139,27 +130,27 @@ export default function KanbanBoard({
                             </div>
                           )}
 
-                          {/* Directional Assignment Badge (Incoming vs Delegated) */}
+                          {/* Compact Directional Assignment Badge (Incoming vs Delegated) */}
                           {(() => {
                             const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
                             const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
 
                             if (isAssignee && !isCreator) {
                               return (
-                                <div style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', color: '#3730a3', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>📥 INCOMING TASK: Assigned to You by {task.creatorName || 'Super Admin'}</span>
+                                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>📥 Incoming from {task.creatorName || 'Super Admin'}</span>
                                 </div>
                               );
                             } else if (isCreator && !isAssignee) {
                               return (
-                                <div style={{ background: '#d1fae5', border: '1px solid #a7f3d0', color: '#065f46', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>📤 DELEGATED TASK: Assigned by You to {task.assigneeName || 'Faculty'}</span>
+                                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>📤 Delegated to {task.assigneeName || 'Faculty'}</span>
                                 </div>
                               );
                             } else if (task.creatorName && task.creatorName.toLowerCase().includes('super')) {
                               return (
-                                <div style={{ background: '#f3e8ff', border: '1px solid #e9d5ff', color: '#6b21a8', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>🏛️ SUPER ADMIN DIRECTIVE: {task.creatorName} ➔ {task.assigneeName}</span>
+                                <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', color: '#7e22ce', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>🏛️ Directive: {task.creatorName} ➔ {task.assigneeName}</span>
                                 </div>
                               );
                             }
@@ -168,11 +159,12 @@ export default function KanbanBoard({
 
                           {/* Pending Extension Request Alert Banner */}
                           {hasPendingExt && (
-                            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '6px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Clock size={12} />
-                              <span>Extension Requested (Pending HOD Review)</span>
+                            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '4px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Clock size={11} />
+                              <span>Extension Requested</span>
                             </div>
                           )}
+
 
                           {/* Urgent 24-Hour Countdown Timer Pulsing Badge */}
                           {urgentInfo && (
@@ -236,6 +228,14 @@ export default function KanbanBoard({
                               return null;
                             })()}
                           </div>
+
+                          {/* Mandatory Submission Format Requirement Badge */}
+                          {task.requiredFormats && !task.requiredFormats.includes('ANY') && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', marginBottom: '2px', fontSize: '10px', fontWeight: '800', color: '#0369a1', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '2px 7px', borderRadius: '6px' }}>
+                              <FileText size={11} color="#0284c7" />
+                              <span>Required Format: {task.requiredFormats.join(' + ')}</span>
+                            </div>
+                          )}
 
                           <h4 className="card-title" onClick={() => onEditTask(task)}>
                             {task.title}

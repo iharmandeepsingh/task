@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, Clock, Calendar, AlertCircle, CheckCircle2, XCircle, Send, Check } from 'lucide-react';
+import { X, Clock, Calendar, AlertCircle, CheckCircle2, XCircle, Send, Check, RefreshCw } from 'lucide-react';
 import { formatDueDateWithDayTime } from '../data/initialData';
 
 export default function ExtensionRequestModal({ isOpen, onClose, task, authUser, onRequestExtension, onApproveExtension }) {
   const [reason, setReason] = useState('');
   const [requestedDeadline, setRequestedDeadline] = useState('');
+  const [customSupervisorDeadline, setCustomSupervisorDeadline] = useState('');
 
   if (!isOpen || !task) return null;
 
@@ -35,12 +36,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
     ['10001', '24051', '17572', '001'].includes(authEmpId) ||
     ['usr-0', 'usr-10001', 'usr-24051'].includes(authId);
 
-  // Can the current user submit an extension request on this task?
-  // Yes, if they are the Assignee (regardless of whether they are Faculty, Admin, or HOD)
   const canRequestExtension = isAssignee || (!isCreator && !isSuperAdmin);
-
-  // Can the current user approve an extension request on this task?
-  // Yes, if they are the Creator/Assigner or Super Admin
   const canApproveExtension = isCreator || isSuperAdmin;
 
   const existingExtensions = task.extensions || [];
@@ -67,6 +63,21 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
     onClose();
   };
 
+  const handleQuickAddHours = (hours, isSupervisor = false) => {
+    const currentTarget = isSupervisor 
+      ? (customSupervisorDeadline ? new Date(customSupervisorDeadline) : new Date(task.dueDate || new Date()))
+      : (requestedDeadline ? new Date(requestedDeadline) : new Date(task.dueDate || new Date()));
+    
+    const newDate = new Date(currentTarget.getTime() + hours * 60 * 60 * 1000);
+    const isoString = new Date(newDate.getTime() - newDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    
+    if (isSupervisor) {
+      setCustomSupervisorDeadline(isoString);
+    } else {
+      setRequestedDeadline(isoString);
+    }
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
       position: 'fixed',
@@ -77,7 +88,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
       zIndex: 1000, padding: '12px'
     }}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{
-        width: '100%', maxWidth: '540px', background: '#ffffff', borderRadius: '18px',
+        width: '100%', maxWidth: '560px', background: '#ffffff', borderRadius: '18px',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden',
         display: 'flex', flexDirection: 'column', maxHeight: '90vh'
       }}>
@@ -100,7 +111,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
             </div>
             <div>
               <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
-                Deadline Extension Management
+                Deadline Extension & Re-issue Management
               </h3>
               <p style={{ fontSize: '11px', color: '#fef3c7', margin: 0 }}>
                 {task.id} • Current Due: <strong>{formatDueDateWithDayTime(task.dueDate, task.dueTime)}</strong>
@@ -119,9 +130,50 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#92400e' }}>
             <div><strong>Task:</strong> {task.title}</div>
             <div style={{ marginTop: '4px', fontSize: '11px', color: '#b45309' }}>
-              <strong>Assigned To:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'}
+              <strong>Assigned To:</strong> {task.assigneeName} • <strong>Assigned By:</strong> {task.creatorName || 'Super Admin'} • <strong>Stage:</strong> {task.stage}
             </div>
           </div>
+
+          {/* Supervisor / HOD Direct Custom Due Date Grant */}
+          {canApproveExtension && (
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock size={15} color="#2563eb" />
+                  <span>Grant Direct Deadline Extension</span>
+                </h4>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button type="button" onClick={() => handleQuickAddHours(24, true)} style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+24h</button>
+                  <button type="button" onClick={() => handleQuickAddHours(48, true)} style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+48h</button>
+                  <button type="button" onClick={() => handleQuickAddHours(72, true)} style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+3d</button>
+                  <button type="button" onClick={() => handleQuickAddHours(168, true)} style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+1w</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="datetime-local"
+                  value={customSupervisorDeadline}
+                  onChange={(e) => setCustomSupervisorDeadline(e.target.value)}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!customSupervisorDeadline) {
+                      alert('Please select a new deadline timestamp first.');
+                      return;
+                    }
+                    onApproveExtension(task.id, 'direct-supervisor-grant', customSupervisorDeadline);
+                    onClose();
+                  }}
+                  style={{ padding: '8px 14px', borderRadius: '8px', background: '#16a34a', color: '#ffffff', border: 'none', fontWeight: '700', fontSize: '12.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <CheckCircle2 size={15} /> Apply
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Existing Extensions List */}
           {existingExtensions.length > 0 && (
@@ -168,16 +220,24 @@ export default function ExtensionRequestModal({ isOpen, onClose, task, authUser,
           {/* Extension Request Form (Available to Assignee on this task) */}
           {canRequestExtension && (
             <form onSubmit={handleApplyRequest} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                Submit New Extension Request
-              </h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                  Submit New Extension Request
+                </h4>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button type="button" onClick={() => handleQuickAddHours(24)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+24h</button>
+                  <button type="button" onClick={() => handleQuickAddHours(48)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+48h</button>
+                  <button type="button" onClick={() => handleQuickAddHours(72)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+3 Days</button>
+                  <button type="button" onClick={() => handleQuickAddHours(168)} style={{ padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}>+1 Week</button>
+                </div>
+              </div>
               
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Proposed New Target Date *
+                  Proposed New Target Date & Time *
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={requestedDeadline}
                   onChange={(e) => setRequestedDeadline(e.target.value)}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}

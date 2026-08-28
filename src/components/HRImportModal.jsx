@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ShieldAlert, CheckCircle, AlertTriangle, RefreshCw, FileText, ArrowRight, FolderPlus, UserCheck, Shield, ClipboardList, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { getApiUrl } from '../utils/apiBase';
 
 export default function HRImportModal({ isOpen, onClose, onImportSuccess, team = [] }) {
   const [importCategory, setImportCategory] = useState('faculty'); // 'faculty' or 'admin'
@@ -28,16 +29,122 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
 
   if (!isOpen) return null;
 
-  // Process raw parsed JS objects into normalized staging rows safely
+  // Department detection helper
+  const isDeptString = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    const s = str.trim().toLowerCase();
+    if (s.length < 3) return false;
+    return (
+      s.includes('school') || s.includes('dept') || s.includes('department') ||
+      s.includes('engineering') || s.includes('technology') || s.includes('management') ||
+      s.includes('agriculture') || s.includes('design') || s.includes('innovation') ||
+      s.includes('pharm') || s.includes('health') || s.includes('hotel') ||
+      s.includes('tourism') || s.includes('social') || s.includes('liberal') ||
+      s.includes('humanities') || s.includes('law') || s.includes('sciences') ||
+      s.includes('applied') || s.includes('pec') || s.includes('administration') ||
+      s.includes('support') || s.includes('crc') || s.includes('corporate')
+    );
+  };
+
+  // High-precision column classification helper
+  const classifyColumn = (colStr) => {
+    const s = String(colStr || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!s) return null;
+    
+    // 1. Serial Number: s no, sr no, sno, sr, serial no, serial, row, row no, sl no, seq, #
+    if (
+      s === 's no' || s === 'sr no' || s === 'sno' || s === 'sr' || s === 'serial no' ||
+      s === 'serial' || s === 'sl no' || s === 'sl' || s === 'row' || s === 'row no' || s === '#'
+    ) {
+      return 'sr';
+    }
+
+    // 2. Email: official email id, official email, email id, email, e mail, mail
+    if (s.includes('email') || s.includes('mail')) {
+      return 'email';
+    }
+
+    // 3. Contact / Phone: contact no, contact number, contact, mobile no, mobile number, mobile, phone no, phone number, phone
+    if (s.includes('contact') || s.includes('mobile') || s.includes('phone') || s === 'cell') {
+      return 'phone';
+    }
+
+    // 4. Department / School: school department, department, dept, school, branch, institute, faculty of
+    if (s.includes('school') || s.includes('dept') || s.includes('department') || s.includes('branch') || s.includes('institute')) {
+      return 'dept';
+    }
+
+    // 5. Designation / Role: designation, role, post, title
+    if (s.includes('designation') || s.includes('role') || s.includes('post') || s.includes('title')) {
+      return 'designation';
+    }
+
+    // 6. Employee ID / Code: emp id, employee id, emp code, employee code, staff id, emp code no, empid, empcode
+    if (
+      s.includes('emp') || s.includes('employee') || s.includes('staff id') || 
+      s === 'emp id' || s === 'empid' || s === 'emp code' || s === 'id' || s === 'code'
+    ) {
+      return 'empId';
+    }
+
+    // 7. Name: faculty name, employee name, staff name, name, full name, emp name
+    if (s.includes('name')) {
+      return 'name';
+    }
+
+    return null;
+  };
+
+  // Process raw parsed spreadsheet into normalized staging rows safely
   const processRawRows = (rawRows, fileName, sheetTitle = 'Sheet1', category = importCategory) => {
-    if (!Array.isArray(rawRows)) return;
+    if (!Array.isArray(rawRows) || rawRows.length === 0) return;
     const seenIds = new Set();
     const processed = [];
     const counts = { valid: 0, warning: 0, error: 0, duplicate: 0 };
+    let activeCascadingDept = category === 'faculty' ? 'School of Agriculture & Natural Sciences' : 'University Administration';
 
-    rawRows.forEach((row, index) => {
-      if (!row) return;
-      const rowNum = index + 1;
+    let headerRowIdx = -1;
+    let colMap = { sr: -1, empId: -1, name: -1, email: -1, phone: -1, dept: -1, designation: -1 };
+
+    // Inspect first few rows to locate the header row
+    for (let r = 0; r < Math.min(rawRows.length, 10); r++) {
+      const row = rawRows[r];
+      if (!Array.isArray(row)) continue;
+      
+      const matchedCols = {};
+      row.forEach((colVal, colIdx) => {
+        const fieldType = classifyColumn(colVal);
+        if (fieldType && matchedCols[fieldType] === undefined) {
+          matchedCols[fieldType] = colIdx;
+        }
+      });
+
+      if ((matchedCols.sr !== undefined || matchedCols.empId !== undefined) && matchedCols.name !== undefined) {
+        headerRowIdx = r;
+        colMap = {
+          sr: matchedCols.sr ?? -1,
+          empId: matchedCols.empId ?? -1,
+          name: matchedCols.name ?? -1,
+          email: matchedCols.email ?? -1,
+          phone: matchedCols.phone ?? -1,
+          dept: matchedCols.dept ?? -1,
+          designation: matchedCols.designation ?? -1
+        };
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) {
+      colMap = { sr: 0, empId: 1, name: 2, email: 3, phone: 4, dept: 5, designation: -1 };
+    }
+
+    const startRow = headerRowIdx >= 0 ? headerRowIdx + 1 : 0;
+
+    for (let i = startRow; i < rawRows.length; i++) {
+      const row = rawRows[i];
+      if (!row) continue;
+
+      let userRowNum = '';
       let empId = '';
       let displayName = '';
       let emailStr = '';
@@ -46,12 +153,26 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       let rawDesignation = '';
 
       if (Array.isArray(row)) {
-        empId = String(row[0] || '').trim();
-        displayName = String(row[1] || row[0] || '').trim();
-        emailStr = String(row[2] || '').trim();
-        phoneStr = String(row[3] || '').trim();
-        dept = String(row[4] || '').trim();
-        rawDesignation = String(row[5] || '').trim();
+        const firstCell = String(row[0] || '').trim();
+        const deptCell = colMap.dept >= 0 ? String(row[colMap.dept] || '').trim() : '';
+
+        // Check for isolated department banner rows
+        if (isDeptString(firstCell) && !row[colMap.empId] && !row[colMap.name]) {
+          activeCascadingDept = firstCell;
+          continue;
+        }
+        if (isDeptString(deptCell) && !row[colMap.empId] && !row[colMap.name]) {
+          activeCascadingDept = deptCell;
+          continue;
+        }
+
+        userRowNum = colMap.sr >= 0 ? String(row[colMap.sr] ?? '').trim() : '';
+        empId = colMap.empId >= 0 ? String(row[colMap.empId] ?? '').trim() : '';
+        displayName = colMap.name >= 0 ? String(row[colMap.name] ?? '').trim() : '';
+        emailStr = colMap.email >= 0 ? String(row[colMap.email] ?? '').trim() : '';
+        phoneStr = colMap.phone >= 0 ? String(row[colMap.phone] ?? '').trim() : '';
+        dept = colMap.dept >= 0 ? String(row[colMap.dept] ?? '').trim() : '';
+        rawDesignation = colMap.designation >= 0 ? String(row[colMap.designation] ?? '').trim() : '';
       } else if (typeof row === 'object' && row !== null) {
         const rowKeys = Object.keys(row);
         const findKey = (candidates) => {
@@ -62,50 +183,91 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
           return null;
         };
 
-        const colValues = Object.values(row).map(v => String(v).trim()).filter(Boolean);
-
-        empId = String(findKey(['emp code', 'employee id', 'emp id', 'staff id', 'id', 'code', 'sr no', 's.no']) || colValues[0] || `260${10 + index}`).trim();
-        displayName = String(findKey(['faculty name', 'name', 'employee name', 'staff name', 'full name']) || colValues[1] || `Staff Member ${index + 1}`).trim();
-        emailStr = String(findKey(['email', 'e-mail', 'official email', 'mail']) || colValues[2] || '').trim();
-        phoneStr = String(findKey(['contact no', 'mobile', 'phone', 'contact']) || colValues[3] || '').trim();
-        dept = String(findKey(['department', 'dept', 'school', 'branch']) || colValues[4] || '').trim();
-        rawDesignation = String(findKey(['designation', 'role', 'title', 'post']) || colValues[5] || '').trim();
+        userRowNum = String(findKey(['sr. no', 'sr no', 's.no', 'sr_no', 'row no', 'sno', '#']) || '').trim();
+        empId = String(findKey(['emp id', 'emp code', 'employee id', 'staff id', 'id', 'code', 'emp_id', 'empid']) || '').trim();
+        displayName = String(findKey(['name', 'faculty name', 'employee name', 'staff name', 'full name', 'name of employee']) || '').trim();
+        emailStr = String(findKey(['official email id', 'official email', 'email', 'e-mail', 'mail', 'email id']) || '').trim();
+        phoneStr = String(findKey(['contact no', 'mobile', 'phone', 'contact', 'contact number', 'mobile no', 'phone no']) || '').trim();
+        dept = String(findKey(['school / department', 'school/department', 'department', 'dept', 'school', 'branch', 'institute']) || '').trim();
+        rawDesignation = String(findKey(['designation', 'role', 'title', 'post']) || '').trim();
       }
 
-      if (!empId) empId = `260${10 + index}`;
-      if (!displayName) displayName = `Staff Member ${index + 1}`;
-      if (!emailStr) emailStr = `${displayName.toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`;
-      if (!dept) dept = category === 'faculty' ? 'School of Management & Sciences' : 'University Administration';
-      if (!rawDesignation) rawDesignation = category === 'faculty' ? 'Faculty Member' : 'Administrative Staff';
+      // Department Cascading
+      if (dept && isDeptString(dept)) {
+        activeCascadingDept = dept;
+      }
+
+      // Skip completely empty blank rows
+      if (!empId && !displayName && !emailStr && !userRowNum) continue;
 
       let status = 'VALID';
-      if (empId && seenIds.has(empId)) {
+      if (empId && seenIds.has(empId.toLowerCase())) {
         status = 'DUPLICATE';
       } else if (empId) {
-        seenIds.add(empId);
+        seenIds.add(empId.toLowerCase());
       }
 
       counts.valid++;
 
       processed.push({
-        id: `stg-${index}-${Date.now()}`,
-        rowNum,
-        empId,
-        displayName,
-        email: emailStr.split(/[\/,;\s]+/)[0] || emailStr,
-        phone: phoneStr,
-        dept,
-        designation: rawDesignation,
+        id: `stg-${i}-${Date.now()}`,
+        rowNum: userRowNum || '',
+        empId: empId || '',
+        displayName: displayName || '',
+        email: emailStr.split(/[\/,;\s]+/)[0] || emailStr || '',
+        phone: phoneStr || '',
+        dept: dept || activeCascadingDept || '',
+        designation: rawDesignation || (category === 'faculty' ? 'Faculty Member' : 'Administrative Staff'),
         targetRole: category === 'faculty' ? 'Faculty' : 'Admin',
         status
       });
-    });
+    }
 
     setStagingRows(processed);
     setMetrics(counts);
     setSelectedFileName(fileName);
     setSheetName(sheetTitle);
     setIsParsed(true);
+  };
+
+  // Update Staging Row Cell in real-time
+  const handleUpdateStagingRow = (rowId, field, value) => {
+    setStagingRows(prev => prev.map(r => {
+      if (r.id === rowId) {
+        return { ...r, [field]: value };
+      }
+      return r;
+    }));
+  };
+
+  // Add Blank Empty Row to be filled manually by user
+  const handleAddEmptyRow = () => {
+    const newEmptyRow = {
+      id: `stg-empty-${Date.now()}`,
+      rowNum: stagingRows.length + 1,
+      empId: '',
+      displayName: '',
+      email: '',
+      phone: '',
+      dept: importCategory === 'faculty' ? 'School of Engineering & Technology' : 'University Administration',
+      designation: '',
+      targetRole: importCategory === 'faculty' ? 'Faculty' : 'Admin',
+      status: 'VALID'
+    };
+    setStagingRows(prev => [...prev, newEmptyRow]);
+    setIsParsed(true);
+  };
+
+  const handleRemoveStagingRow = (rowId) => {
+    setStagingRows(prev => prev.filter(r => r.id !== rowId));
+  };
+
+  const handleClearAllStagingRows = () => {
+    if (window.confirm('Clear all staged rows?')) {
+      setStagingRows([]);
+      setIsParsed(false);
+      setSelectedFileName(null);
+    }
   };
 
   // Add Single Employee Record via Form Fields
@@ -182,10 +344,10 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
         if (!rawData || rawData.length === 0) {
-          rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+          rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
         }
 
         if (!rawData || rawData.length === 0) {
@@ -238,14 +400,36 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
     }
   };
 
-  const handleExecuteImport = () => {
+  const handleExecuteImport = async () => {
     if (stagingRows.length === 0) {
       alert('No data rows available to import.');
       return;
     }
 
+    const verificationPayload = stagingRows.map((emp, idx) => ({
+      staffId: emp.empId || `26${100 + idx}`,
+      name: emp.displayName || 'Staff Member',
+      email: emp.email || '',
+      phone: emp.phone || '',
+      department: emp.dept || (importCategory === 'faculty' ? 'School of Agriculture & Natural Sciences' : 'University Administration'),
+      category: importCategory === 'faculty' ? 'Faculty' : 'Admin',
+      role: emp.designation || (importCategory === 'faculty' ? 'Faculty Member' : 'Administrative Staff'),
+      status: 'Pre-Authorized',
+      uploadedAt: new Date().toISOString()
+    }));
+
+    try {
+      await fetch(getApiUrl('/api/sync-verification'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records: verificationPayload })
+      });
+    } catch (e) {
+      console.warn("Direct modal sync-verification error:", e);
+    }
+
     if (onImportSuccess) {
-      onImportSuccess(stagingRows, importCategory);
+      await onImportSuccess(stagingRows, importCategory);
     }
 
     alert(`Successfully uploaded ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Master Directory!`);
@@ -269,16 +453,6 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
       zIndex: 1000,
       padding: '12px'
     }}>
-      {/* Native File Input */}
-      <input
-        id="hr-file-upload-input"
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".xlsx, .xls, .csv, text/plain"
-        style={{ display: 'none' }}
-      />
-
       <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{
         width: '100%',
         maxWidth: '860px',
@@ -416,14 +590,8 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
               <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: '#1e293b' }}>
                 Upload {importCategory === 'faculty' ? 'Faculty / Staff' : 'Admin'} Spreadsheet (.xlsx / .csv)
               </h4>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 16px 0' }}>
-                Select any <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> file, fill form fields, or paste Excel lines below.
-              </p>
-
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                 <label
-                  htmlFor="hr-file-upload-input"
-                  onClick={() => fileInputRef.current?.click()}
                   style={{
                     padding: '12px 24px',
                     borderRadius: '10px',
@@ -431,16 +599,34 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
                     color: '#ffffff',
                     fontSize: '13px',
                     fontWeight: '700',
-                    border: 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
                   <FolderPlus size={18} />
                   <span>Choose File from Computer / Phone</span>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls, .csv, text/plain, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    onChange={handleFileChange}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer',
+                      zIndex: 10
+                    }}
+                  />
                 </label>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -818,46 +1004,107 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
 
               {/* Staging Preview Table */}
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
-                    Staged Employee Data ({stagingRows.length} Staff Records)
-                  </span>
+                <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
+                      Staged Employee Data ({stagingRows.length} Staff Records)
+                    </span>
+                    <button
+                      onClick={handleAddEmptyRow}
+                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>+ Add Empty Row</span>
+                    </button>
+                    <button
+                      onClick={handleClearAllStagingRows}
+                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: '600', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Clear All
+                    </button>
+                  </div>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: importCategory === 'faculty' ? '#2563eb' : '#059669' }}>
                     Category: {importCategory === 'faculty' ? '🎓 Faculty' : '🏛️ Admin'}
                   </span>
                 </div>
 
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', minWidth: '600px' }}>
+                <div style={{ overflowX: 'auto', maxHeight: '420px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', minWidth: '700px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                        <th style={{ padding: '8px 12px' }}>Row</th>
-                        <th style={{ padding: '8px 12px' }}>Staff ID</th>
-                        <th style={{ padding: '8px 12px' }}>Name</th>
-                        <th style={{ padding: '8px 12px' }}>Department</th>
-                        <th style={{ padding: '8px 12px' }}>Designation</th>
-                        <th style={{ padding: '8px 12px' }}>Upload Status</th>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                        <th style={{ padding: '8px 10px', width: '55px' }}>Sr. No</th>
+                        <th style={{ padding: '8px 10px', width: '110px' }}>EMP ID *</th>
+                        <th style={{ padding: '8px 10px', width: '160px' }}>Name *</th>
+                        <th style={{ padding: '8px 10px', width: '160px' }}>Official Email ID</th>
+                        <th style={{ padding: '8px 10px', width: '120px' }}>Contact No</th>
+                        <th style={{ padding: '8px 10px', width: '160px' }}>School / Dept</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', width: '70px' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {stagingRows.map((row) => (
                         <tr key={row.id || `row-${row.rowNum}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 12px', color: '#64748b' }}>#{row.rowNum}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: '800', color: '#2563eb' }}>{row.empId}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: '700' }}>{row.displayName}</td>
-                          <td style={{ padding: '8px 12px' }}>{row.dept}</td>
-                          <td style={{ padding: '8px 12px', color: '#64748b' }}>{row.designation}</td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <span style={{
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              background: '#dcfce7',
-                              color: '#15803d',
-                              fontWeight: '700',
-                              fontSize: '10px'
-                            }}>
-                              Ready to Upload
-                            </span>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="text"
+                              placeholder=""
+                              value={row.rowNum}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'rowNum', e.target.value)}
+                              style={{ width: '42px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="text"
+                              placeholder="EMP ID"
+                              value={row.empId}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'empId', e.target.value)}
+                              style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', fontWeight: '700', color: '#2563eb', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="text"
+                              placeholder="Enter Name"
+                              value={row.displayName}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'displayName', e.target.value)}
+                              style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', fontWeight: '600', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="email"
+                              placeholder="Official Email"
+                              value={row.email}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'email', e.target.value)}
+                              style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="text"
+                              placeholder="Phone No"
+                              value={row.phone}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'phone', e.target.value)}
+                              style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <input
+                              type="text"
+                              placeholder="School / Dept"
+                              value={row.dept}
+                              onChange={(e) => handleUpdateStagingRow(row.id, 'dept', e.target.value)}
+                              style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                            <button
+                              onClick={() => handleRemoveStagingRow(row.id)}
+                              style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '11px', fontWeight: '700', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
+                              title="Delete Row"
+                            >
+                              🗑️
+                            </button>
                           </td>
                         </tr>
                       ))}
