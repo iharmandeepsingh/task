@@ -4,8 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const DB_FILE = path.resolve(import.meta.dirname, 'shared_server_db.json');
-const mongoUri = process.env.MONGODB_URI || "mongodb+srv://harmanprab_db_user:zAoIwpKJA4ZnWJoR@cluster0.h5d3xpo.mongodb.net/ctu_task_db?retryWrites=true&w=majority&appName=Cluster0";
+const mongoUri = process.env.MONGODB_URI || "mongodb+srv://ctutasks_db_user:NRLtQ1ElSTK2BaHP@cluster0.q8oubgb.mongodb.net/ctu_task_db?retryWrites=true&w=majority&appName=Cluster0";
 
 let mongoClient = null;
 async function getMongoDatabase(uri) {

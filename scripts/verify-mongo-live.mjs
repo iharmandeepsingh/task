@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
 
-const uri = 'mongodb+srv://harmanprab_db_user:zAoIwpKJA4ZnWJoR@cluster0.h5d3xpo.mongodb.net/?retryWrites=true&w=majority';
+const uri = process.env.MONGODB_URI || 'mongodb+srv://ctutasks_db_user:NRLtQ1ElSTK2BaHP@cluster0.q8oubgb.mongodb.net/?retryWrites=true&w=majority';
+
 
 async function checkLiveDatabase() {
   console.log('Connecting to your MongoDB Atlas Cluster...');
