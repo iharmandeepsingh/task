@@ -428,25 +428,28 @@ export default function LoginPage({ onLogin }) {
           {/* Logo and Titles (Login) */}
           <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '10px',
-              background: '#1e293b',
+              width: '68px',
+              height: '68px',
+              borderRadius: '50%',
+              background: '#ffffff',
+              border: '2px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '16px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              marginBottom: '14px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.08)'
             }}>
-              <img src="/ctu-logo.png" alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+              <img src="/ctu-logo.png" alt="CT University Crest" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
-            <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#0f172a', margin: '0 0 6px 0' }}>
-              CT University
+            <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '0.01em' }}>
+              CT UNIVERSITY
             </h1>
-            <p style={{ fontSize: '14px', color: '#475569', margin: 0 }}>
-              Sign in to your workspace
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0 }}>
+              Task Assignment & Faculty Workflow System
             </p>
           </div>
+
 
           {/* Login Card */}
           <div style={{

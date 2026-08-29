@@ -214,14 +214,15 @@ export default function Navbar({
     <header className="navbar-container">
       <div className="navbar-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="brand-icon" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/ctu-logo.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+          <div className="brand-icon" style={{ background: '#ffffff', width: '42px', height: '42px', borderRadius: '50%', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0, 0, 0, 0.08)' }}>
+            <img src="/ctu-logo.png" alt="CT University Crest" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
-            <h1 className="brand-title" style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>CT UNIVERSITY</h1>
-            <p className="brand-subtitle" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>Task Assignment & Faculty Workflow System</p>
+            <h1 className="brand-title" style={{ fontSize: '16px', fontWeight: '800', margin: 0, letterSpacing: '0.02em', color: '#0f172a' }}>CT UNIVERSITY</h1>
+            <p className="brand-subtitle" style={{ fontSize: '11px', color: 'var(--text-secondary, #64748b)', margin: 0 }}>Task Assignment & Faculty Workflow System</p>
           </div>
         </div>
+
 
         {/* Authenticated User Profile Pill */}
         <div style={{
