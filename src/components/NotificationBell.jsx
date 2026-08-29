@@ -1,6 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, CheckCheck, Trash2, MessageSquare, Clock, AlertTriangle, FileCheck, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, MessageSquare, Clock, AlertTriangle, FileCheck, CheckCircle2, ChevronRight, Send, UserCheck, Layers } from 'lucide-react';
 import { formatDueDateWithDayTime } from '../data/initialData';
+
+function formatRelativeTime(dateInput) {
+  if (!dateInput) return 'Recent';
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return String(dateInput);
+    const diff = Date.now() - d.getTime();
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+    return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  } catch (e) {
+    return 'Recent';
+  }
+}
 
 export default function NotificationBell({ tasks = [], authUser, onOpenChat, onOpenExtensionModal, onOpenReviewModal }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +35,6 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
       const rect = bellButtonRef.current.getBoundingClientRect();
       const vw = window.innerWidth;
       
-      // Smart Auto-Alignment: Align Left or Right based on button position on screen
       if (rect.left < vw / 2) {
         const safeLeft = Math.max(12, Math.min(rect.left, vw - 352));
         setDropdownPos({
@@ -50,7 +65,7 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
   }, []);
 
   // Generate Real-time Notification Feed from Tasks & Activities
-  const notifications = [];
+  const rawNotifications = [];
 
   tasks.forEach((t) => {
     const authEmpId = (authUser?.employeeId || '').trim();
@@ -61,6 +76,8 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
     const taskAssigneeName = (t.assigneeName || '').trim().toLowerCase();
     const taskCreatorId = (t.creatorId || '').trim();
     const taskCreatorName = (t.creatorName || '').trim().toLowerCase();
+    const taskDelegatedById = (t.delegatedById || '').trim();
+    const taskDelegatedByName = (t.delegatedByName || '').trim().toLowerCase();
 
     const isAssignee =
       (authId && taskAssigneeId === authId) ||
@@ -72,20 +89,54 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
       (authEmpId && taskCreatorId === authEmpId) ||
       (authName && taskCreatorName === authName);
 
+    const isDelegator =
+      (authId && taskDelegatedById === authId) ||
+      (authName && taskDelegatedByName === authName);
+
     const isSuperAdmin =
       authUser?.role === 'superAdmin' ||
       ['10001', '24051', '17572', '001'].includes(authEmpId) ||
       ['usr-0', 'usr-10001', 'usr-24051'].includes(authId);
 
-    // 1. Task Assignment Notification
-    if (isAssignee) {
-      notifications.push({
+    const taskCreatedTime = t.createdAt ? new Date(t.createdAt).getTime() : (t.dueDate ? new Date(t.dueDate).getTime() : Date.now());
+    const taskDelegatedTime = t.delegatedAt ? new Date(t.delegatedAt).getTime() : taskCreatedTime;
+
+    // 1. Delegated / Forwarded Task Notification (Highest Priority for Faculty & Admin)
+    if (t.delegatedByName && isAssignee) {
+      rawNotifications.push({
+        id: `notif-fwd-${t.id}-${t.delegatedAt || 'fwd'}`,
+        type: 'FORWARDED_TO_YOU',
+        title: `↗️ Task Forwarded to You: ${t.title}`,
+        message: `Forwarded by ${t.delegatedByName} (originated by ${t.creatorName || 'Super Admin'})${t.delegationNotes ? ` • Note: "${t.delegationNotes}"` : ''}`,
+        sortTimestamp: taskDelegatedTime,
+        timeLabel: formatRelativeTime(t.delegatedAt || t.createdAt),
+        task: t,
+        action: 'CHAT',
+        icon: <Send size={16} color="#16a34a" />
+      });
+    } else if (t.delegatedByName && isDelegator) {
+      rawNotifications.push({
+        id: `notif-delegated-confirm-${t.id}`,
+        type: 'DELEGATED_BY_YOU',
+        title: `ℹ️ Task Delegated: ${t.title}`,
+        message: `Assigned to ${t.assigneeName} (${t.assigneeDept || 'Faculty'}) • Due: ${formatDueDateWithDayTime(t.dueDate, t.dueTime)}`,
+        sortTimestamp: taskDelegatedTime,
+        timeLabel: formatRelativeTime(t.delegatedAt || t.createdAt),
+        task: t,
+        action: 'CHAT',
+        icon: <UserCheck size={16} color="#2563eb" />
+      });
+    } else if (isAssignee) {
+      // Direct Assignment
+      rawNotifications.push({
         id: `notif-assign-${t.id}`,
         type: 'ASSIGNMENT',
         title: `📌 Task Assigned: ${t.title}`,
         message: `Assigned by ${t.creatorName || 'Super Admin'} • Due: ${formatDueDateWithDayTime(t.dueDate, t.dueTime)}`,
-        timestamp: t.dueDate || 'Recent',
+        sortTimestamp: taskCreatedTime,
+        timeLabel: formatRelativeTime(t.createdAt || t.dueDate),
         task: t,
+        action: 'CHAT',
         icon: <FileCheck size={16} color="#2563eb" />
       });
     }
@@ -93,13 +144,15 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
     // 2. Chat Replies & Activity
     if (t.chatMessages && t.chatMessages.length > 0) {
       const lastMsg = t.chatMessages[t.chatMessages.length - 1];
-      if (lastMsg.sender !== authUser?.name && (isAssignee || isCreator || isSuperAdmin)) {
-        notifications.push({
+      const msgTime = lastMsg.timestamp ? new Date(lastMsg.timestamp).getTime() : Date.now();
+      if (lastMsg.senderName !== authUser?.name && (isAssignee || isCreator || isDelegator || isSuperAdmin)) {
+        rawNotifications.push({
           id: `notif-chat-${t.id}-${lastMsg.id || t.chatMessages.length}`,
           type: 'CHAT',
-          title: `💬 New Message on "${t.title}"`,
-          message: `${lastMsg.sender}: "${lastMsg.text}"`,
-          timestamp: lastMsg.time || 'Just now',
+          title: `💬 Message on "${t.title}"`,
+          message: `${lastMsg.senderName || 'Colleague'}: "${lastMsg.text}"`,
+          sortTimestamp: msgTime,
+          timeLabel: formatRelativeTime(lastMsg.timestamp || lastMsg.time),
           task: t,
           action: 'CHAT',
           icon: <MessageSquare size={16} color="#059669" />
@@ -110,56 +163,67 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
     // 3. Extension Requests & Approvals
     if (t.extensions && t.extensions.length > 0) {
       const lastExt = t.extensions[t.extensions.length - 1];
+      const extTime = lastExt.requestedAt ? new Date(lastExt.requestedAt).getTime() : Date.now();
       const extDate = lastExt.requestedDeadline || lastExt.requestedDate;
-      if (lastExt.status === 'PENDING' && (isCreator || isSuperAdmin)) {
-        notifications.push({
+      if (lastExt.status === 'PENDING' && (isCreator || isDelegator || isSuperAdmin)) {
+        rawNotifications.push({
           id: `notif-ext-${t.id}-${lastExt.requestedAt || 'req'}`,
           type: 'EXTENSION_PENDING',
           title: `⏳ Extension Requested: ${t.title}`,
           message: `${t.assigneeName} requested extension until ${extDate}. Reason: "${lastExt.reason}"`,
-          timestamp: 'Action Needed',
+          sortTimestamp: extTime,
+          timeLabel: formatRelativeTime(lastExt.requestedAt),
           task: t,
           action: 'EXTENSION',
           icon: <Clock size={16} color="#d97706" />
         });
       } else if (lastExt.status === 'APPROVED' && isAssignee) {
-        notifications.push({
-          id: `notif-ext-app-${t.id}`,
+        rawNotifications.push({
+          id: `notif-ext-app-${t.id}-${lastExt.id || 'app'}`,
           type: 'EXTENSION_APPROVED',
           title: `✅ Deadline Extension Approved!`,
           message: `Your deadline for "${t.title}" has been extended to ${extDate}.`,
-          timestamp: 'Approved',
+          sortTimestamp: extTime + 1000,
+          timeLabel: formatRelativeTime(lastExt.requestedAt),
           task: t,
+          action: 'EXTENSION',
           icon: <CheckCircle2 size={16} color="#10b981" />
         });
       }
     }
 
     // 4. Submission & Review Notifications
-    if (t.stage === 'Submitted for Review' && isCreator) {
-      notifications.push({
+    if (t.stage === 'Submitted for Review' && (isCreator || isDelegator || isSuperAdmin)) {
+      const subTime = t.submittedAt ? new Date(t.submittedAt).getTime() : (t.updatedAt ? new Date(t.updatedAt).getTime() : Date.now());
+      rawNotifications.push({
         id: `notif-sub-${t.id}`,
         type: 'REVIEW_NEEDED',
         title: `📥 Submission Received: ${t.title}`,
-        message: `${t.assigneeName} submitted task work for final review and sign-off.`,
-        timestamp: 'Review Needed',
+        message: `${t.assigneeName} submitted task work for review and sign-off.`,
+        sortTimestamp: subTime,
+        timeLabel: formatRelativeTime(t.submittedAt || t.updatedAt),
         task: t,
         action: 'REVIEW',
         icon: <AlertTriangle size={16} color="#7c3aed" />
       });
     } else if (t.stage === 'Re-issued' && isAssignee) {
-      notifications.push({
+      const revTime = t.updatedAt ? new Date(t.updatedAt).getTime() : Date.now();
+      rawNotifications.push({
         id: `notif-reissue-${t.id}`,
         type: 'REISSUE',
         title: `🔄 Task Re-issued with Feedback`,
-        message: `Task "${t.title}" requires revisions: "${t.review?.feedback || 'Please update subtasks'}"`,
-        timestamp: 'Revision Needed',
+        message: `Task "${t.title}" requires revisions: "${t.review?.feedback || 'Please review directives'}"`,
+        sortTimestamp: revTime,
+        timeLabel: formatRelativeTime(t.updatedAt),
         task: t,
         action: 'REVIEW',
         icon: <AlertTriangle size={16} color="#dc2626" />
       });
     }
   });
+
+  // ⚡ Crucial: Sort notifications by timestamp DESCENDING (most recent first on top!)
+  const notifications = rawNotifications.sort((a, b) => (b.sortTimestamp || 0) - (a.sortTimestamp || 0));
 
   const unreadCount = notifications.filter(n => !readNotifIds.includes(n.id)).length;
 
@@ -241,7 +305,7 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
           top: `${dropdownPos.top}px`,
           left: dropdownPos.left,
           right: dropdownPos.right,
-          width: '340px',
+          width: '360px',
           maxWidth: 'calc(100vw - 24px)',
           background: '#ffffff',
           borderRadius: '16px',
@@ -261,42 +325,53 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Bell size={16} color="#60a5fa" />
-              <strong style={{ fontSize: '13px' }}>In-App Notifications</strong>
-              {unreadCount > 0 && (
-                <span style={{ background: '#3b82f6', color: '#ffffff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px', fontWeight: '800' }}>
-                  {unreadCount} New
-                </span>
-              )}
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>Activity & Directives</span>
+                {unreadCount > 0 && (
+                  <span style={{ fontSize: '10px', background: '#ef4444', color: '#ffffff', padding: '1px 6px', borderRadius: '10px' }}>
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>Sorted recent first</div>
             </div>
 
             {notifications.length > 0 && (
               <button
                 onClick={handleMarkAllRead}
+                title="Mark all as read"
                 style={{
-                  background: 'none',
+                  background: 'rgba(255, 255, 255, 0.1)',
                   border: 'none',
-                  color: '#93c5fd',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  color: '#94a3b8',
                   fontSize: '11px',
-                  fontWeight: '700',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
                 }}
               >
-                <CheckCheck size={14} />
-                <span>Mark All Read</span>
+                <CheckCheck size={13} />
+                <span>Mark read</span>
               </button>
             )}
           </div>
 
-          {/* Notifications List with Viewport Safety Scroll */}
-          <div style={{ maxHeight: 'calc(70vh - 100px)', minHeight: '120px', overflowY: 'auto' }}>
+          {/* Notifications Scroll List */}
+          <div style={{
+            maxHeight: '380px',
+            overflowY: 'auto',
+            padding: '6px',
+            background: '#f8fafc'
+          }}>
             {notifications.length === 0 ? (
-              <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
-                🔔 No recent notifications. You are all caught up!
+              <div style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                <CheckCircle2 size={32} color="#cbd5e1" style={{ margin: '0 auto 8px' }} />
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>All caught up!</div>
+                <div style={{ fontSize: '11px' }}>No pending notifications or directives.</div>
               </div>
             ) : (
               notifications.map((n) => {
@@ -306,44 +381,95 @@ export default function NotificationBell({ tasks = [], authUser, onOpenChat, onO
                     key={n.id}
                     onClick={() => handleSelectNotif(n)}
                     style={{
-                      padding: '12px 16px',
-                      borderBottom: '1px solid #f1f5f9',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      marginBottom: '6px',
                       background: isRead ? '#ffffff' : '#f0f9ff',
+                      border: isRead ? '1px solid #e2e8f0' : '1px solid #bae6fd',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '10px',
-                      transition: 'background 0.15s ease'
+                      transition: 'all 0.15s ease'
                     }}
                   >
-                    <div style={{ marginTop: '2px' }}>{n.icon}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '12px', fontWeight: isRead ? '600' : '800', color: isRead ? '#334155' : '#0f172a', marginBottom: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{n.title}</span>
-                        {!isRead && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#2563eb' }} />}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
-                        {n.message}
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '600' }}>
-                        {n.timestamp}
-                      </div>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: isRead ? '#f1f5f9' : '#e0f2fe',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: '2px'
+                    }}>
+                      {n.icon}
                     </div>
-                    <ChevronRight size={14} color="#cbd5e1" style={{ marginTop: '4px' }} />
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '2px' }}>
+                        <span style={{
+                          fontSize: '12px',
+                          fontWeight: isRead ? '700' : '800',
+                          color: isRead ? '#334155' : '#0369a1',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {n.title}
+                        </span>
+                        <span style={{ fontSize: '10px', color: isRead ? '#94a3b8' : '#0284c7', fontWeight: '700', flexShrink: 0 }}>
+                          {n.timeLabel}
+                        </span>
+                      </div>
+
+                      <p style={{
+                        fontSize: '11px',
+                        color: isRead ? '#64748b' : '#334155',
+                        margin: 0,
+                        lineHeight: '1.35',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {n.message}
+                      </p>
+                    </div>
+
+                    <ChevronRight size={14} color="#94a3b8" style={{ marginTop: '8px', flexShrink: 0 }} />
                   </div>
                 );
               })
             )}
           </div>
 
-          {/* Footer Action */}
+          {/* Footer */}
           {notifications.length > 0 && (
-            <div style={{ padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+            <div style={{
+              padding: '8px 12px',
+              background: '#ffffff',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
               <button
                 onClick={handleClearNotifs}
-                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
               >
-                Dismiss Menu
+                <Trash2 size={12} />
+                <span>Dismiss All Notifications</span>
               </button>
             </div>
           )}

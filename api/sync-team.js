@@ -19,16 +19,29 @@ module.exports = async function handler(req, res) {
       if (!Array.isArray(teamData)) {
         return res.status(400).json({ error: 'Body must be an array' });
       }
-      await collection.updateOne(
-        { _id: 'shared_team_roster' },
-        { $set: { team: teamData, updatedAt: new Date().toISOString(), count: teamData.length } },
-        { upsert: true }
-      );
+
+      // Upsert individual member records
+      const bulkOps = teamData.map(m => {
+        const empId = String(m.employeeId || m.id || '').trim();
+        return {
+          updateOne: {
+            filter: { employeeId: empId },
+            update: { $set: { ...m, employeeId: empId, updatedAt: new Date().toISOString() } },
+            upsert: true
+          }
+        };
+      });
+
+      if (bulkOps.length > 0) {
+        await collection.bulkWrite(bulkOps);
+      }
+
       return res.status(200).json({ success: true, count: teamData.length });
 
     } else if (req.method === 'GET') {
-      const doc = await collection.findOne({ _id: 'shared_team_roster' });
-      return res.status(200).json({ team: doc && Array.isArray(doc.team) ? doc.team : [] });
+      // Fetch all registered active team member documents
+      const docs = await collection.find({ _id: { $ne: 'shared_team_roster' } }).toArray();
+      return res.status(200).json({ success: true, team: docs || [] });
 
     } else {
       return res.status(405).json({ error: 'Method not allowed' });

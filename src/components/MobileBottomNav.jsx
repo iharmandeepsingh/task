@@ -6,8 +6,10 @@ export default function MobileBottomNav({
   setActiveView,
   currentRole,
   onNewTask,
+  onOpenReportCard,
   onOpenMoreSheet
 }) {
+
   const isFaculty = currentRole === 'faculty';
 
   return (

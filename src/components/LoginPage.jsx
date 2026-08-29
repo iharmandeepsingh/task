@@ -1,23 +1,13 @@
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldAlert, CheckCircle2, HelpCircle, X, KeyRound, AlertCircle, ArrowRight, User, Phone, Building2, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, ShieldAlert, CheckCircle2, HelpCircle, X, KeyRound, AlertCircle, ArrowRight, User, Phone, Building2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { INITIAL_TEAM } from '../data/initialData';
 import { getApiUrl } from '../utils/apiBase';
 
 export default function LoginPage({ onLogin }) {
-  // Always fetch latest master team directory from localStorage or INITIAL_TEAM
-  const activeTeam = (() => {
-    const deletedIds = (() => {
-      try { return JSON.parse(localStorage.getItem('ctu_deleted_employee_ids') || '[]'); } catch { return []; }
-    })();
-    const deletedSet = new Set(deletedIds.map(d => String(d).toLowerCase().trim()).filter(Boolean));
-
+  const [activeTeam, setActiveTeam] = useState(() => {
     const teamMap = new Map();
     INITIAL_TEAM.forEach(m => {
-      const k1 = String(m.id || '').toLowerCase().trim();
-      const k2 = String(m.employeeId || '').toLowerCase().trim();
-      if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
-        teamMap.set((m.employeeId || m.id).toLowerCase(), m);
-      }
+      teamMap.set(String(m.employeeId || m.id).toLowerCase().trim(), m);
     });
 
     const saved = localStorage.getItem('ctu_team_data');
@@ -26,23 +16,20 @@ export default function LoginPage({ onLogin }) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           parsed.forEach(m => {
-            const k1 = String(m.id || '').toLowerCase().trim();
-            const k2 = String(m.employeeId || '').toLowerCase().trim();
-            if ((!k1 || !deletedSet.has(k1)) && (!k2 || !deletedSet.has(k2))) {
-              teamMap.set((m.employeeId || m.id).toLowerCase(), m);
-            }
+            teamMap.set(String(m.employeeId || m.id).toLowerCase().trim(), m);
           });
         }
       } catch (e) {}
     }
     return Array.from(teamMap.values());
-  })();
+  });
 
   const [isRegistering, setIsRegistering] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Register state
   const [regName, setRegName] = useState('');
@@ -61,7 +48,32 @@ export default function LoginPage({ onLogin }) {
   const [recoveryResult, setRecoveryResult] = useState(null);
   const [recoveryError, setRecoveryError] = useState('');
 
-  const handleSubmit = (e) => {
+  // Live Team Loader from backend
+  const fetchLiveTeam = async () => {
+    try {
+      const res = await fetch(getApiUrl('/api/sync-team'));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.team && Array.isArray(data.team)) {
+          const teamMap = new Map();
+          INITIAL_TEAM.forEach(m => teamMap.set(String(m.employeeId || m.id).toLowerCase().trim(), m));
+          data.team.forEach(m => teamMap.set(String(m.employeeId || m.id).toLowerCase().trim(), m));
+          const list = Array.from(teamMap.values());
+          setActiveTeam(list);
+          localStorage.setItem('ctu_team_data', JSON.stringify(list));
+        }
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchLiveTeam();
+    const handleUpdate = () => fetchLiveTeam();
+    window.addEventListener('ctu_records_updated', handleUpdate);
+    return () => window.removeEventListener('ctu_records_updated', handleUpdate);
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanId = identifier.trim().toLowerCase();
 
@@ -70,122 +82,178 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    const matchedUser = activeTeam.find((m) => {
-      const fullEmpId = (m.employeeId || '').trim().toLowerCase();
-      const numDigits = fullEmpId.replace(/\D/g, '');
-      const fullId = (m.id || '').trim().toLowerCase();
-      const fullEmail = (m.email || '').trim().toLowerCase();
-      const emailPrefix = fullEmail.split('@')[0];
-      const fullName = (m.name || '').trim().toLowerCase();
+    setLoading(true);
+    setErrorMessage('');
 
-      return (
-        fullEmpId === cleanId ||
-        (numDigits && numDigits === cleanId) ||
-        fullId === cleanId ||
-        fullId === `usr-${cleanId}` ||
-        fullEmail === cleanId ||
-        emailPrefix === cleanId ||
-        fullName === cleanId
-      );
-    });
+    try {
+      // 1. Search in current active team state
+      let matchedUser = activeTeam.find((m) => {
+        const fullEmpId = String(m.employeeId || '').trim().toLowerCase();
+        const numDigits = fullEmpId.replace(/\D/g, '');
+        const fullId = String(m.id || '').trim().toLowerCase();
+        const fullEmail = String(m.email || '').trim().toLowerCase();
+        const emailPrefix = fullEmail.split('@')[0];
+        const fullName = String(m.name || '').trim().toLowerCase();
 
-    if (!matchedUser) {
-      setErrorMessage(`Staff ID "${identifier.trim()}" not found. Please check your Staff ID or register.`);
-      return;
+        return (
+          fullEmpId === cleanId ||
+          (numDigits && numDigits === cleanId) ||
+          fullId === cleanId ||
+          fullId === `usr-${cleanId}` ||
+          fullEmail === cleanId ||
+          emailPrefix === cleanId ||
+          fullName === cleanId
+        );
+      });
+
+      // 2. If not found in state, query live database
+      if (!matchedUser) {
+        const teamRes = await fetch(getApiUrl('/api/sync-team'));
+        if (teamRes.ok) {
+          const teamData = await teamRes.json();
+          if (teamData.team && Array.isArray(teamData.team)) {
+            const foundInServer = teamData.team.find(m => {
+              const fullEmpId = String(m.employeeId || '').trim().toLowerCase();
+              const fullId = String(m.id || '').trim().toLowerCase();
+              const fullEmail = String(m.email || '').trim().toLowerCase();
+              const numDigits = fullEmpId.replace(/\D/g, '');
+              return fullEmpId === cleanId || (numDigits && numDigits === cleanId) || fullId === cleanId || fullId === `usr-${cleanId}` || fullEmail === cleanId;
+            });
+            if (foundInServer) {
+              matchedUser = foundInServer;
+              setActiveTeam(prev => [...prev.filter(m => String(m.employeeId || m.id).toLowerCase() !== cleanId), foundInServer]);
+            }
+          }
+        }
+      }
+
+      // 3. If still not matched in active team, check Pre-Authorization directory
+      if (!matchedUser) {
+        const checkRes = await fetch(getApiUrl(`/api/check-verification?staffId=${encodeURIComponent(cleanId)}`));
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.record) {
+            if (checkData.record.status === 'Pre-Authorized') {
+              setErrorMessage(`🎉 Staff ID "${identifier.trim()}" is Pre-Authorized! Please click "Sign up" / "Register Account" below to set your password and activate your account.`);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        setErrorMessage(`Staff ID "${identifier.trim()}" not found in active directory. If newly appointed, click "Sign up" below.`);
+        setLoading(false);
+        return;
+      }
+
+      const cleanPass = password.trim();
+      const actualPassword = matchedUser.password || '';
+      const cleanName = (matchedUser.name || '').trim().toLowerCase();
+      const cleanEmpId = (matchedUser.employeeId || '').trim().toLowerCase();
+      const nameParts = cleanName.split(' ').filter(p => p.length > 1);
+
+      const isPasswordValid = 
+        (actualPassword && (cleanPass === actualPassword || cleanPass.toLowerCase() === actualPassword.toLowerCase())) ||
+        (!actualPassword && (
+          cleanPass.toLowerCase() === '123' ||
+          cleanPass.toLowerCase() === 'password123!' ||
+          cleanPass.toLowerCase() === cleanName ||
+          cleanPass.toLowerCase() === cleanEmpId ||
+          nameParts.some(part => cleanPass.toLowerCase().includes(part)) ||
+          cleanPass.toLowerCase().includes(cleanName)
+        ));
+
+      if (!isPasswordValid) {
+        setErrorMessage(`Incorrect password. Please try again.`);
+        setLoading(false);
+        return;
+      }
+
+      let autoDetectedRole = 'faculty';
+      let autoRoleTitle = matchedUser.role || 'Faculty Member';
+      const userRoleStr = (matchedUser.role || '').toLowerCase();
+      const userCategory = (matchedUser.category || '').toLowerCase();
+      const userEmpId = String(matchedUser.employeeId || matchedUser.id || '').toLowerCase();
+
+      if (
+        userRoleStr === 'super admin' || 
+        userRoleStr.includes('superadmin') ||
+        ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(userEmpId)
+      ) {
+        autoDetectedRole = 'superAdmin';
+        autoRoleTitle = 'Super Administrator';
+      } else if (
+        userRoleStr.includes('hod') || 
+        userRoleStr.includes('head of department') ||
+        userRoleStr.includes('h.o.d')
+      ) {
+        autoDetectedRole = 'hod';
+        autoRoleTitle = matchedUser.role || 'Head of Department';
+      } else if (
+        userCategory === 'admin' ||
+        userRoleStr.includes('admin') ||
+        userRoleStr.includes('director') ||
+        userRoleStr.includes('dean') ||
+        userRoleStr.includes('registrar') ||
+        userRoleStr.includes('chancellor')
+      ) {
+        autoDetectedRole = 'admin';
+        autoRoleTitle = matchedUser.role || 'University Administrator';
+      } else {
+        autoDetectedRole = 'faculty';
+        autoRoleTitle = matchedUser.role || 'Faculty Member';
+      }
+
+      onLogin({
+        id: matchedUser.id,
+        employeeId: matchedUser.employeeId,
+        email: matchedUser.email,
+        name: matchedUser.name,
+        role: autoDetectedRole,
+        roleTitle: autoRoleTitle,
+        dept: matchedUser.dept,
+        avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
+      });
+
+    } catch (err) {
+      setErrorMessage(`Login error: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-
-    const cleanPass = password.trim().toLowerCase();
-    const cleanName = (matchedUser.name || '').trim().toLowerCase();
-    const cleanEmpId = (matchedUser.employeeId || '').trim().toLowerCase();
-    const nameParts = cleanName.split(' ').filter(p => p.length > 1);
-    
-    // Check real password or fallback to defaults
-    const actualPassword = matchedUser.password || '';
-    
-    const isPasswordValid = 
-      (actualPassword && cleanPass === actualPassword.toLowerCase()) ||
-      (!actualPassword && (
-        cleanPass === '123' ||
-        cleanPass === 'password123!' ||
-        cleanPass === cleanName ||
-        cleanPass === cleanEmpId ||
-        nameParts.some(part => cleanPass.includes(part)) ||
-        cleanPass.includes(cleanName)
-      ));
-
-    if (!isPasswordValid) {
-      setErrorMessage(`Incorrect password. Please try again.`);
-      return;
-    }
-
-    let autoDetectedRole = 'faculty';
-    let autoRoleTitle = matchedUser.role || 'Faculty Member';
-    const userRoleStr = (matchedUser.role || '').toLowerCase();
-    const userCategory = (matchedUser.category || '').toLowerCase();
-    const userEmpId = String(matchedUser.employeeId || matchedUser.id || '').toLowerCase();
-
-    if (
-      userRoleStr === 'super admin' || 
-      userRoleStr.includes('superadmin') ||
-      ['24051', '17572', '10001', '001', 'usr-0', 'usr-24051', 'usr-17572', 'usr-10001'].includes(userEmpId)
-    ) {
-      autoDetectedRole = 'superAdmin';
-      autoRoleTitle = 'Super Administrator';
-    } else if (
-      userRoleStr.includes('hod') || 
-      userRoleStr.includes('head of department') ||
-      userRoleStr.includes('h.o.d')
-    ) {
-      autoDetectedRole = 'hod';
-      autoRoleTitle = matchedUser.role || 'Head of Department';
-    } else if (
-      userCategory === 'admin' ||
-      userRoleStr.includes('admin') ||
-      userRoleStr.includes('director') ||
-      userRoleStr.includes('dean') ||
-      userRoleStr.includes('registrar') ||
-      userRoleStr.includes('chancellor')
-    ) {
-      autoDetectedRole = 'admin';
-      autoRoleTitle = matchedUser.role || 'University Administrator';
-    } else {
-      autoDetectedRole = 'faculty';
-      autoRoleTitle = matchedUser.role || 'Faculty Member';
-    }
-
-    onLogin({
-      id: matchedUser.id,
-      employeeId: matchedUser.employeeId,
-      email: matchedUser.email,
-      name: matchedUser.name,
-      role: autoDetectedRole,
-      roleTitle: autoRoleTitle,
-      dept: matchedUser.dept,
-      avatar: matchedUser.avatar || matchedUser.name.substring(0, 2).toUpperCase(),
-    });
   };
 
-  // Auto-fill registration details when Staff ID is entered
-  const handleStaffIdChange = (val) => {
+  // Auto-fill registration details when Staff ID is entered by querying backend check-verification
+  const handleStaffIdChange = async (val) => {
     setRegStaffId(val);
-    const cleanId = String(val).trim().toLowerCase();
-    if (!cleanId) return;
+    const cleanId = String(val).trim();
+    if (!cleanId) {
+      setErrorMessage('');
+      return;
+    }
 
-    const matched = activeTeam.find(m => {
-      if (!m) return false;
-      const empId = String(m.employeeId || '').toLowerCase().trim();
-      const id = String(m.id || '').toLowerCase().trim();
-      const sId = String(m.staffId || '').toLowerCase().trim();
-      return empId === cleanId || id === cleanId || id === `usr-${cleanId}` || sId === cleanId;
-    });
-
-    if (matched) {
-      if (matched.name) setRegName(matched.name);
-      if (matched.email) setRegEmail(matched.email);
-      if (matched.dept) setRegDept(matched.dept);
-      if (matched.phone) setRegPhone(matched.phone);
+    try {
+      const res = await fetch(getApiUrl(`/api/check-verification?staffId=${encodeURIComponent(cleanId)}`));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.record) {
+          if (data.record.name) setRegName(data.record.name);
+          if (data.record.email) setRegEmail(data.record.email);
+          if (data.record.department) setRegDept(data.record.department);
+          if (data.record.phone) setRegPhone(data.record.phone);
+          if (data.alreadyActive) {
+            setErrorMessage(`Staff ID "${cleanId}" is already an active registered account. Please sign in.`);
+          } else {
+            setErrorMessage('');
+          }
+        } else if (data.notFound) {
+          setErrorMessage(`Staff ID "${cleanId}" is not found in the Pre-Authorization Directory. Please contact Super Admin.`);
+        }
+      }
+    } catch (e) {
+      console.warn("Autofill lookup error:", e);
     }
   };
+
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -199,123 +267,52 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    const cleanEmail = regEmail.trim().toLowerCase();
-    const cleanStaffId = regStaffId.trim().toLowerCase();
+    const cleanStaffId = regStaffId.trim();
 
-    // Check if staff ID or email exists in active roster
-    const existing = activeTeam.find(m => {
-      if (!m) return false;
-      const empId = String(m.employeeId || '').toLowerCase().trim();
-      const id = String(m.id || '').toLowerCase().trim();
-      const sId = String(m.staffId || '').toLowerCase().trim();
-      const email = String(m.email || '').toLowerCase().trim();
-
-      return (
-        (cleanStaffId && (empId === cleanStaffId || id === cleanStaffId || id === `usr-${cleanStaffId}` || sId === cleanStaffId)) ||
-        (cleanEmail && email === cleanEmail)
-      );
-    });
-    
-    // If account exists and already has a confirmed password set and is Active
-    if (existing && existing.password && existing.status === 'Active') {
-      setErrorMessage('An active account with this email or Staff ID already exists. Please sign in.');
-      return;
-    }
-
-    let verificationRecord = null;
     try {
-      const checkRes = await fetch(getApiUrl(`/api/check-verification?staffId=${encodeURIComponent(cleanStaffId)}`));
-      if (checkRes.ok) {
-        const data = await checkRes.json();
-        if (data.record) {
-          verificationRecord = data.record;
-        }
-      }
-    } catch (e) {
-      console.warn("Verification check failed", e);
-    }
-
-    // Pre-authorized if exists in team roster, in verification pool, or standard CT University ID
-    const isPreAuthorized = 
-      !!existing || 
-      !!verificationRecord || 
-      /^\d{3,7}$/.test(cleanStaffId) || 
-      cleanStaffId.startsWith('adm') || 
-      cleanStaffId.startsWith('ctu-') ||
-      cleanStaffId.startsWith('usr-');
-
-    if (!isPreAuthorized) {
-      setErrorMessage('Verification Failed: Your Staff ID is not pre-authorized. Please contact Super Admin.');
-      return;
-    }
-
-    const isAdmin = 
-      (existing && (existing.category === 'Admin' || String(existing.role || '').toLowerCase().includes('admin'))) ||
-      (verificationRecord && (verificationRecord.category === 'Admin' || String(verificationRecord.role || '').toLowerCase().includes('admin'))) ||
-      cleanStaffId.startsWith('adm') ||
-      cleanStaffId.startsWith('ctu-adm') ||
-      ['10001', '24051', '17572'].includes(cleanStaffId);
-
-    const assignedCategory = isAdmin ? 'Admin' : (existing?.category || verificationRecord?.category || 'Faculty');
-    const assignedRole = existing?.role || verificationRecord?.role || (isAdmin ? 'Administrative Staff' : 'Faculty Member');
-
-    const initials = regName.split(/\s+/).map(n => n[0]).join('').substring(0,2).toUpperCase();
-
-    const registeredUser = {
-      ...(existing || {}),
-      id: existing?.id || `usr-${Date.now()}`,
-      employeeId: regStaffId.trim(),
-      name: regName.trim(),
-      email: regEmail.trim(),
-      phone: regPhone.trim(),
-      password: regPassword.trim(),
-      role: assignedRole,
-      category: assignedCategory,
-      dept: regDept || existing?.dept || verificationRecord?.department || (isAdmin ? 'University Administration' : 'School of Engineering & Technology'),
-      avatar: initials,
-      status: 'Active',
-      hasAccount: true
-    };
-
-    const updatedTeam = existing 
-      ? activeTeam.map(m => {
-          const eId = String(m.employeeId || '').toLowerCase().trim();
-          const id = String(m.id || '').toLowerCase().trim();
-          const em = String(m.email || '').toLowerCase().trim();
-          return (eId === cleanStaffId || id === cleanStaffId || em === cleanEmail) ? registeredUser : m;
+      const res = await fetch(getApiUrl('/api/check-verification'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staffId: cleanStaffId,
+          password: regPassword.trim(),
+          name: regName.trim(),
+          email: regEmail.trim(),
+          phone: regPhone.trim(),
+          dept: regDept.trim()
         })
-      : [...activeTeam, registeredUser];
+      });
 
-    localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam));
-    
-    // 1. Sync updated registered user to ctu_team in MongoDB
-    fetch(getApiUrl('/api/sync-team'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team: updatedTeam })
-    }).catch(() => {});
+      const data = await res.json();
 
-    // 2. Remove the person from the pre-verification list (ctu_staff_verification) in MongoDB
-    fetch(getApiUrl('/api/sync-verification'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'remove', staffId: regStaffId.trim() })
-    }).catch(() => {});
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || 'Registration failed. Please check with administrator.');
+        return;
+      }
 
-    alert(`🎉 Registration successful as ${assignedCategory} (${assignedRole})! You can now sign in.`);
-    setIsRegistering(false);
-    setIdentifier(regStaffId.trim());
-    setPassword('');
-    // Reset form
-    setRegName('');
-    setRegStaffId('');
-    setRegEmail('');
-    setRegPhone('');
-    setRegDept('');
-    setRegPassword('');
-    setRegConfirmPassword('');
-    setErrorMessage('');
+      // Update local active team data cache immediately
+      if (data.user) {
+        const fullUser = { ...data.user, password: regPassword.trim() };
+        setActiveTeam(prev => {
+          const updated = [...prev.filter(m => String(m.employeeId || m.id).toLowerCase() !== cleanStaffId.toLowerCase()), fullUser];
+          localStorage.setItem('ctu_team_data', JSON.stringify(updated));
+          return updated;
+        });
+      }
+
+      // Fire global update events
+      window.dispatchEvent(new Event('ctu_records_updated'));
+
+      alert(`🎉 Registration successful for ${data.user?.name || cleanStaffId}!\nYour account is now Active. You can now sign in.`);
+      setIsRegistering(false);
+      setIdentifier(cleanStaffId);
+      setPassword(regPassword.trim());
+      setErrorMessage('');
+    } catch (err) {
+      setErrorMessage(`Registration error: ${err.message}`);
+    }
   };
+
 
   const handleRecoverPassword = (e) => {
     e.preventDefault();

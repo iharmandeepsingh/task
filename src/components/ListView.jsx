@@ -13,10 +13,12 @@ export default function ListView({
   onOpenChat,
   onOpenExtensionModal,
   onOpenReviewModal,
+  onOpenForwardModal,
   currentRole,
 }) {
-  const [sortField, setSortField] = useState('dueDate');
-  const [sortOrder, setSortOrder] = useState('asc');
+
+  const [sortField, setSortField] = useState('recent');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
   const getAssignee = (id) => (team ? team.find((m) => m.id === id) : null) || { name: 'Faculty Member', avatar: 'FM' };
@@ -26,17 +28,23 @@ export default function ListView({
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder('asc');
+      setSortOrder(field === 'recent' ? 'desc' : 'asc');
     }
   };
 
   const sortedTasks = [...tasks].sort((a, b) => {
+    if (sortField === 'recent') {
+      const timeA = new Date(a.updatedAt || a.delegatedAt || a.createdAt || a.dueDate || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.delegatedAt || b.createdAt || b.dueDate || 0).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    }
     let valA = a[sortField] || '';
     let valB = b[sortField] || '';
     if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
     if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
   });
+
 
   return (
     <div>
@@ -98,27 +106,34 @@ export default function ListView({
                           const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
                           const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
 
-                          if (isAssignee && !isCreator) {
+                          if (task.delegatedByName || task.isDelegated) {
+                            return (
+                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName || task.originalAssigneeName || 'Admin'} ➔ 🎓 {task.assigneeName}
+                              </div>
+                            );
+                          } else if (isAssignee && !isCreator) {
                             return (
                               <div style={{ fontSize: '10px', fontWeight: '800', color: '#3730a3', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                📥 Assigned to You by {task.creatorName || 'Super Admin'}
+                                📥 Incoming: 👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.assigneeName}
                               </div>
                             );
                           } else if (isCreator && !isAssignee) {
                             return (
                               <div style={{ fontSize: '10px', fontWeight: '800', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                📤 Assigned by You to {task.assigneeName || 'Faculty'}
+                                📤 Delegated: 🏛️ {task.creatorName} ➔ 🎓 {task.assigneeName}
                               </div>
                             );
-                          } else if (task.creatorName && task.creatorName.toLowerCase().includes('super')) {
+                          } else if (task.creatorName && (task.creatorName.toLowerCase().includes('super') || task.creatorRole?.toLowerCase().includes('super'))) {
                             return (
                               <div style={{ fontSize: '10px', fontWeight: '800', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                🏛️ Directive: {task.creatorName} ➔ {task.assigneeName}
+                                👑 {task.creatorName} ➔ 🏛️ {task.assigneeName}
                               </div>
                             );
                           }
                           return null;
                         })()}
+
 
                         {hasPendingExt && (
                           <div style={{ fontSize: '10px', fontWeight: '700', color: '#b45309', background: '#fffbeb', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '4px' }}>
@@ -171,12 +186,28 @@ export default function ListView({
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {assignee.avatar}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {assignee.avatar}
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
                           </div>
-                          <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
+                          {task.delegatedByName && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                              <span style={{ fontSize: '9.5px', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: '700' }}>
+                                👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName} ➔ 🎓 {task.assigneeName}
+                              </span>
+                              {task.delegationNotes && (
+                                <span style={{ fontSize: '9.5px', color: '#64748b', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  "{task.delegationNotes}"
+                                </span>
+                              )}
+                            </div>
+                          )}
+
                         </div>
+
                       </td>
                       <td style={{ padding: '12px 16px', fontWeight: '700', fontSize: '11px', color: '#1e40af' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -230,6 +261,18 @@ export default function ListView({
                               <span>Review</span>
                             </button>
                           )}
+
+                          {isLeader && task.stage !== 'Accepted' && (
+                            <button
+                              onClick={() => onOpenForwardModal && onOpenForwardModal(task)}
+                              title="Forward / Delegate Task to Faculty"
+                              style={{ padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Send size={13} />
+                              <span>Forward</span>
+                            </button>
+                          )}
+
 
                           {(() => {
                             const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
@@ -291,9 +334,33 @@ export default function ListView({
                 <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0' }}>
                   {task.title}
                 </h4>
+
+                {/* Delegation Info Banner on Mobile Card */}
+                {task.delegatedByName && (
+                  <div style={{
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    background: currentRole === 'faculty' ? '#f0fdf4' : '#eff6ff',
+                    border: currentRole === 'faculty' ? '1px solid #bbf7d0' : '1px solid #bfdbfe',
+                    fontSize: '11px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ fontWeight: '800', color: currentRole === 'faculty' ? '#166534' : '#1e40af', marginBottom: '2px' }}>
+                      👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName} ➔ 🎓 {task.assigneeName}
+                    </div>
+                    {task.delegationNotes && (
+                      <div style={{ fontSize: '10px', color: '#475569', fontStyle: 'italic', marginTop: '2px', background: '#ffffff', padding: '3px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        Note: "{task.delegationNotes}"
+                      </div>
+                    )}
+                  </div>
+                )}
+
+
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px 0' }}>
                   {task.description}
                 </p>
+
 
                 {/* Pending Extension Request Alert Banner on Mobile Card */}
                 {hasPendingExt && (

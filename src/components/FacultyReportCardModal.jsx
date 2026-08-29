@@ -4,16 +4,29 @@ import { X, Award, CheckCircle2, Clock, AlertTriangle, TrendingUp, BookOpen, Cal
 export default function FacultyReportCardModal({ isOpen, onClose, authUser, tasks }) {
   if (!isOpen) return null;
 
-  const facultyName = authUser?.name || 'Dr. Harmanpreet Singh';
-  const facultyDept = authUser?.dept || 'Computer Science & Engineering';
+  const facultyName = authUser?.name || 'Faculty Member';
+  const facultyDept = authUser?.dept || 'Department of Engineering';
 
-  // Calculate faculty task stats
-  const facultyTasks = tasks.filter(t => t.assigneeId === authUser?.id || t.assigneeId === 'usr-3' || (t.assigneeName && t.assigneeName.includes('Harmanpreet')));
+  // Calculate faculty task stats matching by ID, Employee ID, or Name
+  const authEmpId = String(authUser?.employeeId || '').toLowerCase().trim();
+  const authId = String(authUser?.id || '').toLowerCase().trim();
+  const authName = String(authUser?.name || '').toLowerCase().trim();
+
+  const facultyTasks = tasks.filter(t => {
+    const aId = String(t.assigneeId || '').toLowerCase().trim();
+    const aEmpId = String(t.assigneeEmpId || '').toLowerCase().trim();
+    const aName = String(t.assigneeName || '').toLowerCase().trim();
+    return (authId && (aId === authId || aId === `usr-${authEmpId}`)) ||
+           (authEmpId && (aEmpId === authEmpId || aId === authEmpId || aId === `usr-${authEmpId}`)) ||
+           (authName && aName === authName);
+  });
+
   const completedTasks = facultyTasks.filter(t => t.stage === 'Accepted' || t.stage === 'Submitted for Review');
   const inProgressTasks = facultyTasks.filter(t => t.stage === 'In Progress' || t.stage === 'Assigned' || t.stage === 'Re-issued');
   const overdueTasks = facultyTasks.filter(t => t.deadlineHealth === 'Red');
 
   const completionRate = facultyTasks.length > 0 ? Math.round((completedTasks.length / facultyTasks.length) * 100) : 100;
+
 
   return (
     <div className="modal-backdrop" style={{

@@ -13,8 +13,10 @@ export default function TaskActionSheet({
   onOpenChat,
   onOpenExtensionModal,
   onOpenReviewModal,
+  onOpenForwardModal,
   currentRole
 }) {
+
   if (!isOpen || !task) return null;
 
   const authEmpId = (authUser?.employeeId || '').trim();
@@ -151,6 +153,24 @@ export default function TaskActionSheet({
             <ArrowRight size={14} />
           </button>
 
+          {/* Forward Task to Faculty (Admin / Head) */}
+          {!isFaculty && (
+            <button
+              onClick={() => { onOpenForwardModal(task); onClose(); }}
+              style={{
+                padding: '12px 14px', borderRadius: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0',
+                color: '#166534', fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Send size={16} />
+                <span>↗️ Forward / Delegate to Faculty</span>
+              </div>
+              <ArrowRight size={14} />
+            </button>
+          )}
+
           {/* Edit Task (Non-faculty) */}
           {!isFaculty && (
             <button
@@ -168,6 +188,7 @@ export default function TaskActionSheet({
               <ArrowRight size={14} />
             </button>
           )}
+
 
           {/* Delete Task (Admin / Super Admin) */}
           {!isFaculty && (

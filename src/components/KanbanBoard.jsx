@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter, Paperclip, Trash2 } from 'lucide-react';
+import { Clock, AlertTriangle, MessageSquare, CheckSquare, Send, Calendar, AlertCircle, RefreshCw, ChevronDown, Layers, Filter, Paperclip, Trash2, FileText } from 'lucide-react';
 import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
+
 
 export default function KanbanBoard({
   tasks,
@@ -12,9 +13,11 @@ export default function KanbanBoard({
   onOpenChat,
   onOpenExtensionModal,
   onOpenReviewModal,
+  onOpenForwardModal,
   onToggleSubtask,
   currentRole,
 }) {
+
   const [selectedMobileStage, setSelectedMobileStage] = useState('ALL');
   const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
 
@@ -96,7 +99,14 @@ export default function KanbanBoard({
       <div className="kanban-container" style={{ scrollSnapType: 'x mandatory' }}>
         <div className="kanban-grid">
           {displayedStages.map((stage) => {
-            const stageTasks = tasks.filter((t) => t.stage === stage);
+            const stageTasks = tasks
+              .filter((t) => t.stage === stage)
+              .sort((a, b) => {
+                const timeA = new Date(a.updatedAt || a.delegatedAt || a.createdAt || a.dueDate || 0).getTime();
+                const timeB = new Date(b.updatedAt || b.delegatedAt || b.createdAt || b.dueDate || 0).getTime();
+                return timeB - timeA;
+              });
+
 
             return (
               <div key={stage} className="kanban-column" style={{ scrollSnapAlign: 'start' }}>
@@ -135,27 +145,34 @@ export default function KanbanBoard({
                             const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
                             const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
 
-                            if (isAssignee && !isCreator) {
+                            if (task.delegatedByName || task.isDelegated) {
+                              return (
+                                <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', color: '#7e22ce', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName || task.originalAssigneeName || 'Admin'} ➔ 🎓 {task.assigneeName}</span>
+                                </div>
+                              );
+                            } else if (isAssignee && !isCreator) {
                               return (
                                 <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>📥 Incoming from {task.creatorName || 'Super Admin'}</span>
+                                  <span>📥 Incoming: 👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.assigneeName}</span>
                                 </div>
                               );
                             } else if (isCreator && !isAssignee) {
                               return (
                                 <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>📤 Delegated to {task.assigneeName || 'Faculty'}</span>
+                                  <span>📤 Delegated: 🏛️ {task.creatorName} ➔ 🎓 {task.assigneeName}</span>
                                 </div>
                               );
-                            } else if (task.creatorName && task.creatorName.toLowerCase().includes('super')) {
+                            } else if (task.creatorName && (task.creatorName.toLowerCase().includes('super') || task.creatorRole?.toLowerCase().includes('super'))) {
                               return (
                                 <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', color: '#7e22ce', padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>🏛️ Directive: {task.creatorName} ➔ {task.assigneeName}</span>
+                                  <span>👑 {task.creatorName} ➔ 🏛️ {task.assigneeName}</span>
                                 </div>
                               );
                             }
                             return null;
                           })()}
+
 
                           {/* Pending Extension Request Alert Banner */}
                           {hasPendingExt && (
@@ -237,9 +254,70 @@ export default function KanbanBoard({
                             </div>
                           )}
 
+                          {/* Comprehensive Delegation / Reassignment Info Banner */}
+                          {task.delegatedByName && (
+                            <div style={{
+                              marginTop: '6px',
+                              marginBottom: '6px',
+                              padding: '8px 10px',
+                              borderRadius: '8px',
+                              background: currentRole === 'faculty' ? '#f0fdf4' : '#eff6ff',
+                              border: currentRole === 'faculty' ? '1px solid #bbf7d0' : '1px solid #bfdbfe',
+                              fontSize: '11px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+                                <span style={{
+                                  fontWeight: '800',
+                                  color: currentRole === 'faculty' ? '#166534' : '#1e40af',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <span>{currentRole === 'faculty' ? '👑 Assigned from Super Admin' : 'ℹ️ Task Reassigned to Faculty'}</span>
+                                </span>
+                                <span style={{
+                                  fontSize: '9.5px',
+                                  background: currentRole === 'faculty' ? '#dcfce7' : '#dbeafe',
+                                  color: currentRole === 'faculty' ? '#15803d' : '#1e40af',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontWeight: '700'
+                                }}>
+                                  {task.assigneeDept || 'Faculty'}
+                                </span>
+                              </div>
+
+                              <div style={{ color: '#0f172a', fontWeight: '700', fontSize: '11.5px' }}>
+                                Assigned to: <span style={{ color: '#2563eb' }}>{task.assigneeName}</span>
+                              </div>
+
+                              {task.delegationNotes && (
+                                <div style={{
+                                  fontSize: '10.5px',
+                                  color: '#334155',
+                                  marginTop: '4px',
+                                  background: '#ffffff',
+                                  padding: '4px 6px',
+                                  borderRadius: '4px',
+                                  border: currentRole === 'faculty' ? '1px solid #dcfce7' : '1px solid #e2e8f0',
+                                  fontStyle: 'italic'
+                                }}>
+                                  Delegation Note: "{task.delegationNotes}"
+                                </div>
+                              )}
+
+                              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '6px', paddingTop: '4px', borderTop: '1px dashed #cbd5e1', fontWeight: '700' }}>
+                                👑 <span>{task.creatorName || 'Super Admin'}</span> ➔ 🏛️ <span>{task.delegatedByName || task.originalAssigneeName || 'Admin'}</span> ➔ 🎓 <span style={{ color: '#2563eb' }}>{task.assigneeName}</span>
+                              </div>
+                            </div>
+                          )}
+
+
+
                           <h4 className="card-title" onClick={() => onEditTask(task)}>
                             {task.title}
                           </h4>
+
 
                           <p className="card-desc">{task.description}</p>
 
@@ -404,10 +482,23 @@ export default function KanbanBoard({
                                   <span>Review</span>
                                 </button>
                               )}
+
+                              {isLeader && task.stage !== 'Accepted' && (
+                                <button
+                                  className="action-btn-small forward"
+                                  title="Forward / Delegate Task to Faculty"
+                                  onClick={() => onOpenForwardModal && onOpenForwardModal(task)}
+                                  style={{ padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  <Send size={12} />
+                                  <span>Forward</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
                       );
+
                     })
                   )}
                 </div>

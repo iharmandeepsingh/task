@@ -46,200 +46,63 @@ function syncServerPlugin() {
     name: 'sync-server-plugin',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        // 1. Team Sync API
-        if (req.url.startsWith('/api/sync-team')) {
-          if (req.method === 'POST') {
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const teamData = JSON.parse(body);
-                const teamArray = Array.isArray(teamData) ? teamData : teamData.team;
-                
-                if (mongoUri && teamArray) {
-                  const db = await getMongoDatabase(mongoUri);
-                  await db.collection('ctu_team').deleteMany({});
-                  if (teamArray.length > 0) {
-                    await db.collection('ctu_team').insertMany(teamArray);
-                  }
-                }
-                saveDb({ team: teamArray });
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, count: teamArray?.length || 0 }));
-              } catch (e) {
-                res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
-              }
+        const url = req.url || '';
+
+        // Helper to run serverless handler
+        const runHandler = async (handlerFile) => {
+          let bodyData = null;
+          if (req.method === 'POST' || req.method === 'DELETE' || req.method === 'PUT') {
+            let bodyStr = '';
+            await new Promise(resolve => {
+              req.on('data', chunk => { bodyStr += chunk; });
+              req.on('end', resolve);
             });
-            return;
-          } else if (req.method === 'GET') {
-            try {
-              if (mongoUri) {
-                const db = await getMongoDatabase(mongoUri);
-                const team = await db.collection('ctu_team').find({}).toArray();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ team }));
-                return;
-              }
-            } catch (e) {}
-            const db = loadDb();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ team: db.team }));
-            return;
+            if (bodyStr) {
+              try { bodyData = JSON.parse(bodyStr); } catch (e) { bodyData = bodyStr; }
+            }
           }
-        }
-        
-        // 2. Tasks Sync API
-        else if (req.url.startsWith('/api/sync-tasks')) {
-          if (req.method === 'POST') {
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const tasksData = JSON.parse(body);
-                const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData.tasks;
-                
-                if (mongoUri && tasksArray) {
-                  const db = await getMongoDatabase(mongoUri);
-                  await db.collection('ctu_tasks').deleteMany({});
-                  if (tasksArray.length > 0) {
-                    await db.collection('ctu_tasks').insertMany(tasksArray);
-                  }
-                }
-                saveDb({ tasks: tasksArray });
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, count: tasksArray?.length || 0 }));
-              } catch (e) {
-                res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
-              }
-            });
-            return;
-          } else if (req.method === 'GET') {
-            try {
-              if (mongoUri) {
-                const db = await getMongoDatabase(mongoUri);
-                const tasks = await db.collection('ctu_tasks').find({}).toArray();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ tasks }));
-                return;
-              }
-            } catch (e) {}
-            const db = loadDb();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ tasks: db.tasks }));
-            return;
-          }
-        }
+          req.body = bodyData;
 
-        // 3. Verification Sync API
-        else if (req.url.startsWith('/api/sync-verification')) {
-          if (req.method === 'POST') {
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const incomingData = JSON.parse(body);
+          res.status = function(code) {
+            this.statusCode = code;
+            return this;
+          };
+          res.json = function(data) {
+            this.setHeader('Content-Type', 'application/json');
+            this.end(JSON.stringify(data));
+            return this;
+          };
 
-                // Action: Clear/Wipe All Pre-Authorized Records
-                if (incomingData?.action === 'clear-all' || incomingData?.action === 'wipe-all') {
-                  if (mongoUri) {
-                    const db = await getMongoDatabase(mongoUri);
-                    const result = await db.collection('ctu_staff_verification').deleteMany({});
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, deletedCount: result.deletedCount }));
-                    return;
-                  }
-                }
-
-                // Action: Bulk Delete Array of Staff IDs
-                if (incomingData?.action === 'bulk-delete' || Array.isArray(incomingData?.staffIds)) {
-                  const staffIdsToDelete = incomingData.staffIds || incomingData.deletedStaffIds || [];
-                  if (mongoUri && Array.isArray(staffIdsToDelete) && staffIdsToDelete.length > 0) {
-                    const db = await getMongoDatabase(mongoUri);
-                    const regexArray = staffIdsToDelete.map(id => new RegExp(`^${String(id).trim()}$`, 'i'));
-                    const result = await db.collection('ctu_staff_verification').deleteMany({ staffId: { $in: regexArray } });
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, deletedCount: result.deletedCount }));
-                    return;
-                  }
-                }
-
-                // Action: Single Delete
-                if (incomingData?.action === 'remove' || incomingData?.action === 'delete') {
-                  const removeId = incomingData.staffId || incomingData.id;
-                  if (mongoUri && removeId) {
-                    const db = await getMongoDatabase(mongoUri);
-                    await db.collection('ctu_staff_verification').deleteOne({
-                      staffId: new RegExp(`^${String(removeId).trim()}$`, 'i')
-                    });
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, removed: removeId }));
-                    return;
-                  }
-                }
-
-                const records = Array.isArray(incomingData) ? incomingData : incomingData.records;
-                if (mongoUri && records && records.length > 0) {
-                  const db = await getMongoDatabase(mongoUri);
-                  const collection = db.collection('ctu_staff_verification');
-                  const bulkOps = records.map(record => ({
-                    updateOne: {
-                      filter: { staffId: record.staffId },
-                      update: { $set: { ...record, updatedAt: new Date().toISOString() } },
-                      upsert: true
-                    }
-                  }));
-                  await collection.bulkWrite(bulkOps);
-                  res.writeHead(200, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ success: true, count: records.length }));
-                  return;
-                }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, count: 0 }));
-              } catch (e) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: e.message }));
-              }
-            });
-            return;
-          } else if (req.method === 'GET') {
-            try {
-              if (mongoUri) {
-                const db = await getMongoDatabase(mongoUri);
-                const records = await db.collection('ctu_staff_verification').find({}).toArray();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ records: records || [] }));
-                return;
-              }
-            } catch (e) {}
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ records: [] }));
-            return;
-          }
-        }
-
-        // 4. Check Verification API
-        else if (req.url.startsWith('/api/check-verification')) {
           try {
-            const url = new URL(req.url, `http://${req.headers.host}`);
-            const staffId = url.searchParams.get('staffId');
-            if (!staffId) {
-              res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'staffId required' }));
-              return;
-            }
+            const handlerPath = path.resolve(import.meta.dirname, 'api', handlerFile);
+            delete require.cache[require.resolve(handlerPath)];
+            const handler = require(handlerPath);
+            await handler(req, res);
+          } catch (err) {
+            console.error(`API Error in ${handlerFile}:`, err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        };
 
-            if (mongoUri) {
-              const db = await getMongoDatabase(mongoUri);
-              const record = await db.collection('ctu_staff_verification').findOne({
-                staffId: new RegExp(`^${String(staffId).trim()}$`, 'i')
-              });
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ preAuthorized: !!record, record }));
-              return;
-            }
-          } catch (e) {}
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ preAuthorized: false, record: null }));
+        if (url.startsWith('/api/check-verification')) {
+          await runHandler('check-verification.js');
+          return;
+        }
+
+        if (url.startsWith('/api/sync-verification')) {
+          await runHandler('sync-verification.js');
+          return;
+        }
+
+        if (url.startsWith('/api/sync-team')) {
+          await runHandler('sync-team.js');
+          return;
+        }
+
+        if (url.startsWith('/api/sync-tasks')) {
+          await runHandler('sync-tasks.js');
           return;
         }
 
@@ -248,6 +111,7 @@ function syncServerPlugin() {
     }
   };
 }
+
 
 export default defineConfig({
   plugins: [react(), syncServerPlugin()],

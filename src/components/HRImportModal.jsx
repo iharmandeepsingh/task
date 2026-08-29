@@ -419,21 +419,27 @@ export default function HRImportModal({ isOpen, onClose, onImportSuccess, team =
     }));
 
     try {
-      await fetch(getApiUrl('/api/sync-verification'), {
+      const res = await fetch(getApiUrl('/api/sync-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ records: verificationPayload })
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Server rejected staff import');
+      }
+
+      window.dispatchEvent(new Event('ctu_records_updated'));
+
+      if (onImportSuccess) {
+        await onImportSuccess(stagingRows, importCategory);
+      }
+
+      alert(`✅ Upload Confirmed!\n• Total Uploaded: ${data.validCount || stagingRows.length}\n• Verified in MongoDB: ${data.verifiedInDatabase || stagingRows.length}\n\nStatus: Pre-Authorized (Awaiting Teacher Registration)`);
+      onClose();
     } catch (e) {
-      console.warn("Direct modal sync-verification error:", e);
+      alert(`Import failed: ${e.message}`);
     }
-
-    if (onImportSuccess) {
-      await onImportSuccess(stagingRows, importCategory);
-    }
-
-    alert(`Successfully uploaded ${stagingRows.length} ${importCategory === 'faculty' ? 'Faculty' : 'Admin'} records into the Master Directory!`);
-    onClose();
   };
 
   const safeTeamCount = Array.isArray(team) ? team.length : 0;

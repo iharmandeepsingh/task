@@ -12,6 +12,7 @@ import FacultyReportCardModal from './components/FacultyReportCardModal';
 import ChatThreadModal from './components/ChatThreadModal';
 import ExtensionRequestModal from './components/ExtensionRequestModal';
 import SubmissionReviewModal from './components/SubmissionReviewModal';
+import ForwardTaskModal from './components/ForwardTaskModal';
 import AnalyticsDashboardModal from './components/AnalyticsDashboardModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import TagFilterBar from './components/TagFilterBar';
@@ -21,7 +22,7 @@ import MobileMoreSheet from './components/MobileMoreSheet';
 import TaskActionSheet from './components/TaskActionSheet';
 import FilterBottomSheet from './components/FilterBottomSheet';
 import { INITIAL_TASKS, INITIAL_TEAM } from './data/initialData';
-import { ShieldAlert, Lock } from 'lucide-react';
+import { ShieldAlert, Lock, Award } from 'lucide-react';
 import { getApiUrl } from './utils/apiBase';
 
 export default function App() {
@@ -156,6 +157,7 @@ export default function App() {
   const [activeChatTask, setActiveChatTask] = useState(null);
   const [activeExtensionTask, setActiveExtensionTask] = useState(null);
   const [activeReviewTask, setActiveReviewTask] = useState(null);
+  const [activeForwardTask, setActiveForwardTask] = useState(null);
   const [isHRImportOpen, setIsHRImportOpen] = useState(false);
   const [isReportCardOpen, setIsReportCardOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
@@ -191,40 +193,10 @@ export default function App() {
             setVerificationRecordsState(data.records);
             try { localStorage.setItem('ctu_staff_verification', JSON.stringify(data.records)); } catch (e) {}
 
-            // Merge uploaded verification staff into team state if not already present
-            setTeam((prev) => {
-              const teamMap = new Map();
-              prev.forEach(m => teamMap.set(String(m.employeeId || m.id).toLowerCase(), m));
+            // NOTE: Do NOT merge verification records into team here.
+            // Pre-Authorized faculty should remain in ctu_staff_verification only.
+            // They move to team (Active) only when they self-register via LoginPage.
 
-              data.records.forEach(r => {
-                const sId = String(r.staffId || r.employeeId || '').trim();
-                if (!sId || deletedIds.includes(sId.toLowerCase())) return;
-
-                if (!teamMap.has(sId.toLowerCase())) {
-                  teamMap.set(sId.toLowerCase(), {
-                    id: `usr-${sId}`,
-                    employeeId: sId,
-                    name: r.name || `Faculty Member ${sId}`,
-                    role: r.role || (r.category === 'Admin' ? 'Administrative Staff' : 'Faculty Member'),
-                    category: r.category || 'Faculty',
-                    dept: r.department || (r.category === 'Admin' ? 'University Administration' : 'School of Engineering & Technology'),
-                    email: r.email || '',
-                    phone: r.phone || '',
-                    avatar: r.name ? r.name.substring(0, 2).toUpperCase() : 'U',
-                    status: 'Active',
-                    hasAccount: true,
-                    source: 'VERIFICATION_SYNC'
-                  });
-                }
-              });
-
-              const updatedTeam = Array.from(teamMap.values());
-              if (updatedTeam.length !== prev.length) {
-                try { localStorage.setItem('ctu_team_data', JSON.stringify(updatedTeam)); } catch (e) {}
-                return updatedTeam;
-              }
-              return prev;
-            });
           }
         })
         .catch(() => {});
@@ -305,28 +277,6 @@ export default function App() {
   const handleImportEmployees = async (importedRows, category = 'faculty') => {
     if (!Array.isArray(importedRows) || importedRows.length === 0) return;
 
-    const formattedMembers = importedRows.map((emp, idx) => {
-      const names = (emp.displayName || 'Employee').split(' ');
-      const initials = names.map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'EM';
-      const cleanEmpId = emp.empId || `26${100 + idx}`;
-      const isFacultyCat = category === 'faculty' || emp.targetRole === 'Faculty';
-
-      return {
-        id: `usr-imp-${Date.now()}-${idx}`,
-        employeeId: cleanEmpId,
-        name: emp.displayName || 'Staff Member',
-        role: emp.designation || (isFacultyCat ? 'Faculty Member' : 'Administrative Staff'),
-        category: isFacultyCat ? 'Faculty' : 'Admin',
-        dept: emp.dept || (isFacultyCat ? 'School of Engineering & Technology' : 'University Administration'),
-        email: emp.email || `${(emp.displayName || 'staff').toLowerCase().replace(/\s+/g, '.')}@ctu.edu.in`,
-        phone: emp.phone || '',
-        avatar: initials,
-        status: 'Active',
-        source: 'EXCEL_IMPORT',
-        hasAccount: true
-      };
-    });
-
     const verificationRecords = importedRows.map((emp, idx) => {
       const isFacultyCat = category === 'faculty' || emp.targetRole === 'Faculty';
       return {
@@ -342,37 +292,18 @@ export default function App() {
       };
     });
 
-    // 1. Update React State & LocalStorage for Team Data
-    setTeam((prevTeam) => {
-      const teamMap = new Map();
-      (prevTeam || []).forEach(m => {
-        if (m && (m.employeeId || m.id)) {
-          teamMap.set(String(m.employeeId || m.id).toLowerCase(), m);
-        }
-      });
-
-      formattedMembers.forEach(newMem => {
-        teamMap.set(String(newMem.employeeId).toLowerCase(), newMem);
-      });
-
-      const updated = Array.from(teamMap.values());
-      localStorage.setItem('ctu_team_data', JSON.stringify(updated));
-      return updated;
-    });
-
-    // 2. Update Verification LocalStorage AND React State (direct prop to SuperAdminVerification)
+    // 1. Update Verification LocalStorage AND React State
     try {
       const existingVer = JSON.parse(localStorage.getItem('ctu_staff_verification') || '[]');
       const verMap = new Map();
-      existingVer.forEach(v => verMap.set(String(v.staffId).toLowerCase(), v));
-      verificationRecords.forEach(v => verMap.set(String(v.staffId).toLowerCase(), v));
+      existingVer.forEach(v => v?.staffId && verMap.set(String(v.staffId).toLowerCase(), v));
+      verificationRecords.forEach(v => v?.staffId && verMap.set(String(v.staffId).toLowerCase(), v));
       const merged = Array.from(verMap.values());
       localStorage.setItem('ctu_staff_verification', JSON.stringify(merged));
-      // Update React state so SuperAdminVerification gets new records as prop immediately
       setVerificationRecordsState(merged);
     } catch (e) {}
 
-    // 3. Persist to MongoDB Server Collections via APIs
+    // 2. Persist to MongoDB verification collection only (NOT team)
     try {
       await fetch(getApiUrl('/api/sync-verification'), {
         method: 'POST',
@@ -383,21 +314,12 @@ export default function App() {
       console.warn("MongoDB sync-verification upload:", e);
     }
 
-    try {
-      await fetch(getApiUrl('/api/sync-team'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formattedMembers)
-      });
-    } catch (e) {
-      console.warn("MongoDB sync-team upload:", e);
-    }
-
-    // 4. Fire event to trigger re-fetch in SuperAdminVerification
+    // 3. Fire event to trigger re-fetch in SuperAdminVerification
     window.dispatchEvent(new Event('ctu_records_updated'));
 
     setActiveView('staff');
   };
+
 
   // Delete Faculty / Admin Employee Record Handler
   const handleDeleteEmployee = (memberId) => {
@@ -511,6 +433,14 @@ export default function App() {
     const taskCreatorId = (t.creatorId || '').trim();
     const taskCreatorName = (t.creatorName || '').trim().toLowerCase();
 
+    const taskDelegatedById = (t.delegatedById || '').trim();
+    const taskDelegatedByEmpId = (t.delegatedByEmpId || '').trim();
+    const taskDelegatedByName = (t.delegatedByName || '').trim().toLowerCase();
+
+    const taskOriginalAssigneeId = (t.originalAssigneeId || '').trim();
+    const taskOriginalAssigneeEmpId = (t.originalAssigneeEmpId || '').trim();
+    const taskOriginalAssigneeName = (t.originalAssigneeName || '').trim().toLowerCase();
+
     // Helper: Strict match — ID (primary) or EXACT full name (fallback only)
     const matchesAsAssignee =
       (authId && taskAssigneeId === authId) ||
@@ -521,6 +451,16 @@ export default function App() {
       (authId && taskCreatorId === authId) ||
       (authEmpId && taskCreatorId === authEmpId) ||
       (authName && taskCreatorName === authName);
+
+    const matchesAsDelegator =
+      (authId && taskDelegatedById === authId) ||
+      (authEmpId && taskDelegatedByEmpId === authEmpId) ||
+      (authName && taskDelegatedByName === authName);
+
+    const matchesAsOriginalAssignee =
+      (authId && taskOriginalAssigneeId === authId) ||
+      (authEmpId && taskOriginalAssigneeEmpId === authEmpId) ||
+      (authName && taskOriginalAssigneeName === authName);
 
     // 🎓 PHASE 1: Faculty — can ONLY view tasks assigned strictly TO them
     if (currentRole === 'faculty') {
@@ -540,9 +480,12 @@ export default function App() {
     // 🏛️ PHASE 2: University Administrator / HOD — ONLY their direct assignment chain:
     // ✅ Tasks assigned TO them (Incoming from Super Admin or from another Admin)
     // ✅ Tasks assigned BY them (Delegated to Faculty or to another Admin)
+    // ✅ Tasks FORWARDED/DELEGATED by them to faculty
     // 🚫 Tasks between other Admins and other Faculty/Admins are HIDDEN
-    return matchesAsCreator || matchesAsAssignee;
+    return matchesAsCreator || matchesAsAssignee || matchesAsDelegator || matchesAsOriginalAssignee;
   });
+
+
 
   // Filter Tasks by Search, Priority, Tag & Department
   const filteredTasks = roleScopedTasks.filter((t) => {
@@ -577,6 +520,10 @@ export default function App() {
     }
 
     return matchesSearch && matchesPriority && matchesTag && matchesDept && matchesDirection;
+  }).sort((a, b) => {
+    const timeA = new Date(a.updatedAt || a.delegatedAt || a.createdAt || a.dueDate || 0).getTime();
+    const timeB = new Date(b.updatedAt || b.delegatedAt || b.createdAt || b.dueDate || 0).getTime();
+    return timeB - timeA;
   });
 
   // Handlers
@@ -588,11 +535,14 @@ export default function App() {
 
     setTasks((prevTasks) => {
       let updated;
+      const nowIso = new Date().toISOString();
       if (taskToEdit) {
-        updated = prevTasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t);
+        updated = prevTasks.map(t => t.id === taskData.id ? { ...t, ...taskData, updatedAt: nowIso } : t);
       } else {
         const newTask = {
           ...taskData,
+          createdAt: nowIso,
+          updatedAt: nowIso,
           creatorName: authUser?.name || 'University Admin',
           creatorId: authUser?.id || authUser?.employeeId || 'admin',
           creatorRole: authUser?.roleTitle || 'University Administrator',
@@ -604,9 +554,71 @@ export default function App() {
       return updated;
     });
 
+
     setIsTaskModalOpen(false);
     setTaskToEdit(null);
   };
+
+  // Forward Task Handler (Admin forwards tasks to teaching faculty)
+  const handleForwardTask = (payload) => {
+    setTasks((prevTasks) => {
+      const updated = prevTasks.map((t) => {
+        if (t.id === payload.taskId) {
+          const forwardTag = 'Forwarded';
+          const existingTags = Array.isArray(t.tags) ? t.tags : [];
+          const updatedTags = existingTags.includes(forwardTag) ? existingTags : [...existingTags, forwardTag];
+
+          const systemMessage = {
+            id: `msg-${Date.now()}`,
+            senderName: authUser?.name || 'Admin',
+            senderRole: authUser?.roleTitle || 'University Administrator',
+            text: `↗️ Task forwarded to ${payload.newAssigneeName} by ${authUser?.name || 'Admin'}${payload.delegationNotes ? ': "' + payload.delegationNotes + '"' : ''}`,
+            timestamp: new Date().toISOString(),
+            isSystem: true
+          };
+
+          return {
+            ...t,
+            originalAssigneeId: t.originalAssigneeId || t.assigneeId,
+            originalAssigneeEmpId: t.originalAssigneeEmpId || t.assigneeEmpId || t.assigneeId,
+            originalAssigneeName: t.originalAssigneeName || t.assigneeName,
+            originalAssigneeRole: t.originalAssigneeRole || t.assigneeRole || 'University Administrator',
+            isDelegated: true,
+            assigneeId: payload.newAssigneeId,
+            assigneeEmpId: payload.newAssigneeEmpId,
+            assigneeName: payload.newAssigneeName,
+            assigneeDept: payload.newAssigneeDept,
+            delegatedById: payload.delegatedById,
+            delegatedByEmpId: payload.delegatedByEmpId,
+            delegatedByName: payload.delegatedByName,
+            delegatedByRole: payload.delegatedByRole,
+            delegatedAt: new Date().toISOString(),
+            delegationNotes: payload.delegationNotes,
+            dueDate: payload.updatedDueDate || t.dueDate,
+            dueTime: payload.updatedDueTime || t.dueTime,
+            stage: 'Assigned',
+            tags: updatedTags,
+            chatMessages: [...(t.chatMessages || []), systemMessage]
+          };
+
+        }
+        return t;
+      });
+
+      localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+      fetch('/api/sync-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+
+      return updated;
+    });
+
+    alert(`✅ Task successfully forwarded to ${payload.newAssigneeName}!`);
+    setActiveForwardTask(null);
+  };
+
 
   const handleToggleSubtask = (taskId, subtaskId) => {
     setTasks((prevTasks) => {
@@ -959,6 +971,7 @@ export default function App() {
             onOpenChat={(task) => setActiveChatTask(task)}
             onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
             onOpenReviewModal={(task) => setActiveReviewTask(task)}
+            onOpenForwardModal={(task) => setActiveForwardTask(task)}
             currentRole={currentRole}
           />
         )}
@@ -974,6 +987,7 @@ export default function App() {
             onOpenChat={(task) => setActiveChatTask(task)}
             onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
             onOpenReviewModal={(task) => setActiveReviewTask(task)}
+            onOpenForwardModal={(task) => setActiveForwardTask(task)}
             currentRole={currentRole}
           />
         )}
@@ -982,13 +996,10 @@ export default function App() {
           currentRole !== 'faculty' ? (
             <SuperAdminVerification 
               viewType="table"
-              team={team}
-              records={verificationRecordsState}
               onOpenHRImport={() => setIsHRImportOpen(true)}
-              onDeleteEmployee={handleDeleteEmployee}
-              onBulkDeleteEmployees={handleBulkDeleteEmployees}
               isMobile={isMobile}
             />
+
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '14px', border: '1px solid #fee2e2', color: '#dc2626', fontWeight: '700', fontSize: '14px', marginTop: '20px' }}>
               ⚠️ Access Restricted: Faculty accounts do not have authorization to view Employee Master Directory or Staff Records.
@@ -1007,6 +1018,20 @@ export default function App() {
           team={team}
         />
       )}
+
+      {/* Forward Task to Faculty Modal */}
+      {activeForwardTask && (
+        <ForwardTaskModal
+          isOpen={!!activeForwardTask}
+          onClose={() => setActiveForwardTask(null)}
+          task={activeForwardTask}
+          team={team}
+          verificationRecords={verificationRecordsState}
+          authUser={authUser}
+          onForwardTask={handleForwardTask}
+        />
+      )}
+
 
       {/* Bulk CSV/XLSX Employee Import Modal */}
       {isHRImportOpen && (
@@ -1098,9 +1123,11 @@ export default function App() {
           onOpenChat={(task) => setActiveChatTask(task)}
           onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
           onOpenReviewModal={(task) => setActiveReviewTask(task)}
+          onOpenForwardModal={(task) => setActiveForwardTask(task)}
           currentRole={currentRole}
         />
       )}
+
 
       {/* Mobile Filter Bottom Sheet */}
       {isFilterSheetOpen && (
