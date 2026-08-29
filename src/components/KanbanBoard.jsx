@@ -630,22 +630,36 @@ export default function KanbanBoard({
       {/* Top Controls Toolbar: Mobile Filter + Grouping & Density Toggles */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
+        flexDirection: 'column',
         gap: '8px',
-        marginBottom: '12px'
+        marginBottom: '12px',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box'
       }}>
-        {/* Mobile Stage Pills */}
+        {/* Row 1: Mobile Stage Pills */}
         <div className="mobile-stage-filter-bar" style={{
-          flex: 1,
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
           background: '#ffffff',
-          padding: '6px 10px',
+          padding: '6px 8px',
           borderRadius: '10px',
           border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+          <div style={{
+            display: 'flex',
+            gap: '5px',
+            overflowX: 'auto',
+            width: '100%',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}>
             <button
               onClick={() => setSelectedMobileStage('ALL')}
               style={{
@@ -704,104 +718,107 @@ export default function KanbanBoard({
           </div>
         </div>
 
-        {/* Desktop / Leader Controls: Group by School + Density Switcher */}
+        {/* Row 2: Desktop / Leader Controls (Group by School & Density) */}
         {isLeader && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap' }}>
             {/* Group by School Toggle */}
             <button
               onClick={() => setGroupBySchool(!groupBySchool)}
               style={{
-                padding: '6px 12px',
+                padding: '5px 10px',
                 borderRadius: '8px',
                 background: groupBySchool ? '#0f172a' : '#ffffff',
                 color: groupBySchool ? '#ffffff' : '#334155',
                 border: `1px solid ${groupBySchool ? '#0f172a' : '#cbd5e1'}`,
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
               }}
               title="Group tasks into collapsible School & Faculty Accordions"
             >
-              <Building2 size={14} color={groupBySchool ? '#60a5fa' : '#2563eb'} />
+              <Building2 size={13} color={groupBySchool ? '#60a5fa' : '#2563eb'} />
               <span>Group by School</span>
               {groupBySchool && (
-                <span style={{ fontSize: '10px', background: '#3b82f6', color: '#ffffff', padding: '1px 5px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '9.5px', background: '#3b82f6', color: '#ffffff', padding: '1px 4px', borderRadius: '8px' }}>
                   {schoolNames.length}
                 </span>
               )}
             </button>
 
-            {/* Density Toggle (Standard vs Compact) */}
-            <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <button
-                onClick={() => setDensityMode('standard')}
-                style={{
-                  padding: '5px 8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: densityMode === 'standard' ? '#ffffff' : 'transparent',
-                  color: densityMode === 'standard' ? '#0f172a' : '#64748b',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: densityMode === 'standard' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                }}
-                title="Standard Card View"
-              >
-                <LayoutGrid size={13} />
-                <span>Cards</span>
-              </button>
-
-              <button
-                onClick={() => setDensityMode('compact')}
-                style={{
-                  padding: '5px 8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: densityMode === 'compact' ? '#ffffff' : 'transparent',
-                  color: densityMode === 'compact' ? '#0f172a' : '#64748b',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: densityMode === 'compact' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                }}
-                title="High-Density Compact Row View (Fast scanning of 100+ tasks)"
-              >
-                <List size={13} />
-                <span>Compact</span>
-              </button>
-            </div>
-
-            {/* Expand / Collapse All (When in Grouped mode) */}
-            {groupBySchool && (
-              <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+              {/* Density Toggle (Standard vs Compact) */}
+              <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <button
-                  onClick={handleExpandAll}
-                  style={{ padding: '5px 8px', borderRadius: '6px', background: '#ffffff', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+                  onClick={() => setDensityMode('standard')}
+                  style={{
+                    padding: '4px 7px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: densityMode === 'standard' ? '#ffffff' : 'transparent',
+                    color: densityMode === 'standard' ? '#0f172a' : '#64748b',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    boxShadow: densityMode === 'standard' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
+                  }}
+                  title="Standard Card View"
                 >
-                  Expand All
+                  <LayoutGrid size={12} />
+                  <span>Cards</span>
                 </button>
+
                 <button
-                  onClick={handleCollapseAll}
-                  style={{ padding: '5px 8px', borderRadius: '6px', background: '#ffffff', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+                  onClick={() => setDensityMode('compact')}
+                  style={{
+                    padding: '4px 7px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: densityMode === 'compact' ? '#ffffff' : 'transparent',
+                    color: densityMode === 'compact' ? '#0f172a' : '#64748b',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    boxShadow: densityMode === 'compact' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
+                  }}
+                  title="High-Density Compact Row View"
                 >
-                  Collapse All
+                  <List size={12} />
+                  <span>Compact</span>
                 </button>
               </div>
-            )}
+
+              {/* Expand / Collapse All (When in Grouped mode) */}
+              {groupBySchool && (
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  <button
+                    onClick={handleExpandAll}
+                    style={{ padding: '4px 6px', borderRadius: '6px', background: '#ffffff', border: '1px solid #cbd5e1', fontSize: '10.5px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+                  >
+                    Expand
+                  </button>
+                  <button
+                    onClick={handleCollapseAll}
+                    style={{ padding: '4px 6px', borderRadius: '6px', background: '#ffffff', border: '1px solid #cbd5e1', fontSize: '10.5px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+                  >
+                    Collapse
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
+
 
       {/* ========================================================
           MODE 1: Grouped by School Accordions (Super Admin High Volume)

@@ -474,6 +474,37 @@ input:focus, select:focus, textarea:focus {
   }
 
   .main-content {
-    padding: 12px 14px 80px 14px !important;
+    padding: 10px 12px 80px 12px !important;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-stage-filter-bar {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-stage-filter-bar > div {
+    display: flex !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .mobile-stage-filter-bar > div::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .kanban-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
+
