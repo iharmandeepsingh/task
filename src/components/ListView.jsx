@@ -81,15 +81,16 @@ export default function ListView({
                   </td>
                 </tr>
               ) : (
-                sortedTasks.map((task) => {
+                sortedTasks.map((task, idx) => {
                   const assignee = getAssignee(task.assigneeId);
                   const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
 
                   return (
                     <tr 
-                      key={task.id} 
+                      key={task.id || `task-row-${idx}`} 
                       style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
                     >
+
                       <td style={{ padding: '12px 16px', fontWeight: '700', color: '#2563eb', fontSize: '12px' }}>
                         {task.id}
                       </td>
@@ -108,31 +109,32 @@ export default function ListView({
 
                           if (task.delegatedByName || task.isDelegated) {
                             return (
-                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName || task.originalAssigneeName || 'Admin'} ➔ 🎓 {task.assigneeName}
+                              <div style={{ fontSize: '10.5px', fontWeight: '600', color: '#334155', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                DIRECTIVE: <strong>{task.creatorName || 'Super Admin'}</strong> ➔ <strong>{task.delegatedByName || task.originalAssigneeName || 'Admin'}</strong> ➔ <strong>{task.assigneeName}</strong>
                               </div>
                             );
                           } else if (isAssignee && !isCreator) {
                             return (
-                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#3730a3', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                📥 Incoming: 👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.assigneeName}
+                              <div style={{ fontSize: '10.5px', fontWeight: '600', color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                INCOMING: Assigned by <strong>{task.creatorName || 'Super Admin'}</strong>
                               </div>
                             );
                           } else if (isCreator && !isAssignee) {
                             return (
-                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                📤 Delegated: 🏛️ {task.creatorName} ➔ 🎓 {task.assigneeName}
+                              <div style={{ fontSize: '10.5px', fontWeight: '600', color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                DELEGATED: Assigned to <strong>{task.assigneeName}</strong>
                               </div>
                             );
                           } else if (task.creatorName && (task.creatorName.toLowerCase().includes('super') || task.creatorRole?.toLowerCase().includes('super'))) {
                             return (
-                              <div style={{ fontSize: '10px', fontWeight: '800', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                👑 {task.creatorName} ➔ 🏛️ {task.assigneeName}
+                              <div style={{ fontSize: '10.5px', fontWeight: '600', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                DIRECTIVE: <strong>{task.creatorName}</strong> ➔ <strong>{task.assigneeName}</strong>
                               </div>
                             );
                           }
                           return null;
                         })()}
+
 
 
                         {hasPendingExt && (
@@ -195,8 +197,8 @@ export default function ListView({
                           </div>
                           {task.delegatedByName && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
-                              <span style={{ fontSize: '9.5px', color: '#6b21a8', background: '#f3e8ff', border: '1px solid #e9d5ff', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: '700' }}>
-                                👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName} ➔ 🎓 {task.assigneeName}
+                              <span style={{ fontSize: '9.5px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: '600' }}>
+                                DIRECTIVE: {task.creatorName || 'Super Admin'} ➔ {task.delegatedByName} ➔ <span style={{ color: '#2563eb', fontWeight: '700' }}>{task.assigneeName}</span>
                               </span>
                               {task.delegationNotes && (
                                 <span style={{ fontSize: '9.5px', color: '#64748b', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -205,6 +207,7 @@ export default function ListView({
                               )}
                             </div>
                           )}
+
 
                         </div>
 
@@ -309,12 +312,13 @@ export default function ListView({
             No tasks matching filter criteria.
           </div>
         ) : (
-          sortedTasks.map((task) => {
+          sortedTasks.map((task, idx) => {
             const assignee = getAssignee(task.assigneeId);
             const hasPendingExt = task.extensions && task.extensions.some(e => e.status === 'PENDING');
 
             return (
-              <div key={task.id} style={{ background: '#ffffff', borderRadius: '14px', padding: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+              <div key={task.id || `task-mob-${idx}`} style={{ background: '#ffffff', borderRadius: '14px', padding: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+
                 {/* Mobile Card Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
@@ -345,8 +349,8 @@ export default function ListView({
                     fontSize: '11px',
                     marginBottom: '8px'
                   }}>
-                    <div style={{ fontWeight: '800', color: currentRole === 'faculty' ? '#166534' : '#1e40af', marginBottom: '2px' }}>
-                      👑 {task.creatorName || 'Super Admin'} ➔ 🏛️ {task.delegatedByName} ➔ 🎓 {task.assigneeName}
+                    <div style={{ fontWeight: '700', color: currentRole === 'faculty' ? '#166534' : '#1e40af', marginBottom: '2px' }}>
+                      DIRECTIVE: {task.creatorName || 'Super Admin'} ➔ {task.delegatedByName} ➔ {task.assigneeName}
                     </div>
                     {task.delegationNotes && (
                       <div style={{ fontSize: '10px', color: '#475569', fontStyle: 'italic', marginTop: '2px', background: '#ffffff', padding: '3px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
@@ -355,6 +359,7 @@ export default function ListView({
                     )}
                   </div>
                 )}
+
 
 
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px 0' }}>

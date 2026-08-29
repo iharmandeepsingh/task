@@ -280,8 +280,9 @@ export default function ForwardTaskModal({
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', color: '#475569' }}>
                 <div>
                   <span style={{ color: '#94a3b8' }}>Originally Created By: </span>
-                  <strong style={{ color: '#0f172a' }}>👑 {task.creatorName || 'Super Admin'}</strong>
+                  <strong style={{ color: '#0f172a' }}>{task.creatorName || 'Super Admin'}</strong>
                 </div>
+
                 <div>
                   <span style={{ color: '#94a3b8' }}>Current Assignee: </span>
                   <strong style={{ color: '#2563eb' }}>{task.assigneeName}</strong>
