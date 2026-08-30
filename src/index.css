@@ -489,10 +489,20 @@ input:focus, select:focus, textarea:focus {
 
   .mobile-stage-filter-bar > div {
     display: flex !important;
-    flex-wrap: wrap !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
     width: 100% !important;
     gap: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    scroll-snap-type: x mandatory !important;
   }
+
+  .mobile-stage-filter-bar > div::-webkit-scrollbar {
+    display: none !important;
+  }
+
 
   .kanban-container {
     width: 100% !important;

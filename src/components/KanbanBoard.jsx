@@ -17,6 +17,67 @@ function getStageColorClass(stage) {
   }
 }
 
+// 🎨 Dynamic status color styling (Red, Yellow, Green) for task cards
+function getTaskCardStyles(task, isIdle) {
+  if (isIdle) {
+    return {
+      background: '#fff1f2',
+      border: '1.5px solid #fca5a5',
+      borderLeft: '5px solid #ef4444'
+    };
+  }
+  const health = task.deadlineHealth || (task.priority === 'Urgent' ? 'Red' : 'Green');
+  if (health === 'Red' || task.priority === 'Urgent') {
+    return {
+      background: '#fff5f5',
+      border: '1.5px solid #fca5a5',
+      borderLeft: '5px solid #ef4444'
+    };
+  }
+  if (health === 'Yellow' || task.priority === 'High') {
+    return {
+      background: '#fefce8',
+      border: '1.5px solid #fde047',
+      borderLeft: '5px solid #eab308'
+    };
+  }
+  return {
+    background: '#f0fdf4',
+    border: '1.5px solid #86efac',
+    borderLeft: '5px solid #22c55e'
+  };
+}
+
+function getCompactRowStyles(task, isIdle) {
+  if (isIdle) {
+    return {
+      background: '#fff1f2',
+      border: '1px solid #fecaca',
+      borderLeft: '4px solid #ef4444'
+    };
+  }
+  const health = task.deadlineHealth || (task.priority === 'Urgent' ? 'Red' : 'Green');
+  if (health === 'Red' || task.priority === 'Urgent') {
+    return {
+      background: '#fff5f5',
+      border: '1px solid #fecaca',
+      borderLeft: '4px solid #ef4444'
+    };
+  }
+  if (health === 'Yellow' || task.priority === 'High') {
+    return {
+      background: '#fefce8',
+      border: '1px solid #fde68a',
+      borderLeft: '4px solid #eab308'
+    };
+  }
+  return {
+    background: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    borderLeft: '4px solid #22c55e'
+  };
+}
+
 // 📇 Single Compact Task Row (For High-Density Scanning of 100+ Tasks)
 function CompactTaskRow({
   task,
@@ -44,6 +105,8 @@ function CompactTaskRow({
     allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
   }
 
+  const rowStyle = getCompactRowStyles(task, isIdle);
+
   return (
     <div style={{
       display: 'flex',
@@ -51,13 +114,16 @@ function CompactTaskRow({
       justifyContent: 'space-between',
       gap: '10px',
       padding: '8px 12px',
-      background: isIdle ? '#fef2f2' : '#ffffff',
-      border: isIdle ? '1px solid #fecaca' : '1px solid #e2e8f0',
+      background: rowStyle.background,
+      border: rowStyle.border,
+      borderLeft: rowStyle.borderLeft,
       borderRadius: '8px',
       fontSize: '12px',
       transition: 'all 0.15s ease',
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
     }}>
+
       {/* Left: ID + Title + Stage Pill */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 300px', minWidth: '240px' }}>
         <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#1e3a8a', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }}>
@@ -201,18 +267,22 @@ function TaskCard({
     allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
   }
 
+  const cardStyle = getTaskCardStyles(task, isIdle);
+
   return (
     <div 
       className={`kanban-card ${isIdle ? 'idle-border' : ''}`}
       style={{
-        background: '#ffffff',
+        background: cardStyle.background,
         borderRadius: '10px',
-        border: isIdle ? '1.5px solid #f87171' : '1px solid #e2e8f0',
+        border: cardStyle.border,
+        borderLeft: cardStyle.borderLeft,
         padding: '12px 14px',
         boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px'
+        gap: '8px',
+        transition: 'all 0.15s ease'
       }}
     >
       {/* 1. Card Top: ID + Priority + Health + Delete Action */}
@@ -585,12 +655,11 @@ export default function KanbanBoard({
   onToggleSubtask,
   currentRole,
 }) {
+  const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
   const [selectedMobileStage, setSelectedMobileStage] = useState('ALL');
   const [groupBySchool, setGroupBySchool] = useState(false);
-  const [densityMode, setDensityMode] = useState('standard'); // 'standard' or 'compact'
+  const [densityMode, setDensityMode] = useState(isLeader ? 'compact' : 'standard'); // Compact by default for Super Admin & Admin
   const [collapsedSchools, setCollapsedSchools] = useState({});
-
-  const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
 
   const displayedStages = selectedMobileStage === 'ALL' 
     ? STAGES 
@@ -638,7 +707,7 @@ export default function KanbanBoard({
         minWidth: 0,
         boxSizing: 'border-box'
       }}>
-        {/* Row 1: Mobile Stage Pills */}
+        {/* Row 1: Mobile Stage Swipe Track */}
         <div className="mobile-stage-filter-bar" style={{
           width: '100%',
           maxWidth: '100%',
@@ -648,40 +717,47 @@ export default function KanbanBoard({
           borderRadius: '12px',
           border: '1px solid #e2e8f0',
           boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          position: 'relative'
         }}>
           <div style={{
             display: 'flex',
-            gap: '6px',
-            flexWrap: 'wrap',
-            alignItems: 'center',
+            gap: '8px',
+            overflowX: 'auto',
             width: '100%',
-            boxSizing: 'border-box'
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            scrollSnapType: 'x mandatory',
+            paddingBottom: '2px',
+            alignItems: 'center'
           }}>
             <button
               onClick={() => setSelectedMobileStage('ALL')}
               style={{
-                padding: '5px 10px',
+                padding: '6px 12px',
                 borderRadius: '16px',
                 background: selectedMobileStage === 'ALL' ? '#0f172a' : '#f1f5f9',
                 color: selectedMobileStage === 'ALL' ? '#ffffff' : '#475569',
                 border: 'none',
-                fontSize: '11px',
+                fontSize: '11.5px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
+                flexShrink: 0,
+                scrollSnapAlign: 'start',
                 transition: 'all 0.15s ease'
               }}
             >
-              <span>All</span>
+              <span>All Stages</span>
               <span style={{
-                padding: '0 5px',
-                borderRadius: '8px',
+                padding: '1px 6px',
+                borderRadius: '10px',
                 background: selectedMobileStage === 'ALL' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
                 color: selectedMobileStage === 'ALL' ? '#ffffff' : '#334155',
-                fontSize: '9.5px',
+                fontSize: '10px',
                 fontWeight: '800'
               }}>
                 {tasks.length}
@@ -696,27 +772,29 @@ export default function KanbanBoard({
                   key={s}
                   onClick={() => setSelectedMobileStage(s)}
                   style={{
-                    padding: '5px 10px',
+                    padding: '6px 12px',
                     borderRadius: '16px',
                     background: isSel ? '#2563eb' : '#f8fafc',
                     color: isSel ? '#ffffff' : '#475569',
                     border: isSel ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                    fontSize: '11px',
+                    fontSize: '11.5px',
                     fontWeight: '700',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '5px',
+                    flexShrink: 0,
+                    scrollSnapAlign: 'start',
                     transition: 'all 0.15s ease'
                   }}
                 >
                   <span>{s}</span>
                   <span style={{
-                    padding: '0 5px',
-                    borderRadius: '8px',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
                     background: isSel ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
                     color: isSel ? '#ffffff' : '#334155',
-                    fontSize: '9.5px',
+                    fontSize: '10px',
                     fontWeight: '800'
                   }}>
                     {count}
@@ -726,6 +804,7 @@ export default function KanbanBoard({
             })}
           </div>
         </div>
+
 
         {/* Row 2: Desktop / Leader Controls (Group by School & Density) */}
         {isLeader && (
