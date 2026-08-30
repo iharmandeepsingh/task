@@ -32,11 +32,17 @@ export default function App() {
   });
 
   const [tasks, setTasks] = useState(() => {
+    const TASKS_VERSION = 'v5';
+    const savedVersion = localStorage.getItem('ctu_tasks_version');
+    if (savedVersion !== TASKS_VERSION) {
+      localStorage.removeItem('ctu_tasks_data');
+      localStorage.setItem('ctu_tasks_version', TASKS_VERSION);
+    }
     const saved = localStorage.getItem('ctu_tasks_data');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
     return INITIAL_TASKS;
@@ -48,7 +54,7 @@ export default function App() {
   });
 
   const [team, setTeam] = useState(() => {
-    const TEAM_VERSION = 'v3'; // bump this when INITIAL_TEAM changes to force a clean reset
+    const TEAM_VERSION = 'v5'; // bump this to force clean cache reset across all users
     const savedVersion = localStorage.getItem('ctu_team_version');
 
     // If version mismatch, clear stale localStorage so INITIAL_TEAM is authoritative
@@ -62,6 +68,7 @@ export default function App() {
 
     // Start with full base roster — this has correct category, dept, etc.
     INITIAL_TEAM.forEach(m => teamMap.set(m.employeeId || m.id, m));
+
 
     if (saved) {
       try {
