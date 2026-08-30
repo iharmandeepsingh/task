@@ -696,124 +696,73 @@ export default function KanbanBoard({
 
   return (
     <div>
-      {/* Top Controls Toolbar: Mobile Filter + Grouping & Density Toggles */}
+      {/* Top Controls Toolbar: Stage Dropdown Filter + Grouping & Density Toggles */}
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
         gap: '8px',
         marginBottom: '12px',
         width: '100%',
-        maxWidth: '100%',
-        minWidth: 0,
         boxSizing: 'border-box'
       }}>
-        {/* Row 1: Mobile Stage Swipe Track */}
-        <div className="mobile-stage-filter-bar" style={{
-          width: '100%',
-          maxWidth: '100%',
-          minWidth: 0,
+        {/* Stage Filter Dropdown */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           background: '#ffffff',
-          padding: '8px 10px',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
+          borderRadius: '10px',
+          border: '1.5px solid #cbd5e1',
+          padding: '6px 12px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          gap: '8px',
+          flex: '1 1 240px',
+          minWidth: '200px',
+          maxWidth: '380px',
           boxSizing: 'border-box',
           position: 'relative'
         }}>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            width: '100%',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            scrollSnapType: 'x mandatory',
-            paddingBottom: '2px',
-            alignItems: 'center'
-          }}>
-            <button
-              onClick={() => setSelectedMobileStage('ALL')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '16px',
-                background: selectedMobileStage === 'ALL' ? '#0f172a' : '#f1f5f9',
-                color: selectedMobileStage === 'ALL' ? '#ffffff' : '#475569',
-                border: 'none',
-                fontSize: '11.5px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                flexShrink: 0,
-                scrollSnapAlign: 'start',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>All Stages</span>
-              <span style={{
-                padding: '1px 6px',
-                borderRadius: '10px',
-                background: selectedMobileStage === 'ALL' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
-                color: selectedMobileStage === 'ALL' ? '#ffffff' : '#334155',
-                fontSize: '10px',
-                fontWeight: '800'
-              }}>
-                {tasks.length}
-              </span>
-            </button>
-
+          <Layers size={15} color="#2563eb" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#475569', whiteSpace: 'nowrap' }}>
+            Stage:
+          </span>
+          <select
+            value={selectedMobileStage}
+            onChange={(e) => setSelectedMobileStage(e.target.value)}
+            style={{
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#0f172a',
+              width: '100%',
+              cursor: 'pointer',
+              padding: 0
+            }}
+          >
+            <option value="ALL">All Stages ({tasks.length})</option>
             {STAGES.map((s) => {
               const count = tasks.filter(t => t.stage === s).length;
-              const isSel = selectedMobileStage === s;
               return (
-                <button
-                  key={s}
-                  onClick={() => setSelectedMobileStage(s)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '16px',
-                    background: isSel ? '#2563eb' : '#f8fafc',
-                    color: isSel ? '#ffffff' : '#475569',
-                    border: isSel ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                    fontSize: '11.5px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    flexShrink: 0,
-                    scrollSnapAlign: 'start',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span>{s}</span>
-                  <span style={{
-                    padding: '1px 6px',
-                    borderRadius: '10px',
-                    background: isSel ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
-                    color: isSel ? '#ffffff' : '#334155',
-                    fontSize: '10px',
-                    fontWeight: '800'
-                  }}>
-                    {count}
-                  </span>
-                </button>
+                <option key={s} value={s}>
+                  {s} ({count})
+                </option>
               );
             })}
-          </div>
+          </select>
+          <ChevronDown size={14} color="#64748b" style={{ flexShrink: 0, pointerEvents: 'none' }} />
         </div>
 
-
-        {/* Row 2: Desktop / Leader Controls (Group by School & Density) */}
+        {/* Desktop / Leader Controls: Group by School + Density Switcher */}
         {isLeader && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginLeft: 'auto' }}>
             {/* Group by School Toggle */}
             <button
               onClick={() => setGroupBySchool(!groupBySchool)}
               style={{
-                padding: '5px 10px',
+                padding: '6px 12px',
                 borderRadius: '8px',
                 background: groupBySchool ? '#0f172a' : '#ffffff',
                 color: groupBySchool ? '#ffffff' : '#334155',
@@ -838,6 +787,7 @@ export default function KanbanBoard({
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+
               {/* Density Toggle (Standard vs Compact) */}
               <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <button
