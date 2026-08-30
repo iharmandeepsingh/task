@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, RefreshCw, AlertCircle, FileText, Send, Calendar, Clock } from 'lucide-react';
+import { X, CheckCircle, RefreshCw, AlertCircle, FileText, Send, Calendar, Clock, Star } from 'lucide-react';
 
 export default function SubmissionReviewModal({ isOpen, onClose, task, authUser, onReviewSubmission, onSubmitTask }) {
   const [feedback, setFeedback] = useState('');
   const [newRestartDeadline, setNewRestartDeadline] = useState('');
   const [submissionNotes, setSubmissionNotes] = useState('');
+  const [rating, setRating] = useState(task?.rating || 5);
+  const [hoverRating, setHoverRating] = useState(0);
 
   if (!isOpen || !task) return null;
 
@@ -51,9 +53,10 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
   };
 
   const handleApprove = () => {
-    onReviewSubmission(task.id, true, `Approved by ${authUser?.name || 'Assigner'}`);
+    onReviewSubmission(task.id, true, feedback || `Approved with ${rating}-Star rating`, null, rating);
     onClose();
   };
+
 
   const handleReissue = (e) => {
     e.preventDefault();
@@ -163,16 +166,52 @@ export default function SubmissionReviewModal({ isOpen, onClose, task, authUser,
               <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '12px' }}>
                 Reviewer Action ({authUser?.name || 'Assigner'})
               </h4>
+
+              {/* Star Rating Selector */}
+              <div style={{ marginBottom: '14px', padding: '12px 14px', background: '#fefce8', border: '1.5px solid #fde047', borderRadius: '12px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '800', color: '#854d0e', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <Star size={15} color="#eab308" fill="#eab308" />
+                  <span>Performance Quality Rating (1 to 5 Stars)</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[1, 2, 3, 4, 5].map((starVal) => {
+                      const isFilled = (hoverRating || rating) >= starVal;
+                      return (
+                        <button
+                          key={starVal}
+                          type="button"
+                          onMouseEnter={() => setHoverRating(starVal)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          onClick={() => setRating(starVal)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', transition: 'transform 0.15s ease' }}
+                          title={`Rate ${starVal} Star${starVal > 1 ? 's' : ''}`}
+                        >
+                          <Star
+                            size={24}
+                            color={isFilled ? '#eab308' : '#cbd5e1'}
+                            fill={isFilled ? '#eab308' : 'none'}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#a16207' }}>
+                    {rating} / 5 Stars {rating === 5 ? '🏆 (Excellent)' : rating === 4 ? '✨ (Good)' : rating === 3 ? '👍 (Satisfactory)' : rating === 2 ? '⚠️ (Needs Work)' : '🔴 (Poor)'}
+                  </span>
+                </div>
+              </div>
               
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <button
                   type="button"
                   onClick={handleApprove}
-                  style={{ flex: 1, padding: '12px', borderRadius: '10px', background: '#16a34a', color: '#ffffff', border: 'none', fontWeight: '700', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '10px', background: '#16a34a', color: '#ffffff', border: 'none', fontWeight: '700', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)' }}
                 >
-                  <CheckCircle size={16} /> Accept & Approve Task
+                  <CheckCircle size={16} /> Accept & Approve Task with {rating} ★
                 </button>
               </div>
+
 
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
                 <h5 style={{ fontSize: '12.5px', fontWeight: '700', color: '#dc2626', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>

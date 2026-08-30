@@ -790,10 +790,60 @@ export default function App() {
     setActiveReviewTask(null);
   };
 
-  const handleReviewSubmission = (taskId, isApproved, feedback, newRestartDeadline) => {
+  const handleRateTask = (taskId, newRating, feedback = '') => {
+    setTasks((prevTasks) => {
+      const updated = prevTasks.map((t) => {
+        if (t.id === taskId) {
+          return {
+            ...t,
+            rating: newRating,
+            ratingFeedback: feedback || t.ratingFeedback || '',
+            ratedBy: {
+              name: authUser?.name || 'Super Admin',
+              role: currentRole || 'superAdmin',
+              employeeId: authUser?.employeeId || '',
+              at: new Date().toISOString()
+            },
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return t;
+      });
+      localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+      persistTasksToServer(updated);
+      return updated;
+    });
+  };
+
+  const handleReviewSubmission = (taskId, isApproved, feedback, newRestartDeadline, rating) => {
     if (isApproved) {
-      handleMoveStage(taskId, 'Accepted');
-      alert('Task submission accepted & approved!');
+      const awardedRating = rating || 5;
+      setTasks((prevTasks) => {
+        const updated = prevTasks.map((t) => {
+          if (t.id === taskId) {
+            return {
+              ...t,
+              stage: 'Accepted',
+              progressPercent: 100,
+              rating: awardedRating,
+              ratingFeedback: feedback || '',
+              ratedBy: {
+                name: authUser?.name || 'Super Admin',
+                role: currentRole || 'superAdmin',
+                employeeId: authUser?.employeeId || '',
+                at: new Date().toISOString()
+              },
+              review: { isApproved: true, feedback, rating: awardedRating },
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return t;
+        });
+        localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+        persistTasksToServer(updated);
+        return updated;
+      });
+      alert(`Task submission accepted & approved with ${awardedRating} ★ rating! ⭐`);
     } else {
       setTasks((prevTasks) => {
         const updated = prevTasks.map((t) => {
@@ -804,17 +854,20 @@ export default function App() {
               dueDate: newRestartDeadline || t.dueDate,
               progressPercent: 30,
               review: { isApproved: false, feedback, newRestartDeadline },
+              updatedAt: new Date().toISOString()
             };
           }
           return t;
         });
         localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
+        persistTasksToServer(updated);
         return updated;
       });
       alert('Task re-issued with revision feedback.');
     }
     setActiveReviewTask(null);
   };
+
 
   return (
     <div className="app-layout">
@@ -972,6 +1025,7 @@ export default function App() {
             onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
             onOpenReviewModal={(task) => setActiveReviewTask(task)}
             onOpenForwardModal={(task) => setActiveForwardTask(task)}
+            onRateTask={handleRateTask}
             currentRole={currentRole}
           />
         )}
@@ -988,9 +1042,11 @@ export default function App() {
             onOpenExtensionModal={(task) => setActiveExtensionTask(task)}
             onOpenReviewModal={(task) => setActiveReviewTask(task)}
             onOpenForwardModal={(task) => setActiveForwardTask(task)}
+            onRateTask={handleRateTask}
             currentRole={currentRole}
           />
         )}
+
 
         {(activeView === 'team' || activeView === 'staff' || activeView === 'verification') && (
           currentRole !== 'faculty' ? (

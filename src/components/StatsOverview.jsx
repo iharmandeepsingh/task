@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock, AlertTriangle, ShieldAlert, Layers } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, ShieldAlert, Layers, Star } from 'lucide-react';
 
 export default function StatsOverview({ tasks = [], currentRole, isMobile = false }) {
   const totalTasks = tasks.length;
@@ -9,7 +9,12 @@ export default function StatsOverview({ tasks = [], currentRole, isMobile = fals
   const redTasks = tasks.filter(t => t.deadlineHealth === 'Red' || t.isIdle).length;
   const idleCount = tasks.filter(t => t.isIdle).length;
 
-  // 📱 Mobile Compact Stats Bar (Preserve unchanged)
+  const ratedTasks = tasks.filter(t => typeof t.rating === 'number' && t.rating > 0);
+  const avgRating = ratedTasks.length > 0 
+    ? (ratedTasks.reduce((sum, t) => sum + t.rating, 0) / ratedTasks.length).toFixed(1)
+    : null;
+
+  // 📱 Mobile Compact Stats Bar
   if (isMobile) {
     return (
       <div style={{
@@ -39,6 +44,26 @@ export default function StatsOverview({ tasks = [], currentRole, isMobile = fals
           <Clock size={12} color="#3b82f6" />
           <span>Total: <strong>{totalTasks}</strong></span>
         </div>
+
+        {/* Global Average Rating */}
+        {avgRating && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '6px 10px',
+            background: '#fefce8',
+            borderRadius: '10px',
+            border: '1px solid #fde047',
+            fontSize: '11px',
+            fontWeight: '800',
+            color: '#854d0e',
+            flexShrink: 0
+          }}>
+            <Star size={12} color="#eab308" fill="#eab308" />
+            <span>★ {avgRating} Quality Score</span>
+          </div>
+        )}
 
         <div style={{
           display: 'inline-flex',
@@ -131,6 +156,20 @@ export default function StatsOverview({ tasks = [], currentRole, isMobile = fals
 
       <div className="stat-card">
         <div className="stat-header">
+          <span className="stat-title">Quality & Review Score</span>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fefce8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Star size={16} color="#eab308" fill="#eab308" />
+          </div>
+        </div>
+        <div className="stat-value" style={{ color: '#854d0e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span>{avgRating ? `★ ${avgRating}` : '★ 5.0'}</span>
+          <span style={{ fontSize: '13px', color: '#a16207', fontWeight: '600' }}>/ 5.0</span>
+        </div>
+        <p className="stat-desc">{ratedTasks.length > 0 ? `${ratedTasks.length} Evaluated Tasks` : 'University Benchmark'}</p>
+      </div>
+
+      <div className="stat-card">
+        <div className="stat-header">
           <span className="stat-title">On Track (&gt;7 Days)</span>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CheckCircle2 size={16} color="#16a34a" />
@@ -175,3 +214,4 @@ export default function StatsOverview({ tasks = [], currentRole, isMobile = fals
     </div>
   );
 }
+

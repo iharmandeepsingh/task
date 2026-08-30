@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Clock, AlertTriangle, MessageSquare, Send, Calendar, RefreshCw, 
   ChevronDown, ChevronRight, Layers, Paperclip, Trash2, Building2, 
-  CheckCircle2, LayoutGrid, List, Check, ChevronsUpDown
+  CheckCircle2, LayoutGrid, List, Check, ChevronsUpDown, Star
 } from 'lucide-react';
 import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
 
@@ -16,6 +16,34 @@ function getStageColorClass(stage) {
     default: return 'blue';
   }
 }
+
+// 🌟 Compute Faculty / Teacher Average Rating across rated tasks
+export function getFacultyAvgRating(assigneeId, assigneeName, allTasks = []) {
+  if (!allTasks || allTasks.length === 0) return { avg: null, count: 0 };
+  const rated = allTasks.filter(t => {
+    const matchId = assigneeId && (t.assigneeId === assigneeId);
+    const matchName = assigneeName && t.assigneeName && (t.assigneeName.toLowerCase() === assigneeName.toLowerCase());
+    return (matchId || matchName) && typeof t.rating === 'number' && t.rating > 0;
+  });
+  if (rated.length === 0) return { avg: null, count: 0 };
+  const total = rated.reduce((sum, t) => sum + t.rating, 0);
+  const avg = (total / rated.length).toFixed(1);
+  return { avg, count: rated.length };
+}
+
+// 🏫 Compute School / Department Average Rating across all department tasks
+export function getSchoolAvgRating(schoolName, allTasks = []) {
+  if (!allTasks || allTasks.length === 0 || !schoolName) return { avg: null, count: 0 };
+  const rated = allTasks.filter(t => {
+    const matchSchool = (t.departmentName || 'General University Administration').toLowerCase() === schoolName.toLowerCase();
+    return matchSchool && typeof t.rating === 'number' && t.rating > 0;
+  });
+  if (rated.length === 0) return { avg: null, count: 0 };
+  const total = rated.reduce((sum, t) => sum + t.rating, 0);
+  const avg = (total / rated.length).toFixed(1);
+  return { avg, count: rated.length };
+}
+
 
 // 🎨 Dynamic status color styling (Red, Yellow, Green) for task cards
 function getTaskCardStyles(task, isIdle) {
@@ -83,6 +111,7 @@ function CompactTaskRow({
   task,
   team,
   authUser,
+  allTasks,
   onEditTask,
   onMoveStage,
   onDeleteTask,
@@ -90,6 +119,7 @@ function CompactTaskRow({
   onOpenExtensionModal,
   onOpenReviewModal,
   onOpenForwardModal,
+  onRateTask,
   currentRole
 }) {
   const assignee = team ? team.find((u) => u.id === task.assigneeId) : null;
@@ -106,6 +136,7 @@ function CompactTaskRow({
   }
 
   const rowStyle = getCompactRowStyles(task, isIdle);
+  const facultyAvg = getFacultyAvgRating(task.assigneeId, task.assigneeName, allTasks);
 
   return (
     <div style={{
@@ -124,14 +155,14 @@ function CompactTaskRow({
       boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
     }}>
 
-      {/* Left: ID + Title + Stage Pill */}
+      {/* Left: ID + Title + Health + Star Rating */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 300px', minWidth: '240px' }}>
         <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#1e3a8a', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }}>
           {task.id}
         </span>
         <span 
           onClick={() => onEditTask(task)} 
-          style={{ fontWeight: '700', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '320px' }}
+          style={{ fontWeight: '700', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}
           title={task.title}
         >
           {task.title}
@@ -146,17 +177,53 @@ function CompactTaskRow({
         }}>
           {task.deadlineHealth || 'On Track'}
         </span>
+
+        {/* Task Star Rating Pill */}
+        {task.rating > 0 && (
+          <span style={{
+            fontSize: '9.5px',
+            fontWeight: '800',
+            padding: '1px 6px',
+            borderRadius: '10px',
+            background: '#fefce8',
+            color: '#854d0e',
+            border: '1px solid #fde047',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '2px'
+          }} title={`Task Rating: ${task.rating} / 5 Stars`}>
+            <Star size={10} color="#eab308" fill="#eab308" />
+            <span>{task.rating}.0</span>
+          </span>
+        )}
       </div>
 
-      {/* Middle: Assignee + Due Date */}
+      {/* Middle: Assignee + Teacher Average Rating + Due Date */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', color: '#475569' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {assignee ? assignee.avatar : 'FC'}
           </div>
-          <span style={{ fontWeight: '600', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontWeight: '600', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {task.assigneeName || 'Faculty'}
           </span>
+          {facultyAvg && facultyAvg.avg && (
+            <span style={{
+              fontSize: '9px',
+              fontWeight: '800',
+              color: '#854d0e',
+              background: '#fefce8',
+              border: '1px solid #fde047',
+              padding: '0 4px',
+              borderRadius: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }} title={`Teacher Avg Rating: ${facultyAvg.avg} / 5 (${facultyAvg.count} tasks)`}>
+              <Star size={8} color="#eab308" fill="#eab308" />
+              <span>{facultyAvg.avg}</span>
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#64748b' }}>
@@ -164,6 +231,7 @@ function CompactTaskRow({
           <span>{formatDueDateWithDayTime(task.dueDate, task.dueTime)}</span>
         </div>
       </div>
+
 
       {/* Right: Quick Stage Select + Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -243,6 +311,7 @@ function TaskCard({
   task,
   team,
   authUser,
+  allTasks,
   onEditTask,
   onMoveStage,
   onDeleteTask,
@@ -251,6 +320,7 @@ function TaskCard({
   onOpenReviewModal,
   onOpenForwardModal,
   onToggleSubtask,
+  onRateTask,
   currentRole
 }) {
   const assignee = team ? team.find((u) => u.id === task.assigneeId) : null;
@@ -268,6 +338,7 @@ function TaskCard({
   }
 
   const cardStyle = getTaskCardStyles(task, isIdle);
+  const facultyAvg = getFacultyAvgRating(task.assigneeId, task.assigneeName, allTasks);
 
   return (
     <div 
@@ -285,7 +356,7 @@ function TaskCard({
         transition: 'all 0.15s ease'
       }}
     >
-      {/* 1. Card Top: ID + Priority + Health + Delete Action */}
+      {/* 1. Card Top: ID + Priority + Health + Star Rating + Delete Action */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span style={{
@@ -323,7 +394,27 @@ function TaskCard({
           }}>
             {task.deadlineHealth || 'On Track'}
           </span>
+
+          {/* Task Star Rating Pill */}
+          {task.rating > 0 && (
+            <span style={{
+              fontSize: '10px',
+              fontWeight: '800',
+              padding: '1px 6px',
+              borderRadius: '4px',
+              background: '#fefce8',
+              color: '#854d0e',
+              border: '1px solid #fde047',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }} title={`Task Quality Rating: ${task.rating} / 5 Stars`}>
+              <Star size={10} color="#eab308" fill="#eab308" />
+              <span>{task.rating}.0</span>
+            </span>
+          )}
         </div>
+
 
         {(isCreator || isSuperAdmin10001) && (
           <button
@@ -582,7 +673,39 @@ function TaskCard({
         </div>
       )}
 
-      {/* 11. Card Footer: Assignee Avatar + Action Toolbar */}
+      {/* 11. Quick Star Rater for Leaders (Super Admin, Admin, HOD) */}
+      {isLeader && onRateTask && (task.stage === 'Accepted' || task.stage === 'Submitted for Review' || task.rating > 0) && (
+        <div 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 10px', background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', fontSize: '11px' }}
+        >
+          <span style={{ fontWeight: '700', color: '#854d0e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Star size={12} color="#eab308" fill="#eab308" />
+            <span>{task.rating ? `Quality: ${task.rating} ★` : 'Rate Submission:'}</span>
+          </span>
+          <div style={{ display: 'flex', gap: '3px' }}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRateTask(task.id, s);
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '1px', lineHeight: 1 }}
+                title={`Award ${s} Star${s > 1 ? 's' : ''}`}
+              >
+                <Star
+                  size={15}
+                  color={(task.rating || 0) >= s ? '#eab308' : '#cbd5e1'}
+                  fill={(task.rating || 0) >= s ? '#eab308' : 'none'}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 12. Card Footer: Assignee Avatar + Faculty Avg Rating + Action Toolbar */}
       <div style={{ marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -591,6 +714,23 @@ function TaskCard({
           <span style={{ fontSize: '11px', fontWeight: '600', color: '#334155' }}>
             {task.assigneeName || (assignee ? assignee.name : 'Faculty')}
           </span>
+          {facultyAvg && facultyAvg.avg && (
+            <span style={{
+              fontSize: '9.5px',
+              fontWeight: '800',
+              color: '#854d0e',
+              background: '#fefce8',
+              border: '1px solid #fde047',
+              padding: '1px 5px',
+              borderRadius: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }} title={`Teacher Overall Rating: ${facultyAvg.avg} / 5 (${facultyAvg.count} tasks)`}>
+              <Star size={9} color="#eab308" fill="#eab308" />
+              <span>{facultyAvg.avg}</span>
+            </span>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -653,6 +793,7 @@ export default function KanbanBoard({
   onOpenReviewModal,
   onOpenForwardModal,
   onToggleSubtask,
+  onRateTask,
   currentRole,
 }) {
   const isLeader = ['superAdmin', 'admin', 'hod', 'adminHead'].includes(currentRole);
@@ -787,7 +928,6 @@ export default function KanbanBoard({
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-
               {/* Density Toggle (Standard vs Compact) */}
               <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <button
@@ -872,6 +1012,7 @@ export default function KanbanBoard({
             const urgentOverdue = schoolTasks.filter(t => t.deadlineHealth === 'Red' || t.deadlineHealth === 'Orange' || t.isIdle).length;
             const accepted = schoolTasks.filter(t => t.stage === 'Accepted').length;
             const progressPercent = total > 0 ? Math.round((accepted / total) * 100) : 0;
+            const schoolRating = getSchoolAvgRating(school, tasks);
 
             return (
               <div 
@@ -911,8 +1052,28 @@ export default function KanbanBoard({
                     </span>
                   </div>
 
-                  {/* Summary Metric Badges */}
+                  {/* Summary Metric Badges & School Average Rating */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {/* School Average Rating Pill */}
+                    {schoolRating.avg ? (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        color: '#854d0e',
+                        background: '#fefce8',
+                        border: '1px solid #fde047',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }} title={`School Performance Average: ${schoolRating.avg} / 5 based on ${schoolRating.count} reviewed tasks`}>
+                        <Star size={12} color="#eab308" fill="#eab308" />
+                        <span>{schoolRating.avg} Avg</span>
+                        <span style={{ fontSize: '9.5px', color: '#a16207' }}>({schoolRating.count})</span>
+                      </span>
+                    ) : null}
+
                     <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '2px 8px', borderRadius: '6px' }}>
                       🟢 {onTrack} On Track
                     </span>
@@ -953,6 +1114,7 @@ export default function KanbanBoard({
                             task={t}
                             team={team}
                             authUser={authUser}
+                            allTasks={tasks}
                             onEditTask={onEditTask}
                             onMoveStage={onMoveStage}
                             onDeleteTask={onDeleteTask}
@@ -960,6 +1122,7 @@ export default function KanbanBoard({
                             onOpenExtensionModal={onOpenExtensionModal}
                             onOpenReviewModal={onOpenReviewModal}
                             onOpenForwardModal={onOpenForwardModal}
+                            onRateTask={onRateTask}
                             currentRole={currentRole}
                           />
                         ))}
@@ -999,6 +1162,7 @@ export default function KanbanBoard({
                                         task={task}
                                         team={team}
                                         authUser={authUser}
+                                        allTasks={tasks}
                                         onEditTask={onEditTask}
                                         onMoveStage={onMoveStage}
                                         onDeleteTask={onDeleteTask}
@@ -1007,6 +1171,7 @@ export default function KanbanBoard({
                                         onOpenReviewModal={onOpenReviewModal}
                                         onOpenForwardModal={onOpenForwardModal}
                                         onToggleSubtask={onToggleSubtask}
+                                        onRateTask={onRateTask}
                                         currentRole={currentRole}
                                       />
                                     ))
@@ -1042,6 +1207,7 @@ export default function KanbanBoard({
                   task={t}
                   team={team}
                   authUser={authUser}
+                  allTasks={tasks}
                   onEditTask={onEditTask}
                   onMoveStage={onMoveStage}
                   onDeleteTask={onDeleteTask}
@@ -1049,6 +1215,7 @@ export default function KanbanBoard({
                   onOpenExtensionModal={onOpenExtensionModal}
                   onOpenReviewModal={onOpenReviewModal}
                   onOpenForwardModal={onOpenForwardModal}
+                  onRateTask={onRateTask}
                   currentRole={currentRole}
                 />
               ))
@@ -1089,6 +1256,7 @@ export default function KanbanBoard({
                             task={task}
                             team={team}
                             authUser={authUser}
+                            allTasks={tasks}
                             onEditTask={onEditTask}
                             onMoveStage={onMoveStage}
                             onDeleteTask={onDeleteTask}
@@ -1097,6 +1265,7 @@ export default function KanbanBoard({
                             onOpenReviewModal={onOpenReviewModal}
                             onOpenForwardModal={onOpenForwardModal}
                             onToggleSubtask={onToggleSubtask}
+                            onRateTask={onRateTask}
                             currentRole={currentRole}
                           />
                         ))
@@ -1112,3 +1281,4 @@ export default function KanbanBoard({
     </div>
   );
 }
+

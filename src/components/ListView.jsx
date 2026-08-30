@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, Trash2, Edit2, ArrowUpDown, MessageSquare, Clock, Send, RefreshCw, User, Tag } from 'lucide-react';
+import { Calendar, Trash2, Edit2, ArrowUpDown, MessageSquare, Clock, Send, RefreshCw, User, Tag, Star } from 'lucide-react';
 import { STAGES, formatDueDateWithDayTime, getUrgentCountdownInfo } from '../data/initialData';
+import { getFacultyAvgRating } from './KanbanBoard';
 
 export default function ListView({
   tasks,
@@ -14,8 +15,10 @@ export default function ListView({
   onOpenExtensionModal,
   onOpenReviewModal,
   onOpenForwardModal,
+  onRateTask,
   currentRole,
 }) {
+
 
   const [sortField, setSortField] = useState('recent');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -95,8 +98,27 @@ export default function ListView({
                         {task.id}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>
-                          {task.title}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>
+                            {task.title}
+                          </span>
+                          {task.rating > 0 && (
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: '800',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              background: '#fefce8',
+                              color: '#854d0e',
+                              border: '1px solid #fde047',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px'
+                            }} title={`Task Rating: ${task.rating} / 5 Stars`}>
+                              <Star size={10} color="#eab308" fill="#eab308" />
+                              <span>{task.rating}.0</span>
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748b' }}>
                           {task.description}
@@ -134,8 +156,6 @@ export default function ListView({
                           }
                           return null;
                         })()}
-
-
 
                         {hasPendingExt && (
                           <div style={{ fontSize: '10px', fontWeight: '700', color: '#b45309', background: '#fffbeb', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '4px' }}>
@@ -188,30 +208,50 @@ export default function ListView({
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {assignee.avatar}
-                            </div>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
-                          </div>
-                          {task.delegatedByName && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
-                              <span style={{ fontSize: '9.5px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: '600' }}>
-                                DIRECTIVE: {task.creatorName || 'Super Admin'} ➔ {task.delegatedByName} ➔ <span style={{ color: '#2563eb', fontWeight: '700' }}>{task.assigneeName}</span>
-                              </span>
-                              {task.delegationNotes && (
-                                <span style={{ fontSize: '9.5px', color: '#64748b', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  "{task.delegationNotes}"
-                                </span>
+                        {(() => {
+                          const facultyAvg = getFacultyAvgRating(task.assigneeId, task.assigneeName, tasks);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {assignee.avatar}
+                                </div>
+                                <span style={{ fontSize: '12px', fontWeight: '600' }}>{task.assigneeName || assignee.name}</span>
+                                {facultyAvg && facultyAvg.avg && (
+                                  <span style={{
+                                    fontSize: '9px',
+                                    fontWeight: '800',
+                                    color: '#854d0e',
+                                    background: '#fefce8',
+                                    border: '1px solid #fde047',
+                                    padding: '0 4px',
+                                    borderRadius: '6px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }} title={`Teacher Avg Rating: ${facultyAvg.avg} / 5`}>
+                                    <Star size={8} color="#eab308" fill="#eab308" />
+                                    <span>{facultyAvg.avg}</span>
+                                  </span>
+                                )}
+                              </div>
+                              {task.delegatedByName && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                                  <span style={{ fontSize: '9.5px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: '600' }}>
+                                    DIRECTIVE: {task.creatorName || 'Super Admin'} ➔ {task.delegatedByName} ➔ <span style={{ color: '#2563eb', fontWeight: '700' }}>{task.assigneeName}</span>
+                                  </span>
+                                  {task.delegationNotes && (
+                                    <span style={{ fontSize: '9.5px', color: '#64748b', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      "{task.delegationNotes}"
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
-
-
-                        </div>
-
+                          );
+                        })()}
                       </td>
+
                       <td style={{ padding: '12px 16px', fontWeight: '700', fontSize: '11px', color: '#1e40af' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
