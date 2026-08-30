@@ -171,12 +171,13 @@ export default function App() {
   // Sync tasks state to server and localStorage
   useEffect(() => {
     localStorage.setItem('ctu_tasks_data', JSON.stringify(tasks));
-    fetch('/api/sync-tasks', {
+    fetch(getApiUrl('/api/sync-tasks'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tasks),
     }).catch(() => {});
   }, [tasks]);
+
 
   // Auto-fetch latest team & tasks from shared server on mount and every 4 seconds
   useEffect(() => {
@@ -333,7 +334,7 @@ export default function App() {
     localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
 
     // Also delete from MongoDB verification collection
-    fetch('/api/sync-verification', {
+    fetch(getApiUrl('/api/sync-verification'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', staffId: targetMember?.employeeId || memberId })
@@ -349,7 +350,7 @@ export default function App() {
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
 
       // Push the updated team (without deleted member) to MongoDB immediately
-      fetch('/api/sync-team', {
+      fetch(getApiUrl('/api/sync-team'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
@@ -368,7 +369,7 @@ export default function App() {
     setDeletedEmployeeIds(newDeletedIds);
     localStorage.setItem('ctu_deleted_employee_ids', JSON.stringify(newDeletedIds));
 
-    fetch('/api/sync-verification', {
+    fetch(getApiUrl('/api/sync-verification'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'bulk-delete', staffIds: targetIds })
@@ -383,7 +384,7 @@ export default function App() {
 
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
 
-      fetch('/api/sync-team', {
+      fetch(getApiUrl('/api/sync-team'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
@@ -405,7 +406,7 @@ export default function App() {
 
       localStorage.setItem('ctu_team_data', JSON.stringify(updated));
 
-      fetch('/api/sync-team', {
+      fetch(getApiUrl('/api/sync-team'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
@@ -414,6 +415,7 @@ export default function App() {
       return updated;
     });
   };
+
 
   // If not logged in, render Login Page entry gate
   if (!authUser) {
@@ -606,11 +608,12 @@ export default function App() {
       });
 
       localStorage.setItem('ctu_tasks_data', JSON.stringify(updated));
-      fetch('/api/sync-tasks', {
+      fetch(getApiUrl('/api/sync-tasks'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       }).catch(() => {});
+
 
       return updated;
     });
