@@ -484,27 +484,44 @@ input:focus, select:focus, textarea:focus {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    overflow: hidden !important;
     box-sizing: border-box !important;
   }
 
   .mobile-stage-filter-bar > div {
     display: flex !important;
-    overflow-x: auto !important;
+    flex-wrap: wrap !important;
     width: 100% !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  .mobile-stage-filter-bar > div::-webkit-scrollbar {
-    display: none !important;
+    gap: 6px !important;
   }
 
   .kanban-container {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .kanban-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    gap: 14px !important;
+  }
+
+  .kanban-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .kanban-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
+
 

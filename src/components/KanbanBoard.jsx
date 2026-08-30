@@ -644,38 +644,48 @@ export default function KanbanBoard({
           maxWidth: '100%',
           minWidth: 0,
           background: '#ffffff',
-          padding: '6px 8px',
-          borderRadius: '10px',
+          padding: '8px 10px',
+          borderRadius: '12px',
           border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             display: 'flex',
-            gap: '5px',
-            overflowX: 'auto',
+            gap: '6px',
+            flexWrap: 'wrap',
+            alignItems: 'center',
             width: '100%',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            boxSizing: 'border-box'
           }}>
             <button
               onClick={() => setSelectedMobileStage('ALL')}
               style={{
-                padding: '4px 10px',
-                borderRadius: '14px',
+                padding: '5px 10px',
+                borderRadius: '16px',
                 background: selectedMobileStage === 'ALL' ? '#0f172a' : '#f1f5f9',
                 color: selectedMobileStage === 'ALL' ? '#ffffff' : '#475569',
                 border: 'none',
                 fontSize: '11px',
                 fontWeight: '700',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.15s ease'
               }}
             >
-              All ({tasks.length})
+              <span>All</span>
+              <span style={{
+                padding: '0 5px',
+                borderRadius: '8px',
+                background: selectedMobileStage === 'ALL' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+                color: selectedMobileStage === 'ALL' ? '#ffffff' : '#334155',
+                fontSize: '9.5px',
+                fontWeight: '800'
+              }}>
+                {tasks.length}
+              </span>
             </button>
 
             {STAGES.map((s) => {
@@ -686,25 +696,24 @@ export default function KanbanBoard({
                   key={s}
                   onClick={() => setSelectedMobileStage(s)}
                   style={{
-                    padding: '4px 9px',
-                    borderRadius: '14px',
+                    padding: '5px 10px',
+                    borderRadius: '16px',
                     background: isSel ? '#2563eb' : '#f8fafc',
                     color: isSel ? '#ffffff' : '#475569',
                     border: isSel ? '1px solid #2563eb' : '1px solid #e2e8f0',
                     fontSize: '11px',
                     fontWeight: '700',
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   <span>{s}</span>
                   <span style={{
-                    padding: '0 4px',
-                    borderRadius: '6px',
+                    padding: '0 5px',
+                    borderRadius: '8px',
                     background: isSel ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
                     color: isSel ? '#ffffff' : '#334155',
                     fontSize: '9.5px',
