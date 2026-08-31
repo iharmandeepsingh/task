@@ -661,10 +661,19 @@ export default function App() {
       const isSuperAdmin10001 = authUser?.employeeId === '10001' || authUser?.id === 'usr-10001' || currentRole === 'superAdmin';
 
       // Security Guard: Assignees cannot self-accept or self-review
-      if (isAssignee && !isCreator && !isSuperAdmin10001 && ['Under Review', 'Re-issued', 'Accepted'].includes(newStage)) {
-        alert(`🛑 Authorization Denied: As the Assignee of this task, you can move work to "In Progress" or "Submitted for Review". Only the Assigner (${targetTask.creatorName || 'Super Admin'}) can mark tasks as Under Review, Re-issued, or Accepted.`);
-        return;
+      if (isAssignee && !isCreator && !isSuperAdmin10001) {
+        if (['Under Review', 'Re-issued', 'Accepted'].includes(newStage)) {
+          alert(`🛑 Authorization Denied: As the Assignee of this task, you can move work to "In Progress" or "Submitted for Review". Only the Assigner (${targetTask.creatorName || 'Super Admin'}) can mark tasks as Under Review, Re-issued, or Accepted.`);
+          return;
+        }
+
+        // Rule: Once submitted for review or under review, status cannot be reverted back to Assigned or In Progress by faculty
+        if (['Submitted for Review', 'Under Review', 'Accepted'].includes(targetTask.stage) && ['Assigned', 'In Progress'].includes(newStage)) {
+          alert(`🛑 Action Blocked: This task has already been submitted for review (${targetTask.stage}). Its status cannot be moved back to "${newStage}" until the Assigner (${targetTask.creatorName || 'Admin / Super Admin'}) completes the review or re-issues the task.`);
+          return;
+        }
       }
+
     }
 
     setTasks((prevTasks) => {

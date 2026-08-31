@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, CheckCircle, Clock, MessageSquare, Edit3, Trash2, ArrowRight, ShieldAlert, Send } from 'lucide-react';
-import { formatDueDateWithDayTime } from '../data/initialData';
+import { formatDueDateWithDayTime, STAGES } from '../data/initialData';
 
 export default function TaskActionSheet({
   isOpen,
@@ -21,15 +21,27 @@ export default function TaskActionSheet({
 
   const authEmpId = (authUser?.employeeId || '').trim();
   const authId = (authUser?.id || '').trim();
-  const isSuperAdmin = currentRole === 'superAdmin' || ['10001', '24051', '17572'].includes(authEmpId);
-  const isFaculty = currentRole === 'faculty';
+  const isSuperAdmin = currentRole === 'superAdmin' || ['10001', '24051', '17572', '001'].includes(authEmpId);
+  const isCreator = authUser?.name === task.creatorName || authUser?.id === task.creatorId || authUser?.employeeId === task.creatorId;
+  const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
 
-  const stages = [
-    { key: 'To Do', label: 'To Do', color: '#64748b' },
-    { key: 'In Progress', label: 'In Progress', color: '#3b82f6' },
-    { key: 'Review', label: 'Review', color: '#f59e0b' },
-    { key: 'Completed', label: 'Completed', color: '#10b981' }
-  ];
+  let allowedStages = STAGES;
+  if (isAssignee && !isCreator && !isSuperAdmin) {
+    if (['Submitted for Review', 'Under Review', 'Accepted'].includes(task.stage)) {
+      allowedStages = [task.stage];
+    } else {
+      allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+    }
+  }
+
+  const stageColorMap = {
+    'Assigned': '#3b82f6',
+    'In Progress': '#8b5cf6',
+    'Submitted for Review': '#f59e0b',
+    'Under Review': '#f97316',
+    'Re-issued': '#ec4899',
+    'Accepted': '#10b981'
+  };
 
   return (
     <div style={{
@@ -81,27 +93,33 @@ export default function TaskActionSheet({
           <label style={{ fontSize: '11.5px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '6px' }}>
             Move Workflow Stage
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-            {stages.map(st => (
-              <button
-                key={st.key}
-                onClick={() => { onMoveStage(task.id, st.key); onClose(); }}
-                style={{
-                  padding: '8px 4px',
-                  borderRadius: '8px',
-                  border: task.stage === st.key ? `2px solid ${st.color}` : '1px solid #e2e8f0',
-                  background: task.stage === st.key ? `${st.color}15` : '#f8fafc',
-                  color: task.stage === st.key ? st.color : '#475569',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
-              >
-                {st.label}
-              </button>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+            {allowedStages.map(stKey => {
+              const color = stageColorMap[stKey] || '#64748b';
+              const isSelected = task.stage === stKey;
+              return (
+                <button
+                  key={stKey}
+                  onClick={() => { onMoveStage(task.id, stKey); onClose(); }}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    border: isSelected ? `2px solid ${color}` : '1px solid #e2e8f0',
+                    background: isSelected ? `${color}15` : '#f8fafc',
+                    color: isSelected ? color : '#475569',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    textAlign: 'center'
+                  }}
+                >
+                  {stKey}
+                </button>
+              );
+            })}
           </div>
         </div>
+
 
         {/* Action List Items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -132,8 +132,13 @@ function CompactTaskRow({
   let allowedStages = STAGES;
   const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
   if (isAssignee && !isCreator && !isSuperAdmin10001) {
-    allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+    if (['Submitted for Review', 'Under Review', 'Accepted'].includes(task.stage)) {
+      allowedStages = [task.stage];
+    } else {
+      allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+    }
   }
+
 
   const rowStyle = getCompactRowStyles(task, isIdle);
   const facultyAvg = getFacultyAvgRating(task.assigneeId, task.assigneeName, allTasks);
@@ -334,8 +339,13 @@ function TaskCard({
   let allowedStages = STAGES;
   const isAssignee = authUser?.name === task.assigneeName || authUser?.id === task.assigneeId || authUser?.employeeId === task.assigneeId;
   if (isAssignee && !isCreator && !isSuperAdmin10001) {
-    allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+    if (['Submitted for Review', 'Under Review', 'Accepted'].includes(task.stage)) {
+      allowedStages = [task.stage];
+    } else {
+      allowedStages = STAGES.filter(s => ['Assigned', 'In Progress', 'Submitted for Review'].includes(s));
+    }
   }
+
 
   const cardStyle = getTaskCardStyles(task, isIdle);
   const facultyAvg = getFacultyAvgRating(task.assigneeId, task.assigneeName, allTasks);
